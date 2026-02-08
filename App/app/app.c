@@ -21,9 +21,6 @@
 #include "am_fix.h"
 #include "app/action.h"
 
-#ifdef ENABLE_AIRCOPY
-    #include "app/aircopy.h"
-#endif
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #include "app/dtmf.h"
@@ -95,9 +92,6 @@ void (*ProcessKeysFunctions[])(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) 
     [DISPLAY_FM] = &FM_ProcessKeys,
 #endif
 
-#ifdef ENABLE_AIRCOPY
-    [DISPLAY_AIRCOPY] = &AIRCOPY_ProcessKeys,
-#endif
 };
 
 #ifdef ENABLE_REGA
@@ -786,19 +780,6 @@ static void CheckRadioInterrupts(void)
             BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
         }
 
-#ifdef ENABLE_AIRCOPY
-        if (interrupts.fskFifoAlmostFull &&
-            gScreenToDisplay == DISPLAY_AIRCOPY &&
-            gAircopyState == AIRCOPY_TRANSFER &&
-            gAirCopyIsSendMode == 0)
-        {
-            for (unsigned int i = 0; i < 4; i++) {
-                g_FSK_Buffer[gFSKWriteIndex++] = BK4819_ReadRegister(BK4819_REG_5F);
-            }
-
-            AIRCOPY_StorePacket();
-        }
-#endif
     }
 }
 
@@ -1174,11 +1155,6 @@ static void CheckKeys(void)
     }
 #endif
 
-#ifdef ENABLE_AIRCOPY
-    if (gScreenToDisplay == DISPLAY_AIRCOPY && gAircopyState != AIRCOPY_READY){
-        return;
-    }
-#endif
 
 // -------------------- PTT ------------------------
 #ifdef ENABLE_FEAT_ROBZYL
@@ -1509,14 +1485,6 @@ void APP_TimeSlice10ms(void)
 
     SCANNER_TimeSlice10ms();
 
-#ifdef ENABLE_AIRCOPY
-    if (gScreenToDisplay == DISPLAY_AIRCOPY && gAircopyState == AIRCOPY_TRANSFER && gAirCopyIsSendMode == 1) {
-        if (!AIRCOPY_SendMessage()) {
-            GUI_DisplayScreen();
-        }
-    }
-#endif
-
     CheckKeys();
 }
 
@@ -1630,11 +1598,7 @@ void APP_TimeSlice500ms(void)
         gWakeUp = false;
     }
 
-    #ifdef ENABLE_AIRCOPY
-    if(gCurrentFunction != FUNCTION_TRANSMIT && !FUNCTION_IsRx() && gScreenToDisplay != DISPLAY_AIRCOPY)
-    #else
     if(gCurrentFunction != FUNCTION_TRANSMIT && !FUNCTION_IsRx())
-    #endif
     {
         if (gSleepModeCountdown_500ms > 0 && --gSleepModeCountdown_500ms == 0) {
             gBacklightCountdown_500ms = 0;
@@ -1718,9 +1682,7 @@ void APP_TimeSlice500ms(void)
 #ifdef ENABLE_FMRADIO
         && (gFM_ScanState == FM_SCAN_OFF || gAskToSave)
 #endif
-#ifdef ENABLE_AIRCOPY
-        && gScreenToDisplay != DISPLAY_AIRCOPY
-#endif
+
     ) {
         if (gEeprom.AUTO_KEYPAD_LOCK && gKeyLockCountdown > 0 && !gDTMF_InputMode
             && gScreenToDisplay != DISPLAY_MENU && --gKeyLockCountdown == 0)
@@ -2139,9 +2101,6 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     }
 #endif
     else if (!SCANNER_IsScanning()
-#ifdef ENABLE_AIRCOPY
-            && gScreenToDisplay != DISPLAY_AIRCOPY
-#endif
     ) {
         ACTION_Handle(Key, bKeyPressed, bKeyHeld);
     }

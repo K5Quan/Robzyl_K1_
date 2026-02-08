@@ -307,10 +307,10 @@ void Main(void)
 
         #ifdef ENABLE_SPECTRUM
         case 4:
-            APP_RunSpectrum();
+            APP_RunSpectrum(1);
             break;
         case 5:
-            APP_RunSpectrum();
+            APP_RunSpectrum(1);
             break;
         #endif
 
@@ -345,7 +345,7 @@ void Main(void)
         #endif
         #ifdef ENABLE_SPECTRUM
         else if (gEeprom.CURRENT_STATE == 4 || gEeprom.CURRENT_STATE == 5) {
-            APP_RunSpectrum();
+            APP_RunSpectrum(1);
         }
         #endif
     #endif

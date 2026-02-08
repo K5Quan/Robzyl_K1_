@@ -24,9 +24,6 @@
 #endif
 #include "driver/keyboard.h"
 #include "misc.h"
-#ifdef ENABLE_AIRCOPY
-    #include "ui/aircopy.h"
-#endif
 #ifdef ENABLE_FMRADIO
     #include "ui/fmradio.h"
 #endif
@@ -55,10 +52,6 @@ void (*UI_DisplayFunctions[])(void) = {
 
 #ifdef ENABLE_FMRADIO
     [DISPLAY_FM] = &UI_DisplayFM,
-#endif
-
-#ifdef ENABLE_AIRCOPY
-    [DISPLAY_AIRCOPY] = &UI_DisplayAircopy,
 #endif
 
 #ifdef ENABLE_REGA

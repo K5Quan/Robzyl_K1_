@@ -17,13 +17,8 @@
 #ifndef SPECTRUM_H
 #define SPECTRUM_H
 
-#pragma once
-
-#include "keyboard_state.h"
-
 #include "../bitmaps.h"
 #include "../board.h"
-#include "py32f0xx.h"
 #include "../driver/bk4819-regs.h"
 #include "../driver/bk4819.h"
 #include "../driver/gpio.h"
@@ -33,6 +28,7 @@
 #include "../driver/systick.h"
 #include "../external/printf/printf.h"
 #include "../font.h"
+#include "../frequencies.h"
 #include "../helper/battery.h"
 #include "../misc.h"
 #include "../radio.h"
@@ -42,38 +38,20 @@
 #include <stdint.h>
 #include <string.h>
 
-static const uint8_t DrawingEndY = 40;
 
+typedef enum {
+    AUTOLOCK_OFF,
+    AUTOLOCK_10S,
+    AUTOLOCK_20S,
+    AUTOLOCK_30S
+} AUTOLOCK_t;
+
+static const uint8_t DrawingEndY = 50;
 static const uint8_t U8RssiMap[] = {
-    121,
-    115,
-    109,
-    103,
-    97,
-    91,
-    85,
-    79,
-    73,
-    63,
+    121, 115, 109, 103, 97, 91, 85, 79, 73, 63,
 };
 
-static const uint16_t scanStepValues[] = {
-    1,
-    10,
-    50,
-    100,
-    250,
-    500,
-    625,
-    833,
-    1000,
-    1250,
-    1500,
-    2000,
-    2500,
-    5000,
-    10000,
-};
+static const uint16_t scanStepValues[] = {1, 10, 50, 100, 250, 500, 625, 833, 1000, 1250, 2500, 10000, 50000};
 
 static const uint16_t scanStepBWRegValues[] = {
     //     RX  RXw TX  BW
@@ -104,81 +82,124 @@ static const uint16_t scanStepBWRegValues[] = {
     0b0011011000101000, // 25
 };
 
-static const uint16_t listenBWRegValues[] = {
-    0b0011011000101000, // 25
-    0b0111111100001000, // 12.5
-    0b0100100001011000, // 6.25
-};
+// static const uint16_t listenBWRegValues[] = {
+//     0b0011011000101000, // 25
+//     0b0111111100001000, // 12.5
+//     0b0100100001011000, // 6.25
+// };
 
-typedef enum State
-{
-    SPECTRUM,
-    FREQ_INPUT,
-    STILL,
+
+typedef enum State {
+  SPECTRUM,
+  FREQ_INPUT,
+  STILL,
+  BAND_LIST_SELECT,
+  SCANLIST_SELECT,
+  PARAMETERS_SELECT,
+  #ifdef ENABLE_SCANLIST_SHOW_DETAIL
+  SCANLIST_CHANNELS,  // NOWY STAN
+  #endif
 } State;
 
-typedef enum StepsCount
-{
-    STEPS_128,
-    STEPS_64,
-    STEPS_32,
-    STEPS_16,
+
+typedef enum Mode {
+  FREQUENCY_MODE,
+  CHANNEL_MODE,
+  SCAN_RANGE_MODE,
+  SCAN_BAND_MODE,
+} Mode;
+
+typedef enum StepsCount {
+  STEPS_128,
+  STEPS_64,
+  STEPS_32,
+  STEPS_16,
 } StepsCount;
 
-typedef enum ScanStep
-{
-    S_STEP_0_01kHz,
-    S_STEP_0_1kHz,
-    S_STEP_0_5kHz,
-    S_STEP_1_0kHz,
-
-    S_STEP_2_5kHz,
-    S_STEP_5_0kHz,
-    S_STEP_6_25kHz,
-    S_STEP_8_33kHz,
-    S_STEP_10_0kHz,
-    S_STEP_12_5kHz,
-    S_STEP_15_0kHz,
-    S_STEP_20_0kHz,
-    S_STEP_25_0kHz,
-    S_STEP_50_0kHz,
-    S_STEP_100_0kHz,
+typedef enum ScanStep {
+  S_STEP_0_01kHz,
+  S_STEP_0_1kHz,
+  S_STEP_0_5kHz,
+  S_STEP_1_0kHz,
+  S_STEP_2_5kHz,
+  S_STEP_5_0kHz,
+  S_STEP_6_25kHz,
+  S_STEP_8_33kHz,
+  S_STEP_10_0kHz,
+  S_STEP_12_5kHz,
+  S_STEP_25_0kHz,
+  S_STEP_100kHz,
+  S_STEP_500kHz,
 } ScanStep;
 
-typedef struct SpectrumSettings
-{
-    uint32_t frequencyChangeStep;
-    StepsCount stepsCount;
-    ScanStep scanStepIndex;
-    uint16_t scanDelay;
-    uint16_t rssiTriggerLevel;
-    BK4819_FilterBandwidth_t bw;
-    BK4819_FilterBandwidth_t listenBw;
-    int dbMin;
-    int dbMax;
-    ModulationMode_t modulationType;
-    bool backlightState;
+typedef enum ScanList {
+  S_SCAN_LIST_1,
+  S_SCAN_LIST_2,
+  S_SCAN_LIST_3,
+  S_SCAN_LIST_4,
+  S_SCAN_LIST_5,
+  S_SCAN_LIST_6,
+  S_SCAN_LIST_7,
+  S_SCAN_LIST_8,
+  S_SCAN_LIST_9,
+  S_SCAN_LIST_10,
+  S_SCAN_LIST_11,
+  S_SCAN_LIST_12,
+  S_SCAN_LIST_13,
+  S_SCAN_LIST_14,
+  S_SCAN_LIST_15,
+  S_SCAN_LIST_ALL
+} ScanList;
+
+typedef struct bandparameters { 
+  char BandName[12];
+  uint32_t Startfrequency; // Start frequency in MHz /100
+  uint32_t Stopfrequency; // Stop frequency in MHz /100
+  ScanStep scanStep;
+  ModulationMode_t modulationType;
+} bandparameters;
+
+typedef struct SpectrumSettings {
+  uint32_t frequencyChangeStep;  
+  StepsCount stepsCount;
+  ScanStep scanStepIndex;
+  uint16_t scanDelay;
+  uint16_t rssiTriggerLevelUp;
+  BK4819_FilterBandwidth_t bw;
+  BK4819_FilterBandwidth_t listenBw;
+  int16_t dbMin;
+  int16_t dbMax;  
+  ModulationMode_t modulationType;
+  int scanList;
+  bool scanListEnabled[15];
+  bool bandEnabled[32];
 } SpectrumSettings;
 
-typedef struct ScanInfo
-{
-    uint16_t rssi, rssiMin, rssiMax;
-    uint16_t i, iPeak;
-    uint32_t f, fPeak;
-    uint16_t scanStep;
-    uint16_t measurementsCount;
+typedef struct KeyboardState{
+  KEY_Code_t current;
+  KEY_Code_t prev;
+  uint8_t counter;
+  bool fKeyPressed;
+} KeyboardState;
+
+typedef struct ScanInfo {
+  uint16_t rssi, rssiMin, rssiMax;
+  uint32_t f;
+  uint16_t scanStep,i;
 } ScanInfo;
 
-typedef struct PeakInfo
-{
-    uint16_t t;
-    uint16_t rssi;
-    uint32_t f;
-    uint16_t i;
+typedef struct PeakInfo {
+  uint16_t t;
+  uint16_t rssi;
+  uint32_t f;
+  uint16_t i;
 } PeakInfo;
 
-void APP_RunSpectrum(void);
+void APP_RunSpectrum(uint8_t Spectrum_state);
+//void LookupChannelInfo();
+//void LookupChannelModulation();
+void ClearSettings(void);
+void LoadSettings(bool LNA);
 
-#endif /* ifndef SPECTRUM_H */
 
-// vim: ft=c
+#endif 

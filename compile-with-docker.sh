@@ -13,20 +13,12 @@ set -euo pipefail
 # ---------------------------------------------
 
 IMAGE=uvk1-uvk5v3
-PRESET=${1:-Custom}
+PRESET=${1:-Fusion}
 shift || true  # remove preset from arguments if present
 
 # Any remaining args will be treated as CMake cache variables
 EXTRA_ARGS=("$@")
 
-# ---------------------------------------------
-# Validate preset name
-# ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(Custom|Bandscope|Broadcast|Basic|RescueOps|Game|Fusion|All)$ ]]; then
-  echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: Custom, Bandscope, Broadcast, Basic, RescueOps, Game, Fusion, All"
-  exit 1
-fi
 
 # ---------------------------------------------
 # Build the Docker image (only needed once)
@@ -58,16 +50,4 @@ build_preset() {
   echo "✅ Done: ${preset}"
 }
 
-# ---------------------------------------------
-# Handle 'All' preset
-# ---------------------------------------------
-if [[ "$PRESET" == "All" ]]; then
-  PRESETS=(Bandscope Broadcast Basic RescueOps Game Fusion)
-  for p in "${PRESETS[@]}"; do
-    build_preset "$p"
-  done
-  echo ""
-  echo "🎉 All presets built successfully!"
-else
-  build_preset "$PRESET"
-fi
+build_preset "$PRESET"

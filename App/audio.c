@@ -54,11 +54,6 @@ void AUDIO_PlayBeep(BEEP_Type_t Beep)
        !gEeprom.BEEP_CONTROL)
         return;
 
-#ifdef ENABLE_AIRCOPY
-    if (gScreenToDisplay == DISPLAY_AIRCOPY)
-        return;
-#endif
-
     if (gCurrentFunction == FUNCTION_RECEIVE)
         return;
 

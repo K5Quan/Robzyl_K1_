@@ -85,7 +85,7 @@ if(NOT SQL_TONE)
 endif()
 target_compile_definitions(App INTERFACE SQL_TONE=${SQL_TONE})
 
-if(ENABLE_AIRCOPY OR ENABLE_UART OR ENABLE_USB)
+if(ENABLE_UART OR ENABLE_USB)
     target_sources(App INTERFACE 
         driver/crc.c
         driver/eeprom_compat.c
@@ -120,10 +120,6 @@ enable_feature(ENABLE_FMRADIO
     driver/bk1080.c 
     app/fm.c 
     ui/fmradio.c
-)
-enable_feature(ENABLE_AIRCOPY
-    app/aircopy.c 
-    ui/aircopy.c
 )
 enable_feature(ENABLE_NOAA)
 enable_feature(ENABLE_VOICE 
