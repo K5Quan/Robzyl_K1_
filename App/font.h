@@ -1,5 +1,8 @@
-/* Copyright 2023 Dual Tachyon
+/* Original work Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
+ *
+ * Modified work Copyright 2024 kamilsss655
+ * https://github.com/kamilsss655
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +27,7 @@ extern const uint8_t gFontBig[95 - 1][16 - 2];
 extern const uint8_t gFontBigDigits[11][26 - 6];
 extern const uint8_t gFont3x5[96][3];
 extern const uint8_t gFontSmall[95 - 1][6];
-#ifdef ENABLE_SMALL_BOLD
-    extern const uint8_t gFontSmallBold[95 - 1][6];
-#endif
+extern const uint8_t gFontBSmall[95 - 1][6];
 
 #endif
 

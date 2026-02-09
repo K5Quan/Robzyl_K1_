@@ -1,5 +1,8 @@
-/* Copyright 2023 Dual Tachyon
+/* Original work Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
+ *
+ * Modified work Copyright 2024 kamilsss655
+ * https://github.com/kamilsss655
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,26 +26,31 @@
 void UI_GenerateChannelString(char *pString, const uint16_t Channel);
 void UI_GenerateChannelStringEx(char *pString, const bool bShowPrefix, const uint16_t ChannelNumber);
 void UI_PrintString(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t Width);
+void UI_PrintStringSmall(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t background);
 void UI_PrintStringSmallNormal(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
-void UI_PrintStringSmallNormalInverse(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
-void UI_PrintStringSmallBold(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
-void UI_PrintStringSmallBoldInverse(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);
-void UI_PrintStringSmallBufferNormal(const char *pString, uint8_t *buffer);
-void UI_PrintStringSmallBufferBold(const char *pString, uint8_t * buffer);
+void UI_PrintStringBSmall(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t background);
+void UI_PrintStringSmallBuffer(const char *pString, uint8_t *buffer);
+void UI_PrintStringSmallBufferNormal(const char *pString, uint8_t * buffer);
+void UI_PrintStringBSmallBuffer(const char *pString, uint8_t *buffer);
 void UI_DisplayFrequency(const char *string, uint8_t X, uint8_t Y, bool center);
+#endif
 
 void UI_DisplayPopup(const char *string);
 
 void UI_DrawPixelBuffer(uint8_t (*buffer)[128], uint8_t x, uint8_t y, bool black);
-#ifdef ENABLE_FEAT_ROBZYL
-    //void UI_DrawLineDottedBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black);
-    void PutPixel(uint8_t x, uint8_t y, bool fill);
-    void PutPixelStatus(uint8_t x, uint8_t y, bool fill);
-    void GUI_DisplaySmallest(const char *pString, uint8_t x, uint8_t y, bool statusbar, bool fill);
-#endif
 void UI_DrawLineBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black);
 void UI_DrawRectangleBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black);
+void UI_DrawDottedLineBuffer(uint8_t (*buffer)[128], int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool black, int dotSpacing);
+
+void PutPixel(uint8_t x, uint8_t y, bool fill);
+void PutPixelStatus(uint8_t x, uint8_t y, bool fill);
+void DrawVLine(int sy, int ey, int nx, bool fill);
+void GUI_DisplaySmallest(const char *pString, uint8_t x, uint8_t y, bool statusbar, bool fill);
+void GUI_DisplaySmallestDark(const char *pString, uint8_t x, uint8_t y, bool statusbar, bool wide_spacing); // ИНВЕРСИЯ МЕЛКОГО ТЕКСТА INVERSION FONT SMALL* // false, true шаг между символами
+
+#ifdef ENABLE_PL_BAND
+void UI_PrintStringSmallScrolling(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t scrollOffset);
+#endif
 
 void UI_DisplayClear();
-
-#endif
+void UI_PrintStringSmallBold(const char *pString, uint8_t Start, uint8_t End, uint8_t Line);

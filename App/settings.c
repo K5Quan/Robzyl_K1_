@@ -1188,9 +1188,6 @@ State[1] = 0
 #ifdef ENABLE_BYP_RAW_DEMODULATORS
     | (1 << 2)
 #endif
-#ifdef ENABLE_FEAT_ROBZYL_GAME
-    | (1 << 3)
-#endif
 #ifdef ENABLE_AM_FIX
     | (1 << 4)
 #endif

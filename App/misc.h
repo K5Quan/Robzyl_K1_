@@ -37,7 +37,7 @@
 #endif
 
 #define FM_CHANNELS_MAX 48
-#define MR_CHANNELS_MAX 1024
+#define MR_CHANNELS_MAX 50 //To solve LATER 1024
 #define MR_CHANNELS_LIST 24
 #define MENU_ITEMS 69
 
@@ -308,6 +308,9 @@ extern bool                  gDualWatchActive;
 extern volatile uint8_t      gSerialConfigCountDown_500ms;
 
 extern volatile bool         gNextTimeslice_500ms;
+extern volatile bool         gNextTimeslice_10ms;
+extern volatile bool         gNextTimeslice_display;
+extern volatile bool         gNextTimeslice_1s;
 
 extern volatile uint16_t     gTxTimerCountdown_500ms;
 extern volatile bool         gTxTimeoutReached;

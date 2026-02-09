@@ -190,6 +190,9 @@ bool              gDualWatchActive           = false;
 volatile uint8_t  gSerialConfigCountDown_500ms;
 
 volatile bool     gNextTimeslice_500ms;
+volatile bool     gNextTimeslice_10ms;
+volatile bool     gNextTimeslice_display;
+volatile bool     gNextTimeslice_1s;
 
 volatile uint16_t gTxTimerCountdown_500ms;
 volatile bool     gTxTimeoutReached;

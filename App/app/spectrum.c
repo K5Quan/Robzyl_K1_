@@ -1,4 +1,5 @@
 #include "app/spectrum.h"
+#include "audio.h"
 #include "scanner.h"
 #include "driver/backlight.h"
 #include "driver/eeprom.h"
@@ -30,21 +31,6 @@ static inline uint32_t get_sp(void)
     return sp;
 }
 
-
-static uint32_t free_ram_bytes(void)
-{
-    uint32_t sp = get_sp();
-    uint32_t heap_start = (uint32_t)&_sheap;
-    uint32_t heap_limit = (uint32_t)&_eheap;
-
-    if (sp <= heap_start) return 0;
-    uint32_t free = sp - heap_start;
-
-    uint32_t max_free = (heap_limit > heap_start) ? (heap_limit - heap_start) : 0;
-    if (free > max_free) free = max_free;
-
-    return free;
-}
 
 #define MAX_VISIBLE_LINES 6
 
@@ -123,7 +109,7 @@ static bool Key_1_pressed = 0;
 static uint16_t WaitSpectrum = 0; 
 static uint32_t Last_Tuned_Freq = 44610000;
 #define SQUELCH_OFF_DELAY 10;
-static bool StorePtt_Toggle_Mode = 0;
+//static bool StorePtt_Toggle_Mode = 0;
 static uint8_t ArrowLine = 1;
 static void LoadValidMemoryChannels(void);
 static void ToggleRX(bool on);
@@ -182,6 +168,12 @@ static PeakInfo peak;
 static ScanInfo scanInfo;
 static char     latestScanListName[12];
 static bool IsBlacklisted(uint32_t f);
+
+typedef struct
+{
+	uint32_t     Frequency;
+}  __attribute__((packed)) ChannelFrequencyAttributes;
+ChannelFrequencyAttributes gMR_ChannelFrequencyAttributes[MR_CHANNEL_LAST +1];
 
 SpectrumSettings settings = {stepsCount: STEPS_128,
                              scanStepIndex: S_STEP_500kHz,
@@ -499,14 +491,14 @@ static uint16_t GetStepsCount()
 
 static uint32_t GetBW() { return GetStepsCount() * GetScanStep(); }
 
-static uint16_t GetRandomChannelFromRSSI(uint16_t maxChannels) {
+/* static uint16_t GetRandomChannelFromRSSI(uint16_t maxChannels) {
   uint32_t rssi = rssiHistory[1]*rssiHistory[maxChannels/2];
   if (maxChannels == 0 || rssi == 0) {
         return 1;  // Fallback to chanel 1 if invalid input
     }
     // Scale RSSI to [1, maxChannels]
     return 1 + (rssi % maxChannels);
-}
+} */
 
 static void DeInitSpectrum(bool ComeBack) {
   
@@ -525,15 +517,15 @@ static void DeInitSpectrum(bool ComeBack) {
     EEPROM_ReadBuffer(0x1D00, &Spectrum_state, 1);
 	  Spectrum_state+=10;
     EEPROM_WriteBuffer(0x1D00, &Spectrum_state);
-    StorePtt_Toggle_Mode = Ptt_Toggle_Mode;
+    //StorePtt_Toggle_Mode = Ptt_Toggle_Mode;To solve LATER
     SYSTEM_DelayMs(50);
-    Ptt_Toggle_Mode =0;
+    //Ptt_Toggle_Mode =0; //To solve LATER
     }
 }
 
 /////////////////////////////EEPROM://///////////////////////////
 
-static void TrimTrailingChars(char *str) {
+/* static void TrimTrailingChars(char *str) {
     int len = strlen(str);
     while (len > 0) {
         unsigned char c = str[len - 1];
@@ -543,13 +535,7 @@ static void TrimTrailingChars(char *str) {
             break;
     }
     str[len] = '\0';
-}
-
-
-static void ReadChannelName(uint16_t Channel, char *name) {
-    EEPROM_ReadBuffer(ADRESS_NAMES + Channel * 16, (uint8_t *)name, 12);
-    TrimTrailingChars(name);
-}
+} */
 
 // *****************************************************************************
 // Fonction : Supprime la fréquence sélectionnée de la liste d'historique en RAM
@@ -609,7 +595,7 @@ static void SaveHistoryToFreeChannel(void) {
     for (int i = 0; i < MR_CHANNEL_LAST; i++) {
         uint32_t freqInMem;
         // Lecture des 4 premiers octets du canal (la fréquence)
-        EEPROM_ReadBuffer(ADRESS_FREQ_PARAMS + (i * 16), (uint8_t *)&freqInMem, 4);
+        EEPROM_ReadBuffer(0x0000 + (i * 16), (uint8_t *)&freqInMem, 4);
         
         // Si le canal n'est pas vide (0xFFFFFFFF) et que la fréquence correspond
         if (freqInMem != 0xFFFFFFFF && freqInMem == f) {
@@ -625,7 +611,7 @@ static void SaveHistoryToFreeChannel(void) {
     for (int i = 0; i < MR_CHANNEL_LAST; i++) {
         uint8_t checkByte;
         // On vérifie juste le premier octet pour voir si le slot est libre
-        EEPROM_ReadBuffer(ADRESS_FREQ_PARAMS + (i * 16), &checkByte, 1);
+        EEPROM_ReadBuffer(0x0000 + (i * 16), &checkByte, 1);
         if (checkByte == 0xFF) { 
             freeCh = i;
             break;
@@ -646,10 +632,10 @@ static void SaveHistoryToFreeChannel(void) {
         tempVFO.Modulation = settings.modulationType;
         tempVFO.CHANNEL_BANDWIDTH = settings.listenBw; 
 
-        tempVFO.OUTPUT_POWER = OUTPUT_POWER_LOW;
+        tempVFO.OUTPUT_POWER = OUTPUT_POWER_LOW1;
         tempVFO.STEP_SETTING = STEP_12_5kHz; 
         // Sauvegarde propre via la fonction système
-        SETTINGS_SaveChannel(freeCh, &tempVFO, 2);
+        SETTINGS_SaveChannel(freeCh,0, &tempVFO, 2); //To solve LATER
 
         // Rafraichir les listes
         LoadValidMemoryChannels();
@@ -716,12 +702,25 @@ void WriteHistory(void) {
 
 #endif
 
+uint16_t BOARD_gMR_fetchChannel(const uint32_t freq)
+{
+		for (uint16_t i = MR_CHANNEL_FIRST; i <= MR_CHANNEL_LAST; i++) {
+			if (gMR_ChannelFrequencyAttributes[i].Frequency == freq)
+				return i;
+		}
+		// Return if no Chanel found
+		return 0xFFFF;
+}
+
 /////////////////////////////EEPROM://///////////////////////////*/
 
 static void ExitAndCopyToVfo() {
   RestoreRegisters();
-if (historyListActive == true){
-      SETTINGS_SetVfoFrequency(HFreqs[historyListIndex]); 
+
+//To solve LATER
+
+/* if (historyListActive == true){
+      //SETTINGS_SetVfoFrequency(HFreqs[historyListIndex]); //To solve LATER
       gTxVfo->Modulation = MODULATION_FM;
       gRequestSaveChannel = 1;
       DeInitSpectrum(0);
@@ -730,7 +729,7 @@ if (historyListActive == true){
     case SPECTRUM:
       if (PttEmission ==1){
           uint16_t randomChannel = GetRandomChannelFromRSSI(scanChannelsCount);
-          static uint32_t rndfreq;
+          //static uint32_t rndfreq;
           uint16_t i = 0;
           SpectrumDelay = 0; //not compatible with ninja
 
@@ -739,10 +738,10 @@ if (historyListActive == true){
             randomChannel++;
             if (randomChannel >scanChannelsCount)randomChannel = 1;
             if (i > MR_CHANNEL_LAST) break;}
-          rndfreq = gMR_ChannelFrequencyAttributes[scanChannel[randomChannel]].Frequency;
-          SETTINGS_SetVfoFrequency(rndfreq);
-          gEeprom.MrChannel     = scanChannel[randomChannel];
-			    gEeprom.ScreenChannel = scanChannel[randomChannel];
+          //rndfreq = gMR_ChannelFrequencyAttributes[scanChannel[randomChannel]].Frequency; //To solve LATER
+          //SETTINGS_SetVfoFrequency(rndfreq); //To solve LATER
+          //gEeprom.MrChannel     = scanChannel[randomChannel]; //To solve LATER
+		  //gEeprom.ScreenChannel = scanChannel[randomChannel]; //To solve LATER
           gTxVfo->Modulation = MODULATION_FM;
           gTxVfo->STEP_SETTING = STEP_0_01kHz;
           gRequestSaveChannel = 1;
@@ -756,7 +755,7 @@ if (historyListActive == true){
               gTxVfo->STEP_SETTING = STEP_0_01kHz;
               gTxVfo->Modulation = MODULATION_FM;
               gTxVfo->OUTPUT_POWER = OUTPUT_POWER_HIGH;
-              COMMON_SwitchToVFOMode();
+              COMMON_SwitchVFOMode();
           }
           else {
             gTxVfo->freq_config_RX.Frequency = HFreqs[historyListIndex];
@@ -765,15 +764,15 @@ if (historyListActive == true){
             COMMON_SwitchToChannelMode();
           }
           gRequestSaveChannel = 1;
-          }
+          } */
 
       DeInitSpectrum(1);
-      break;      
+      //break;      
     
-    default:
+    /* default:
       DeInitSpectrum(0);
       break;
-  }
+  }*/
     // Additional delay to debounce keys
     SYSTEM_DelayMs(200);
     isInitialized = false;
@@ -794,17 +793,23 @@ static uint16_t GetRssi(void) {
   return rssi;
 }
 
-static void ToggleAudio(bool on) {
-  if (on == audioState) {
-    return;
-  }
-  audioState = on;
-  if (on) {
-    GPIO_SetBit(&GPIOC->DATA, GPIOC_PIN_AUDIO_PATH);
-  } else {
-    GPIO_ClearBit(&GPIOC->DATA, GPIOC_PIN_AUDIO_PATH);
-  }
+static void ToggleAudio(bool on)
+{
+    if (on == audioState)
+    {
+        return;
+    }
+    audioState = on;
+    if (on)
+    {
+        AUDIO_AudioPathOn();
+    }
+    else
+    {
+        AUDIO_AudioPathOff();
+    }
 }
+
 
 static void FillfreqHistory(void)
 {
@@ -857,11 +862,11 @@ static void ToggleRX(bool on) {
 
     if (on && isKnownChannel) {
         if(!gForceModulation) settings.modulationType = channelModulation;
-        BK4819_InitAGCSpectrum(settings.modulationType);
+        BK4819_InitAGC(settings.modulationType);
     }
     else if(on && appMode == SCAN_BAND_MODE) {
             if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
-            BK4819_InitAGCSpectrum(settings.modulationType);
+            BK4819_InitAGC(settings.modulationType);
           }
     
     if (on) { 
@@ -941,6 +946,11 @@ static void RelaunchScan() {
     ToggleRX(false);
     scanInfo.rssiMin = RSSI_MAX_VALUE;
     gIsPeak = false;
+}
+
+uint8_t  BK4819_GetExNoiseIndicator(void)
+{
+	return BK4819_ReadRegister(BK4819_REG_65) & 0x007F;
 }
 
 static void UpdateNoiseOff(){
@@ -1030,6 +1040,11 @@ LogUart(str); */
 /////////////////////////DEBUG//////////////////////////  
 }
 
+int Rssi2DBm(const uint16_t rssi)
+{
+	return (rssi >> 1) - 160;
+}
+
 static void UpdateDBMaxAuto() { //Zoom
   static uint8_t z = 3;
   int newDbMax;
@@ -1072,6 +1087,12 @@ if (inc) {
   scanInfo.scanStep = settings.scanStepIndex;
 }
 
+
+uint32_t RX_freq_min()
+{
+	return gEeprom.RX_OFFSET >= frequencyBandTable[0].lower ? 0 : frequencyBandTable[0].lower - gEeprom.RX_OFFSET;
+}
+
 static void UpdateCurrentFreq(bool inc) {
   if (inc && currentFreq < F_MAX) {
     gScanRangeStart += settings.frequencyChangeStep;
@@ -1093,8 +1114,20 @@ static void ToggleModulation() {
     settings.modulationType = MODULATION_FM;
   }
   RADIO_SetModulation(settings.modulationType);
-  BK4819_InitAGCSpectrum(settings.modulationType);
+  BK4819_InitAGC(settings.modulationType);
   gForceModulation = 1;
+}
+
+BK4819_FilterBandwidth_t ACTION_NextBandwidth(BK4819_FilterBandwidth_t currentBandwidth, const bool dynamic, bool increase)
+{
+    BK4819_FilterBandwidth_t nextBandwidth =
+        (increase && currentBandwidth == BK4819_FILTER_BW_NARROWER) ? BK4819_FILTER_BW_WIDE :
+        (!increase && currentBandwidth == BK4819_FILTER_BW_WIDE)     ? BK4819_FILTER_BW_NARROWER :
+        (increase ? currentBandwidth + 1 : currentBandwidth - 1);
+
+    BK4819_SetFilterBandwidth(nextBandwidth, dynamic);
+    gRequestSaveChannel = 1;
+    return nextBandwidth;
 }
 
 static void ToggleListeningBW(bool inc) {
@@ -1263,6 +1296,14 @@ static void RemoveTrailZeros(char *s) {
     }
 }
 
+
+const char *bwNames[5] = {"25k", "12.5k", "8.33k", "6.25k", "5k"};
+
+int16_t BK4819_GetAFCValue() { //from Hawk5
+  int16_t signedAfc = (int16_t)BK4819_ReadRegister(0x6D);
+  return (signedAfc * 10) / 3;
+}
+
 //******************************СТАТУСБАР************** */
 static void DrawStatus() {
   int len=0;
@@ -1373,7 +1414,7 @@ switch(SpectrumMonitor) {
       pos += len;
   }
   GUI_DisplaySmallest(String, 0, 1, true,true);
-  BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4]);
+  BOARD_ADC_GetBatteryInfo(&gBatteryVoltages[gBatteryCheckCounter++ % 4],&gBatteryCurrent);
 
   uint16_t voltage = (gBatteryVoltages[0] + gBatteryVoltages[1] + gBatteryVoltages[2] +
              gBatteryVoltages[3]) /
@@ -1444,7 +1485,7 @@ static void DrawF(uint32_t f) {
     
     // Обновляем имя канала раз в секунду (как было в старом коде)
     if (gNextTimeslice_1s) {
-        ReadChannelName(channelFd, channelName);
+        SETTINGS_FetchChannelName(channelName,channelFd );
         gNextTimeslice_1s = 0;
     }
 
@@ -1571,7 +1612,7 @@ static void LookupChannelModulation() {
 	  uint8_t tmp;
 		uint8_t data[8];
 
-		EEPROM_ReadBuffer(ADRESS_FREQ_PARAMS + gChannel * 16 + 8, data, sizeof(data));
+		EEPROM_ReadBuffer(0x0000 + gChannel * 16 + 8, data, sizeof(data));
 
 		tmp = data[3] >> 4;
 		if (tmp >= MODULATION_UKNOWN)
@@ -1670,7 +1711,6 @@ static const uint8_t durations[] = {0, 20, 40, 60};
 
 static void OnKeyDown(uint8_t key) {
 
-    //if (!gBacklightCountdown) {BACKLIGHT_TurnOn(); return;}
     BACKLIGHT_TurnOn();
     if (gIsKeylocked) {
         // Seule la touche F (Function) permet de déverrouiller
@@ -2687,6 +2727,47 @@ static void DrawMeter(int line) {
         }
     }
 }
+
+typedef struct
+{
+	uint8_t      sLevel;      // S-level value
+	uint8_t      over;        // over S9 value
+	int          dBmRssi;     // RSSI in dBm
+	bool         overSquelch; // determines whether signal is over squelch open threshold
+}  __attribute__((packed))  sLevelAttributes;
+
+#define HF_FREQUENCY 3000000
+
+sLevelAttributes GetSLevelAttributes(const int16_t rssi, const uint32_t frequency)
+{
+	sLevelAttributes att;
+	// S0 .. base level
+	int16_t      s0_dBm       = -130;
+
+	// all S1 on max gain, no antenna
+	const int8_t dBmCorrTable[7] = {
+		-5, // band 1
+		-38, // band 2
+		-37, // band 3
+		-20, // band 4
+		-23, // band 5
+		-23, // band 6
+		-16  // band 7
+	};
+
+	// use UHF/VHF S-table for bands above HF
+	if(frequency > HF_FREQUENCY)
+		s0_dBm-=20;
+
+	att.dBmRssi = Rssi2DBm(rssi)+dBmCorrTable[FREQUENCY_GetBand(frequency)];
+	att.sLevel  = MIN(MAX((att.dBmRssi - s0_dBm) / 6, 0), 9);
+	att.over    = MIN(MAX(att.dBmRssi - (s0_dBm + 9*6), 0), 99);
+	//TODO: calculate based on the current squelch setting
+	att.overSquelch = att.sLevel > 5;
+
+	return att;
+}
+
 //*******************подробный режим */
 static void RenderStill() {
   classic=1;
@@ -2966,8 +3047,8 @@ static void UpdateListening(void) { // called every 10ms
 
 static void Tick() {
   if (gNextTimeslice_500ms) {
-    if (gBacklightCountdown > 0)
-      if (--gBacklightCountdown == 0)	BACKLIGHT_TurnOff();
+    if (gBacklightCountdown_500ms > 0)
+      if (--gBacklightCountdown_500ms == 0)	BACKLIGHT_TurnOff();
     gNextTimeslice_500ms = false;
     
     if (gKeylockCountdown > 0) {gKeylockCountdown--;}
@@ -3075,6 +3156,15 @@ void APP_RunSpectrum(uint8_t Spectrum_state)
     } 
 }
 
+uint16_t RADIO_ValidMemoryChannelsCount(bool bCheckScanList, uint8_t VFO)
+{
+	uint16_t count=0;
+	for (uint16_t i = MR_CHANNEL_FIRST; i<=MR_CHANNEL_LAST; ++i) {
+			if(RADIO_CheckValidChannel(i, bCheckScanList, VFO)) count++;
+		}
+	return count;
+}
+
 static void LoadValidMemoryChannels(void)
   {
     memset(scanChannel,0,sizeof(scanChannel));
@@ -3176,6 +3266,7 @@ typedef struct {
     bool Backlight_On_Rx;
 } SettingsEEPROM;
 
+ChannelAttributes_t   gMR_ChannelAttributes[FREQ_CHANNEL_LAST + 1];
 
 void LoadSettings(bool LNA)
 {
@@ -3479,11 +3570,6 @@ static void GetParametersText(uint16_t index, char *buffer) {
             sprintf(buffer, "Clear History: 3");
             break;
 
-        case 13:
-            uint32_t free = free_ram_bytes();
-            sprintf(buffer, "Free RAM %uB", (unsigned)free);
-            break;
-
         case 14:
             sprintf(buffer, "Power Save: %s", labelsPS[IndexPS]);
             break;
@@ -3556,7 +3642,7 @@ static void GetHistoryItemText(uint16_t index, char* buffer) {
     
     // Lecture du nom du canal (Argument 1: Index, Argument 2: Buffer)
     if (Hchannel != 0xFFFF) {
-        ReadChannelName(Hchannel, Name);
+        SETTINGS_FetchChannelName(Name, Hchannel);
         Name[10] = '\0'; // Troncature explicite du nom à 10 caractères max
     }
     

@@ -30,11 +30,6 @@
 #ifdef ENABLE_SPECTRUM
 #include "app/spectrum.h"
 #endif
-
-#ifdef ENABLE_FEAT_ROBZYL_GAME
-#include "app/breakout.h"
-#endif
-
 #include "audio.h"
 #include "board.h"
 #include "driver/bk4819.h"
@@ -645,19 +640,6 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         ACTION_BackLight();
         return;
     }
-    #ifdef ENABLE_FEAT_ROBZYL_GAME
-    else if(Key == 7)
-    {
-        #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
-            if(gEeprom.MENU_LOCK == true) {
-                return;
-            }
-        #endif
-        APP_RunBreakout();
-        return;
-    }
-    #endif
-
     processFKeyFunction(Key, true);
 }
 

@@ -142,7 +142,7 @@ enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
 )
 enable_feature(ENABLE_BIG_FREQ)
-enable_feature(ENABLE_SMALL_BOLD)
+enable_feature(ENABLE_FR_BAND)
 enable_feature(ENABLE_CUSTOM_MENU_LAYOUT)
 enable_feature(ENABLE_KEEP_MEM_NAME)
 enable_feature(ENABLE_WIDE_RX)
@@ -175,9 +175,6 @@ enable_feature(ENABLE_EXTRA_UART_CMD)
 # ---- ROBZYL MODS ----
 
 enable_feature(ENABLE_FEAT_ROBZYL)
-enable_feature(ENABLE_FEAT_ROBZYL_GAME 
-    app/breakout.c
-)
 enable_feature(ENABLE_FEAT_ROBZYL_SCREENSHOT 
     screenshot.c
 )

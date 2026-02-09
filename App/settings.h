@@ -299,6 +299,7 @@ typedef struct {
 #endif
     uint8_t               BACKLIGHT_MAX;
     BATTERY_Type_t        BATTERY_TYPE;
+    uint32_t              RX_OFFSET;
 #ifdef ENABLE_RSSI_BAR
     uint8_t               S0_LEVEL;
     uint8_t               S9_LEVEL;

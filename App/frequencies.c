@@ -19,30 +19,19 @@
 #include "settings.h"
 #include <assert.h>
 
-// the BK4819 has 2 bands it covers, 18MHz ~ 630MHz and 760MHz ~ 1300MHz
+const freq_band_table_t BX4819_band1 = { 1400000,  63000000}; //Robby69
+const freq_band_table_t BX4819_band2 = {76000000, 130000000};
 
-#define BX4819_band1_lower 1800000
-#define BX4819_band2_upper 130000000
-
-const freq_band_table_t BX4819_band1 = {BX4819_band1_lower,  63000000};
-const freq_band_table_t BX4819_band2 = {84000000, BX4819_band2_upper};
-
-const freq_band_table_t frequencyBandTable[] =
+const freq_band_table_t frequencyBandTable[7] =
 {
-    #ifndef ENABLE_WIDE_RX
-        // QS original
-        [BAND1_50MHz ]={.lower =  5000000,  .upper =  7600000},
-        [BAND7_470MHz]={.lower = 47000000,  .upper = 60000000},
-    #else
-        // extended range
-        [BAND1_50MHz ]={.lower =  BX4819_band1_lower, .upper =  10800000},
-        [BAND7_470MHz]={.lower = 47000000, .upper = BX4819_band2_upper},
-    #endif
-        [BAND2_108MHz]={.lower = 10800000,  .upper = 13700000},
-        [BAND3_137MHz]={.lower = 13700000,  .upper = 17400000},
-        [BAND4_174MHz]={.lower = 17400000,  .upper = 35000000},
-        [BAND5_350MHz]={.lower = 35000000,  .upper = 40000000},
-        [BAND6_400MHz]={.lower = 40000000,  .upper = 47000000}
+		// extended range
+		{.lower =  1400000, .upper =  10800000},
+		{.lower = 10800000, .upper =  13700000},
+		{.lower = 13700000, .upper =  17400000},
+		{.lower = 17400000, .upper =  35000000},
+		{.lower = 35000000, .upper =  40000000},
+		{.lower = 40000000, .upper =  47000000},
+		{.lower = 47000000, .upper = 130000000}
 };
 
 #ifdef ENABLE_NOAA
@@ -142,7 +131,6 @@ uint8_t FREQUENCY_CalculateOutputPower(uint8_t TxpLow, uint8_t TxpMid, uint8_t T
 
     return TxpMid;
 }
-
 
 uint32_t FREQUENCY_RoundToStep(uint32_t freq, uint16_t step)
 {

@@ -827,7 +827,7 @@ void UI_DisplayMain(void)
                 sprintf(String, "%04u", gEeprom.ScreenChannel[vfo_num] + 1);
             else
                 sprintf(String, "%.4s", INPUTBOX_GetAscii());  // show the input text
-            UI_PrintStringSmallNormalInverse(String, x, 0, line + 1);
+            UI_PrintStringSmallNormal(String, x, 0, line + 1);
         }
         else if (IS_FREQ_CHANNEL(gEeprom.ScreenChannel[vfo_num]))
         {   // frequency mode

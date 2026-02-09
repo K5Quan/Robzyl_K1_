@@ -18,6 +18,7 @@
 #define FREQUENCIES_H
 
 #include <stdint.h>
+#include <frequencies.h>
 
 #define _1GHz_in_KHz 100000000
 #define DEFAULT_FREQ 43450000 // Use for Reset and Aircopy
@@ -42,7 +43,7 @@ typedef enum  {
     BAND_N_ELEM
 } FREQUENCY_Band_t;
 
-extern const freq_band_table_t frequencyBandTable[];
+extern const freq_band_table_t frequencyBandTable[7];
 
 typedef enum {
 // standard steps
