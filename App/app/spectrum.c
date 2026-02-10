@@ -720,7 +720,7 @@ static void ExitAndCopyToVfo() {
 //To solve LATER
 
 /* if (historyListActive == true){
-      //SETTINGS_SetVfoFrequency(HFreqs[historyListIndex]); //To solve LATER
+      //SETTINGS_SetVfoFrequency(HFreqs[historyListIndex]);
       gTxVfo->Modulation = MODULATION_FM;
       gRequestSaveChannel = 1;
       DeInitSpectrum(0);
@@ -738,10 +738,10 @@ static void ExitAndCopyToVfo() {
             randomChannel++;
             if (randomChannel >scanChannelsCount)randomChannel = 1;
             if (i > MR_CHANNEL_LAST) break;}
-          //rndfreq = gMR_ChannelFrequencyAttributes[scanChannel[randomChannel]].Frequency; //To solve LATER
-          //SETTINGS_SetVfoFrequency(rndfreq); //To solve LATER
-          //gEeprom.MrChannel     = scanChannel[randomChannel]; //To solve LATER
-		  //gEeprom.ScreenChannel = scanChannel[randomChannel]; //To solve LATER
+          //rndfreq = gMR_ChannelFrequencyAttributes[scanChannel[randomChannel]].Frequency;
+          //SETTINGS_SetVfoFrequency(rndfreq);
+          //gEeprom.MrChannel     = scanChannel[randomChannel];
+		  //gEeprom.ScreenChannel = scanChannel[randomChannel];
           gTxVfo->Modulation = MODULATION_FM;
           gTxVfo->STEP_SETTING = STEP_0_01kHz;
           gRequestSaveChannel = 1;
