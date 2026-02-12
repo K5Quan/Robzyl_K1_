@@ -51,3 +51,5 @@ build_preset() {
 }
 
 build_preset "$PRESET"
+echo "⚡ flash firmware on COM14..."
+    python flash.py ./build/${PRESET}/ROBZYL.fusion.bin -p COM14

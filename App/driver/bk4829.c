@@ -95,12 +95,8 @@ void BK4819_Init(void)
 
     BK4819_WriteRegister(BK4819_REG_00, 0x8000);
     BK4819_WriteRegister(BK4819_REG_00, 0x0000);
-
     BK4819_WriteRegister(BK4819_REG_37, 0x9D1F);
     BK4819_WriteRegister(BK4819_REG_36, 0x0022);
-
-    // BK4819_InitAGC(false);
-    // BK4819_SetAGC(true);
     BK4819_WriteRegister(BK4819_REG_10, 0x0318);
     BK4819_WriteRegister(BK4819_REG_11, 0x033A);
     BK4819_WriteRegister(BK4819_REG_12, 0x03DB);
@@ -332,7 +328,7 @@ void BK4819_SetAGC(bool enable)
     // }
 }
 
-void BK4819_InitAGC(bool amModulation)
+void BK4819_InitAGC(ModulationMode_t modulation)
 {
     // REG_10, REG_11, REG_12 REG_13, REG_14
     //
@@ -377,7 +373,7 @@ void BK4819_InitAGC(bool amModulation)
     BK4819_WriteRegister(BK4819_REG_12, 0x037B);  // 0x037B / 000000 11 011 11 011 / -24dB
     BK4819_WriteRegister(BK4819_REG_11, 0x027B);  // 0x027B / 000000 10 011 11 011 / -43dB
     BK4819_WriteRegister(BK4819_REG_10, 0x007A);  // 0x007A / 000000 00 011 11 010 / -58dB
-    if(amModulation) {
+    if(modulation==MODULATION_AM) {
         BK4819_WriteRegister(BK4819_REG_14, 0x0000);
         BK4819_WriteRegister(BK4819_REG_49, (0 << 14) | (50 << 7) | (32 << 0));
     }

@@ -121,7 +121,7 @@ static void RenderParametersSelect();
 static void UpdateScan();
 static uint8_t bandListSelectedIndex = 0;
 static int bandListScrollOffset = 0;
-static void RenderBandSelect();
+void RenderBandSelect();
 static void ClearHistory();
 static void DrawMeter(int);
 static uint8_t scanListSelectedIndex = 0;
@@ -917,7 +917,6 @@ static bool InitScan() {
             }
             nextBandToScanIndex = (nextBandToScanIndex + 1) % 32;
             checkedBandCount++;
-                        
         }
     } else {
         scanInfo.f = gScanRangeStart;
@@ -999,14 +998,13 @@ static void Measure() {
 
     if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
         SYSTEM_DelayMs(10);
-        
         uint16_t rssi2 = scanInfo.rssi = GetRssi();
         if (rssi2 > rssi+10) {
           peak.f = scanInfo.f;
           peak.i = scanInfo.i;
         }
         if (settings.rssiTriggerLevelUp < 50) {gIsPeak = true;}
-        UpdateNoiseOff();
+        UpdateNoiseOff();//To solve LATER
         UpdateGlitch();
 
     } 
@@ -1046,7 +1044,7 @@ int Rssi2DBm(const uint16_t rssi)
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-  static uint8_t z = 3;
+  static uint8_t z = 10;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
         newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -100, 0);
@@ -3769,7 +3767,7 @@ static void RenderParametersSelect() {
 
 
 #ifdef ENABLE_FR_BAND
-      static void RenderBandSelect() {RenderList("FRA BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("FRA BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_SR_BAND

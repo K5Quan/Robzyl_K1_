@@ -1139,7 +1139,7 @@ void RADIO_SetupAGC(bool listeningAM, bool disable)
 
     if(!listeningAM) { // if not actively listening AM we don't need any AM specific regulation
         BK4819_SetAGC(!disable);
-        BK4819_InitAGC(false);
+        BK4819_InitAGC(MODULATION_FM);
     }
     else {
 #ifdef ENABLE_AM_FIX
@@ -1151,7 +1151,7 @@ void RADIO_SetupAGC(bool listeningAM, bool disable)
 #endif
         {
             BK4819_SetAGC(!disable);
-            BK4819_InitAGC(true);
+            BK4819_InitAGC(MODULATION_AM);
         }
     }
 }
