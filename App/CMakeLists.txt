@@ -143,6 +143,7 @@ enable_feature(ENABLE_SPECTRUM
 )
 enable_feature(ENABLE_BIG_FREQ)
 enable_feature(ENABLE_FR_BAND)
+enable_feature(ENABLE_KO_BAND)
 enable_feature(ENABLE_CUSTOM_MENU_LAYOUT)
 enable_feature(ENABLE_KEEP_MEM_NAME)
 enable_feature(ENABLE_WIDE_RX)

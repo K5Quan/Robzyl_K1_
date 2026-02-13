@@ -13,12 +13,20 @@ set -euo pipefail
 # ---------------------------------------------
 
 IMAGE=uvk1-uvk5v3
-PRESET=${1:-Fusion}
+PRESET=${1:-France}
 shift || true  # remove preset from arguments if present
 
 # Any remaining args will be treated as CMake cache variables
 EXTRA_ARGS=("$@")
 
+# ---------------------------------------------
+# Validate preset name
+# ---------------------------------------------
+if [[ ! "$PRESET" =~ ^(France|Kolyan|All)$ ]]; then
+  echo "❌ Unknown preset: '$PRESET'"
+  echo "Valid presets are: France, Kolyan, All"
+  exit 1
+fi
 
 # ---------------------------------------------
 # Build the Docker image (only needed once)
@@ -50,6 +58,23 @@ build_preset() {
   echo "✅ Done: ${preset}"
 }
 
-build_preset "$PRESET"
+# ---------------------------------------------
+# Handle 'All' preset
+# ---------------------------------------------
+if [[ "$PRESET" == "All" ]]; then
+  PRESETS=(France Kolyan)
+  for p in "${PRESETS[@]}"; do
+    build_preset "$p"
+  done
+  echo ""
+  echo "🎉 All presets built successfully!"
+else
+  build_preset "$PRESET"
+fi
+
+# ---------------------------------------------
+# Automatic flash
+# ---------------------------------------------
+
 echo "⚡ flash firmware on COM14..."
-    python flash.py ./build/${PRESET}/ROBZYL.fusion.bin -p COM14
+    python flash.py ./build/${PRESET}/ROBZYL.France.bin -p COM14

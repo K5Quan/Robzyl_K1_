@@ -22,7 +22,8 @@
                 "ENABLE_DTMF_CALLING": false,
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
-                "ENABLE_FR_BAND": true,
+                "ENABLE_FR_BAND": false,
+                "ENABLE_KO_BAND": false,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
                 "ENABLE_KEEP_MEM_NAME": true,
@@ -72,29 +73,46 @@
         },
        
         {
-            "name": "Fusion",
+            "name": "France",
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FR_BAND": true,
                 "ENABLE_FMRADIO": true,
-                "ENABLE_VOX": true,
                 "ENABLE_FEAT_ROBZYL_SCREENSHOT": true,
                 "ENABLE_FEAT_ROBZYL_PMR": true,
-                "ENABLE_FEAT_ROBZYL_GMRS_FRS_MURS": true,
-                "ENABLE_FEAT_ROBZYL_RESCUE_OPS": true,
                 "ENABLE_FEAT_ROBZYL_VOL": true,
                 "ENABLE_FEAT_ROBZYL_AUDIO": true,
                 "ENABLE_SWD": true,
-                "EDITION_STRING": "Fusion",
-                "TARGET": "ROBZYL.fusion"
+                "EDITION_STRING": "France",
+                "TARGET": "ROBZYL.K1.France"
+            }
+        },
+                {
+            "name": "Kolyan",
+            "inherits": "default",
+            "cacheVariables": {
+                "ENABLE_SPECTRUM": true,
+                "ENABLE_KO_BAND": true,
+                "ENABLE_FMRADIO": true,
+                "ENABLE_FEAT_ROBZYL_SCREENSHOT": true,
+                "ENABLE_FEAT_ROBZYL_PMR": true,
+                "ENABLE_FEAT_ROBZYL_VOL": true,
+                "ENABLE_FEAT_ROBZYL_AUDIO": true,
+                "ENABLE_SWD": true,
+                "EDITION_STRING": "Kolyan",
+                "TARGET": "ROBZYL.K1.Kolyan"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "Fusion",
-            "configurePreset": "Fusion"
+            "name": "France",
+            "configurePreset": "France"
+        },
+        {
+            "name": "Kolyan",
+            "configurePreset": "Kolyan"
         }
     ]
 }

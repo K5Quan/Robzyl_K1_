@@ -870,7 +870,7 @@ static void ToggleRX(bool on) {
           }
     
     if (on) { 
-        BK4819_WriteRegister(BK4819_REG_37, 0x1D0F);
+        //To solve LATER BK4819_WriteRegister(BK4819_REG_37, 0x1D0F);
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
         BK4819_SetFilterBandwidth(settings.listenBw, false);
@@ -1004,8 +1004,8 @@ static void Measure() {
           peak.i = scanInfo.i;
         }
         if (settings.rssiTriggerLevelUp < 50) {gIsPeak = true;}
-        UpdateNoiseOff();//To solve LATER
-        UpdateGlitch();
+        //UpdateNoiseOff();//To solve LATER
+        //UpdateGlitch();
 
     } 
     if (!gIsPeak || !isListening)
@@ -3110,11 +3110,13 @@ void APP_RunSpectrum(uint8_t Spectrum_state)
         if      (Spectrum_state == 4) mode = FREQUENCY_MODE ;
         else if (Spectrum_state == 3) mode = SCAN_RANGE_MODE ;
         else if (Spectrum_state == 2) mode = SCAN_BAND_MODE ;
-        else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
+        //To solve LATER else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
+        else if (Spectrum_state == 1) mode = SCAN_BAND_MODE ;
         else mode = FREQUENCY_MODE;
         //BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, false);  // принудительно узкий в спектре ЧИНИМ ВФО
         EEPROM_WriteBuffer(0x1D00, &Spectrum_state);
-        if (!Key_1_pressed) LoadSettings(0);
+        //if (!Key_1_pressed) LoadSettings(0); //To solve LATER
+        ClearSettings(); //To solve LATER
         appMode = mode;
         ResetModifiers();
         if (appMode==CHANNEL_MODE) LoadValidMemoryChannels();
@@ -3268,6 +3270,7 @@ ChannelAttributes_t   gMR_ChannelAttributes[FREQ_CHANNEL_LAST + 1];
 
 void LoadSettings(bool LNA)
 {
+  return; //To solve LATER
   SettingsEEPROM  eepromData  = {0};
   EEPROM_ReadBuffer(0x1D10, &eepromData, sizeof(eepromData));
   
@@ -3332,6 +3335,7 @@ void LoadSettings(bool LNA)
 
 static void SaveSettings() 
 {
+  return; //To solve LATER
   SettingsEEPROM  eepromData  = {0};
   for (int i = 0; i < 15; i++) {
     if (settings.scanListEnabled[i]) eepromData.scanListFlags |= (1 << i);
@@ -3425,7 +3429,7 @@ void ClearSettings()
   UOO_trigger = 15;
   osdPopupSetting = 500;
   settings.bandEnabled[0] = 1;
-  BK4819_WriteRegister(BK4819_REG_10, 0x0145);
+  /* BK4819_WriteRegister(BK4819_REG_10, 0x0145); //To solve LATER
   BK4819_WriteRegister(BK4819_REG_11, 0x01B5);
   BK4819_WriteRegister(BK4819_REG_12, 0x0393);
   BK4819_WriteRegister(BK4819_REG_13, 0x03BE);
@@ -3437,7 +3441,7 @@ void ClearSettings()
   BK4819_WriteRegister(BK4819_REG_73, 18066);
   BK4819_WriteRegister(BK4819_REG_3C, 20360);
   BK4819_WriteRegister(BK4819_REG_43, 13896);
-  BK4819_WriteRegister(BK4819_REG_2B, 49152);
+  BK4819_WriteRegister(BK4819_REG_2B, 49152); */
   
   ShowOSDPopup("DEFAULT SETTINGS");
   SaveSettings();
@@ -3771,43 +3775,43 @@ static void RenderParametersSelect() {
 #endif
 
 #ifdef ENABLE_SR_BAND
-      static void RenderBandSelect() {RenderList("SR BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("SR BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_IN_BAND
-      static void RenderBandSelect() {RenderList("INT BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("INT BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_FI_BAND
-      static void RenderBandSelect() {RenderList("FI BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("FI BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_BR_BAND
-      static void RenderBandSelect() {RenderList("BR BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("BR BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_PL_BAND
-      static void RenderBandSelect() {RenderList("POL BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("POL BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_RO_BAND
-      static void RenderBandSelect() {RenderList("ROM BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("ROM BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_KO_BAND
-      static void RenderBandSelect() {RenderList("KOL BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("KOL BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_CZ_BAND
-      static void RenderBandSelect() {RenderList("CZ BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("CZ BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_TU_BAND
-      static void RenderBandSelect() {RenderList("TU BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("TU BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 #ifdef ENABLE_RU_BAND
-      static void RenderBandSelect() {RenderList("RUS BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+      void RenderBandSelect() {RenderList("RUS BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
 #endif
 
 static void RenderHistoryList() {

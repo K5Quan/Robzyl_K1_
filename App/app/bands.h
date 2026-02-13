@@ -54,14 +54,14 @@ static const bandparameters BParams[32] = {
     {"MIL 1",          13800000,         14400000,        S_STEP_25_0kHz,    MODULATION_AM},
     {"MIL 2",          22500000,         32800000,        S_STEP_25_0kHz,    MODULATION_AM},
     {"MIL 3",          33600000,         37800000,        S_STEP_25_0kHz,    MODULATION_AM},
-    {"17M USB",        1811000,          1816800,         S_STEP_1_0kHz,     MODULATION_SSB},
-    {"15M USB",        2115000,          2145000,         S_STEP_1_0kHz,     MODULATION_SSB},
-    {"12M USB",        2493100,          2499000,         S_STEP_1_0kHz,     MODULATION_SSB},
+    {"17M USB",        1811000,          1816800,         S_STEP_1_0kHz,     MODULATION_USB},
+    {"15M USB",        2115000,          2145000,         S_STEP_1_0kHz,     MODULATION_USB},
+    {"12M USB",        2493100,          2499000,         S_STEP_1_0kHz,     MODULATION_USB},
     {"11M AM",         2651500,          2830500,         S_STEP_5_0kHz,     MODULATION_AM}, 
-    {"10M USB",        2832000,          2910000,         S_STEP_1_0kHz,     MODULATION_SSB}, 
+    {"10M USB",        2832000,          2910000,         S_STEP_1_0kHz,     MODULATION_USB}, 
     {"10M FM",         2910000,          16202500,        S_STEP_1_0kHz,     MODULATION_FM},
     {"6M FM",          5010000,          5200000,         S_STEP_10_0kHz,    MODULATION_FM},
-    {"4M USB",         7010000,          7025000,         S_STEP_12_5kHz,    MODULATION_SSB},
+    {"4M USB",         7010000,          7025000,         S_STEP_12_5kHz,    MODULATION_USB},
     {"4M FM",          7025000,          7030000,         S_STEP_12_5kHz,    MODULATION_FM},
     {"2M FM",          14400000,         14600000,        S_STEP_12_5kHz,    MODULATION_FM},
     {"70cm FM",        43250000,         43498100,        S_STEP_12_5kHz,    MODULATION_FM},
@@ -252,8 +252,8 @@ static const bandparameters BParams[32] = {
 	{"21MHz",          2100000,          2145000,       S_STEP_5_0kHz,    MODULATION_AM},
 	{"18MHz",          1806800,          1816800,       S_STEP_5_0kHz,    MODULATION_AM},
 	{"17MHz",          1740000,          1780000,       S_STEP_5_0kHz,    MODULATION_AM},
-	{"28MHz",        2800000,           2970000,       S_STEP_5_0kHz,    MODULATION_SSB},
-	{"CB_27",          2651500,          2800000,       S_STEP_5_0kHz,    MODULATION_SSB},
+	{"28MHz",        2800000,           2970000,       S_STEP_5_0kHz,    MODULATION_USB},
+	{"CB_27",          2651500,          2800000,       S_STEP_5_0kHz,    MODULATION_USB},
 	{"CB_135",         2700000,          2714000,       S_STEP_5_0kHz,    MODULATION_AM},
     }; 
 #endif
@@ -264,13 +264,13 @@ static const bandparameters BParams[32] = {
     {"AIR 8.33k",        11800000,         13700000,       S_STEP_8_33kHz,   MODULATION_AM},
     {"MIL AIR",          22500000,         40000000,       S_STEP_25_0kHz,   MODULATION_AM},
     {"SATCOM",           24000000,         27500000,       S_STEP_10_0kHz,   MODULATION_FM},
-    {"HAM 80m USB",       3500000,          3800000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"HAM 40m USB",       7000000,          7200000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"HAM 30m USB",      10100000,         10150000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"HAM 20m USB",      14000000,         14350000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"HAM 17m USB",      18068000,         18168000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"HAM 15m USB",      21000000,         21450000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"HAM 12m USB",      24890000,         24990000,       S_STEP_2_5kHz,    MODULATION_SSB},
+    {"HAM 80m USB",       3500000,          3800000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"HAM 40m USB",       7000000,          7200000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"HAM 30m USB",      10100000,         10150000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"HAM 20m USB",      14000000,         14350000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"HAM 17m USB",      18068000,         18168000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"HAM 15m USB",      21000000,         21450000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"HAM 12m USB",      24890000,         24990000,       S_STEP_2_5kHz,    MODULATION_USB},
     {"HAM 10m FM",       29000000,         29700000,       S_STEP_10_0kHz,   MODULATION_FM},
     {"HAM 6m FM",        5000000,          5200000,        S_STEP_10_0kHz,   MODULATION_FM},
     {"CB FM",            2696500,          2740500,        S_STEP_10_0kHz,   MODULATION_FM},
@@ -290,9 +290,9 @@ static const bandparameters BParams[32] = {
     {"Stavby UHF",      44800000,         44900000,       S_STEP_12_5kHz,   MODULATION_FM},
     {"Stavby VHF",      16940000,         16980000,       S_STEP_12_5kHz,   MODULATION_FM},
 
-    {"VOLMET USB",       5505000,         11233000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"Digital stn",      9250000,          9350000,       S_STEP_2_5kHz,    MODULATION_SSB},
-    {"Marine USB",       8414000,          8815000,       S_STEP_2_5kHz,    MODULATION_SSB}
+    {"VOLMET USB",       5505000,         11233000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"Digital stn",      9250000,          9350000,       S_STEP_2_5kHz,    MODULATION_USB},
+    {"Marine USB",       8414000,          8815000,       S_STEP_2_5kHz,    MODULATION_USB}
 };
 #endif
 
@@ -309,10 +309,10 @@ static const bandparameters BParams[32] = {
 #ifdef ENABLE_RU_BAND
 static const bandparameters BParams[32] = {
     // BandName         Startfrequency    Stopfrequency    scanStep          modulationType
-    {"20M (14MHz)",    1400000,          1435000,       S_STEP_5_0kHz,    MODULATION_SSB},
-    {"17M (18MHz)",    1806800,          1816800,       S_STEP_5_0kHz,    MODULATION_SSB},
-    {"15M (21MHz)",    2100000,          2145000,       S_STEP_1_0kHz,    MODULATION_SSB},
-    {"12M (24MHz)",    2489000,          2499000,       S_STEP_1_0kHz,    MODULATION_SSB},
+    {"20M (14MHz)",    1400000,          1435000,       S_STEP_5_0kHz,    MODULATION_USB},
+    {"17M (18MHz)",    1806800,          1816800,       S_STEP_5_0kHz,    MODULATION_USB},
+    {"15M (21MHz)",    2100000,          2145000,       S_STEP_1_0kHz,    MODULATION_USB},
+    {"12M (24MHz)",    2489000,          2499000,       S_STEP_1_0kHz,    MODULATION_USB},
     {"CB (27MHz)",     2651500,          2830500,       S_STEP_5_0kHz,    MODULATION_FM},
     {"10M (28MHz)",    2800000,          2970000,       S_STEP_1_0kHz,    MODULATION_AM},
     {"LB (43MHz)",     4330000,          4358750,       S_STEP_10_0kHz,   MODULATION_FM},
