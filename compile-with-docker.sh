@@ -77,4 +77,4 @@ fi
 # ---------------------------------------------
 
 echo "⚡ flash firmware on COM14..."
-    python flash.py ./build/${PRESET}/ROBZYL.France.bin -p COM14
+    python flash.py ./build/${PRESET}/ROBZYL.K1.France.bin -p COM14
