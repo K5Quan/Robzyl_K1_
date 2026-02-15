@@ -20,18 +20,6 @@
   #include "screenshot.h"
 #endif
 
-/* --- Add near top of file, po include'ach --- */
-extern char _sheap;   /* początek sterty (z linker script) */
-extern char _eheap;   /* limit sterty (z linker script) */
-
-static inline uint32_t get_sp(void)
-{
-    uint32_t sp;
-    __asm volatile ("mov %0, sp" : "=r" (sp));
-    return sp;
-}
-
-
 #define MAX_VISIBLE_LINES 6
 
 static volatile bool gSpectrumChangeRequested = false;
@@ -55,7 +43,7 @@ static bool gHistoryScan = false; // Indicateur de scan de l'historique
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
 // see GetParametersText
-static uint8_t DelayRssi = 4;                // case 0       
+static uint8_t DelayRssi = 12;                // case 0       
 static uint16_t SpectrumDelay = 0;           // case 1      
 static uint16_t MaxListenTime = 0;           // case 2
 static uint8_t PttEmission = 0;              // case 3      
@@ -75,9 +63,9 @@ static uint8_t Noislvl_ON = 50;
 static uint16_t osdPopupSetting = 500;       // case 16
 static uint16_t UOO_trigger = 15;            // case 17
 static uint8_t AUTO_KEYLOCK = AUTOLOCK_OFF;  // case 18
-static uint8_t GlitchMax = 10;                // case 19 
+static uint8_t GlitchMax = 30;                // case 19 
 static bool    SoundBoost = 0;               // case 20 
-#define PARAMETER_COUNT 21
+#define PARAMETER_COUNT 20
 ////////////////////////////////////////////////////////////////////
 
 uint8_t  gKeylockCountdown = 0;
@@ -454,7 +442,8 @@ static void ToggleAFDAC(bool on)
     BK4819_WriteRegister(BK4819_REG_30, Reg);
 }
 
-static void SetF(uint32_t f) {
+static void SetF(uint32_t sf) {
+  uint32_t f = sf;
   if (f < 1400000 || f > 130000000) return;
   if (SPECTRUM_PAUSED) return;
   BK4819_SetFrequency(f);
@@ -862,15 +851,15 @@ static void ToggleRX(bool on) {
 
     if (on && isKnownChannel) {
         if(!gForceModulation) settings.modulationType = channelModulation;
-        BK4819_InitAGC(settings.modulationType);
+        RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
     }
     else if(on && appMode == SCAN_BAND_MODE) {
             if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
-            BK4819_InitAGC(settings.modulationType);
+            RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
           }
     
     if (on) { 
-        //To solve LATER BK4819_WriteRegister(BK4819_REG_37, 0x1D0F);
+        BK4819_WriteRegister(BK4819_REG_37, 0x1D0F);//To solve LATER
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
         BK4819_SetFilterBandwidth(settings.listenBw, false);
@@ -1004,8 +993,8 @@ static void Measure() {
           peak.i = scanInfo.i;
         }
         if (settings.rssiTriggerLevelUp < 50) {gIsPeak = true;}
-        //UpdateNoiseOff();//To solve LATER
-        //UpdateGlitch();
+        UpdateNoiseOff();//To solve LATER
+        UpdateGlitch();
 
     } 
     if (!gIsPeak || !isListening)
@@ -1112,7 +1101,7 @@ static void ToggleModulation() {
     settings.modulationType = MODULATION_FM;
   }
   RADIO_SetModulation(settings.modulationType);
-  BK4819_InitAGC(settings.modulationType);
+  RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
   gForceModulation = 1;
 }
 
@@ -2019,8 +2008,18 @@ static void OnKeyDown(uint8_t key) {
                   case 12: // ClearHistory
                         if (isKey3) ClearHistory();
                       break;
-
-                  case 13: // RAM
+                  case 13: // AF 300 SoundBoost
+                      SoundBoost = !SoundBoost;
+                      if(SoundBoost){
+                            BK4819_WriteRegister(0x54, 0x90D1);     //default is 0x9009
+                            BK4819_WriteRegister(0x55, 0x3271);    //default is 0x31a9
+                            BK4819_WriteRegister(0x75, 0xFC13);    //default is 0xF50B, clear is 0xFC13
+                      }
+                      else {
+                           BK4819_WriteRegister(0x54, 0x9009);
+                           BK4819_WriteRegister(0x55, 0x31a9);
+                           BK4819_WriteRegister(0x75, 0xF50B);
+                      }
                       break;
                   case 14: // SpectrumSleepMs
                         if (isKey3) {
@@ -2036,7 +2035,7 @@ static void OnKeyDown(uint8_t key) {
                       Noislvl_OFF = isKey3 ? 
                                  (Noislvl_OFF >= 100 ? 30 : Noislvl_OFF + 1) :
                                  (Noislvl_OFF <= 30 ? 100 : Noislvl_OFF - 1);
-                      Noislvl_ON = Noislvl_OFF - 10;                      
+                      Noislvl_ON = Noislvl_OFF - 15;                      
                       break;
                   case 16: //osdPopupSetting
                       osdPopupSetting = isKey3 ? 
@@ -2056,24 +2055,12 @@ static void OnKeyDown(uint8_t key) {
                       break;
                   case 19:
                       if (isKey3) {
-                          if (GlitchMax < 75) GlitchMax+=5;
+                          if (GlitchMax <= 75) GlitchMax+=5;
                       } else {
                           if (GlitchMax > 10) GlitchMax-=5;
                       }
                       break;
-                  case 20: // AF 300 SoundBoost
-                      SoundBoost = !SoundBoost;
-                      if(SoundBoost){
-                            BK4819_WriteRegister(0x54, 0x90D1);     //default is 0x9009
-                            BK4819_WriteRegister(0x55, 0x3271);    //default is 0x31a9
-                            BK4819_WriteRegister(0x75, 0xFC13);    //default is 0xF50B, clear is 0xFC13
-                      }
-                      else {
-                           BK4819_WriteRegister(0x54, 0x9009);
-                           BK4819_WriteRegister(0x55, 0x31a9);
-                           BK4819_WriteRegister(0x75, 0xF50B);
-                      }
-                      break;
+
               }
         break;
 
@@ -3307,7 +3294,7 @@ void LoadSettings(bool LNA)
   IndexPS = eepromData.IndexPS;
   SpectrumSleepMs = PS_Steps[IndexPS];
   Noislvl_OFF = eepromData.Noislvl_OFF;
-  Noislvl_ON  = Noislvl_OFF-10; 
+  Noislvl_ON  = Noislvl_OFF-15; 
   UOO_trigger = eepromData.UOO_trigger;
   osdPopupSetting = eepromData.osdPopupSetting;
   Backlight_On_Rx = eepromData.Backlight_On_Rx;
@@ -3415,7 +3402,7 @@ void ClearSettings()
   settings.listenBw = 1;
   gScanRangeStart = 43000000;
   gScanRangeStop  = 44000000;
-  DelayRssi = 3;
+  DelayRssi = 12;
   PttEmission = 2;
   settings.scanStepIndex = S_STEP_10_0kHz;
   ShowLines = 1; //СТРОКА ПО УМОЛЧАНИЮ
@@ -3424,8 +3411,8 @@ void ClearSettings()
   IndexMaxLT = 0;
   IndexPS = 0;
   Backlight_On_Rx = 1;
-  Noislvl_OFF = 62; 
-  Noislvl_ON = 52;  
+  Noislvl_OFF = 70; 
+  Noislvl_ON = 55;  
   UOO_trigger = 15;
   osdPopupSetting = 500;
   settings.bandEnabled[0] = 1;
@@ -3571,7 +3558,9 @@ static void GetParametersText(uint16_t index, char *buffer) {
         case 12:
             sprintf(buffer, "Clear History: 3");
             break;
-
+        case 13:
+            sprintf(buffer, "SoundBoost: %s", SoundBoost ? "ON" : "OFF");
+            break;
         case 14:
             sprintf(buffer, "Power Save: %s", labelsPS[IndexPS]);
             break;
@@ -3605,9 +3594,7 @@ static void GetParametersText(uint16_t index, char *buffer) {
         case 19:
            sprintf(buffer, "GlitchMax:%d", GlitchMax);
             break;
-        case 20:
-            sprintf(buffer, "SoundBoost: %s", SoundBoost ? "ON" : "OFF");
-            break;
+
         
         default:
             // Gestion d'un index inattendu (optionnel)

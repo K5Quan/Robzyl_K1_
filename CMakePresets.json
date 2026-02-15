@@ -23,6 +23,7 @@
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FR_BAND": false,
+                "ENABLE_AM_FIX": false,
                 "ENABLE_KO_BAND": false,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
