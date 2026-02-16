@@ -859,13 +859,14 @@ static void ToggleRX(bool on) {
           }
     
     if (on) { 
-        BK4819_WriteRegister(BK4819_REG_37, 0x1D0F);//To solve LATER
+        BK4819_RX_TurnOn();
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
         BK4819_SetFilterBandwidth(settings.listenBw, false);
         BK4819_WriteRegister(BK4819_REG_3F, BK4819_REG_02_CxCSS_TAIL);
 
     } else { 
+        BK4819_RX_TurnOn();
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, false); //Scan in 25K bandwidth
         if(appMode!=CHANNEL_MODE) BK4819_WriteRegister(0x43, GetBWRegValueForScan());
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 0);
@@ -1101,7 +1102,7 @@ static void ToggleModulation() {
     settings.modulationType = MODULATION_FM;
   }
   RADIO_SetModulation(settings.modulationType);
-  RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
+  BK4819_InitAGC(settings.modulationType);
   gForceModulation = 1;
 }
 
@@ -2422,11 +2423,23 @@ static void OnKeyDownStill(KEY_Code_t key) {
       case KEY_UP:
           if (stillEditRegs) {
             SetRegMenuValue(stillRegSelected, true);
+          } else if (SpectrumMonitor > 0) {
+             uint32_t step = GetScanStep() ;/// 10;
+             if (step < 1) step = 1;
+             peak.f += step;
+             scanInfo.f = peak.f;
+             SetF(peak.f);
           }
         break;
       case KEY_DOWN:
           if (stillEditRegs) {
             SetRegMenuValue(stillRegSelected, false);
+          } else if (SpectrumMonitor > 0) {
+             uint32_t step = GetScanStep();// / 10;
+             if (step < 1) step = 1;
+             if (peak.f > step) peak.f -= step;
+             scanInfo.f = peak.f;
+             SetF(peak.f);
           }
           break;
       case KEY_2: // przewijanie w górę po liście rejestrów
@@ -2444,7 +2457,7 @@ static void OnKeyDownStill(KEY_Code_t key) {
       case KEY_F:
       break;
       case KEY_5:
-        //FreqInput();
+        FreqInput();
       break;
       case KEY_0:
       break;
@@ -3114,11 +3127,25 @@ void APP_RunSpectrum(uint8_t Spectrum_state)
         }
         Key_1_pressed = 0;
         BackupRegisters();
+
+        BK4819_WriteRegister(BK4819_REG_30, 0);
+        SYSTEM_DelayMs(10);
+        BK4819_RX_TurnOn();
+        SYSTEM_DelayMs(50);  // Dłuższe opóźnienie
+
+        
         uint8_t CodeType = gTxVfo->pRX->CodeType;
         uint8_t Code     = gTxVfo->pRX->Code;
         BK4819_SetCDCSSCodeWord(DCS_GetGolayCodeWord(CodeType, Code));
         ResetInterrupts();
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+
+        BK4819_WriteRegister(BK4819_REG_47, 0x6040);
+        BK4819_WriteRegister(BK4819_REG_48, 0xB3A8);  // AF gain
+	    ToggleRX(true), ToggleRX(false); // hack to prevent noise when squelch off
+    RADIO_SetModulation(settings.modulationType = gTxVfo->Modulation);
+
+    BK4819_SetFilterBandwidth(settings.listenBw, false);
         isListening = true;
         newScanStart = true;
         AutoAdjustFreqChangeStep();

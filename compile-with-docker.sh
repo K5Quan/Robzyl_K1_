@@ -22,9 +22,9 @@ EXTRA_ARGS=("$@")
 # ---------------------------------------------
 # Validate preset name
 # ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(France|Kolyan|All)$ ]]; then
+if [[ ! "$PRESET" =~ ^(France|Kolyan|Russia|Poland|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: France, Kolyan, All"
+  echo "Valid presets are: France, Kolyan,Russia,Poland, All"
   exit 1
 fi
 
@@ -62,7 +62,7 @@ build_preset() {
 # Handle 'All' preset
 # ---------------------------------------------
 if [[ "$PRESET" == "All" ]]; then
-  PRESETS=(France Kolyan)
+  PRESETS=(France Kolyan Russia Poland)
   for p in "${PRESETS[@]}"; do
     build_preset "$p"
   done
