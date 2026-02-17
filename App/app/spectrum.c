@@ -3,7 +3,7 @@
 #include "scanner.h"
 #include "driver/backlight.h"
 #include "driver/eeprom.h"
-
+#include "misc.h"
 #include "ui/helper.h"
 #include "common.h"
 #include "action.h"
@@ -131,8 +131,8 @@ static uint16_t ctcssFreq;
 #define Bottom_print 51 //Robby69
 static Mode appMode;
 #define UHF_NOISE_FLOOR 5
-static uint16_t scanChannel[MR_CHANNEL_LAST + 3];
-static uint8_t ScanListNumber[MR_CHANNEL_LAST + 3];
+static uint16_t scanChannel[MR_CHANNEL_LAST + 3];   //To solve LATER
+static uint8_t ScanListNumber[MR_CHANNEL_LAST + 3]; //To solve LATER
 static uint16_t scanChannelsCount;
 static void ToggleScanList();
 static void SaveSettings();
@@ -199,7 +199,7 @@ static void LookupChannelModulation();
   static void RenderScanListChannelsDoubleLines(const char* title, uint8_t numItems, uint8_t selectedIndex, uint8_t scrollOffset);
 #endif
 
-  #define MAX_VALID_SCANLISTS 15
+  #define MAX_VALID_SCANLISTS 24
 static uint8_t validScanListIndices[MAX_VALID_SCANLISTS]; // stocke les index valides
       static void MyDrawShortHLine(uint8_t y, uint8_t x_start, uint8_t x_end, uint8_t step, bool white); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 static void MyDrawVLine(uint8_t x, uint8_t y_start, uint8_t y_end, uint8_t step); //ПРОСТОЙ РЕЖИМ ЛИНИИ
@@ -994,7 +994,7 @@ static void Measure() {
           peak.i = scanInfo.i;
         }
         if (settings.rssiTriggerLevelUp < 50) {gIsPeak = true;}
-        UpdateNoiseOff();//To solve LATER
+        UpdateNoiseOff();
         UpdateGlitch();
 
     } 
@@ -1861,7 +1861,7 @@ static void OnKeyDown(uint8_t key) {
                 break;
 				        
             case KEY_MENU:
-                if (scanListSelectedIndex < 15) {
+                if (scanListSelectedIndex < 24) {
                     ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
                     SetState(SPECTRUM);
                     ResetModifiers();
@@ -3110,13 +3110,11 @@ void APP_RunSpectrum(uint8_t Spectrum_state)
         if      (Spectrum_state == 4) mode = FREQUENCY_MODE ;
         else if (Spectrum_state == 3) mode = SCAN_RANGE_MODE ;
         else if (Spectrum_state == 2) mode = SCAN_BAND_MODE ;
-        //To solve LATER else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
-        else if (Spectrum_state == 1) mode = SCAN_BAND_MODE ;
+        else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
         else mode = FREQUENCY_MODE;
         //BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, false);  // принудительно узкий в спектре ЧИНИМ ВФО
         EEPROM_WriteBuffer(0x1D00, &Spectrum_state);
-        //if (!Key_1_pressed) LoadSettings(0); //To solve LATER
-        ClearSettings(); //To solve LATER
+        if (!Key_1_pressed) LoadSettings(0); 
         appMode = mode;
         ResetModifiers();
         if (appMode==CHANNEL_MODE) LoadValidMemoryChannels();
@@ -3170,11 +3168,11 @@ void APP_RunSpectrum(uint8_t Spectrum_state)
     } 
 }
 
-uint16_t RADIO_ValidMemoryChannelsCount(bool bCheckScanList, uint8_t VFO)
+uint16_t RADIO_ValidMemoryChannelsCount(bool bCheckScanList, uint8_t CurrentScanList)
 {
 	uint16_t count=0;
 	for (uint16_t i = MR_CHANNEL_FIRST; i<=MR_CHANNEL_LAST; ++i) {
-			if(RADIO_CheckValidChannel(i, bCheckScanList, VFO)) count++;
+			if(RADIO_CheckValidChannel(i, bCheckScanList, CurrentScanList)) count++;
 		}
 	return count;
 }
@@ -3186,17 +3184,17 @@ static void LoadValidMemoryChannels(void)
     bool listsEnabled = false;
     
     // loop through all scanlists
-    for (int CurrentScanList=1; CurrentScanList <= 16; CurrentScanList++) {
+    for (int CurrentScanList=1; CurrentScanList <= 25; CurrentScanList++) {
       // skip disabled scanlist
-      if (CurrentScanList <= 15 && !settings.scanListEnabled[CurrentScanList-1])
+      if (CurrentScanList <= 24 && !settings.scanListEnabled[CurrentScanList-1])
         continue;
 
       // valid scanlist is enabled
-      if (CurrentScanList <= 15 && settings.scanListEnabled[CurrentScanList-1])
+      if (CurrentScanList <= 24 && settings.scanListEnabled[CurrentScanList-1])
         listsEnabled = true;
       
       // break if some lists were enabled, else scan all channels
-      if (CurrentScanList > 15 && listsEnabled)
+      if (CurrentScanList > 24 && listsEnabled)
         break;
 
       uint16_t offset = scanChannelsCount;
@@ -3280,11 +3278,8 @@ typedef struct {
     bool Backlight_On_Rx;
 } SettingsEEPROM;
 
-ChannelAttributes_t   gMR_ChannelAttributes[FREQ_CHANNEL_LAST + 1];
-
 void LoadSettings(bool LNA)
 {
-  return; //To solve LATER
   SettingsEEPROM  eepromData  = {0};
   EEPROM_ReadBuffer(0x1D10, &eepromData, sizeof(eepromData));
   
@@ -3295,7 +3290,7 @@ void LoadSettings(bool LNA)
   BK4819_WriteRegister(BK4819_REG_14, eepromData.R14);
   if (LNA) return;
   if(!IsVersionMatching()) ClearSettings();
-  for (int i = 0; i < 15; i++) {
+  for (int i = 0; i < 24; i++) {
     settings.scanListEnabled[i] = (eepromData.scanListFlags >> i) & 0x01;
   }
   settings.rssiTriggerLevelUp = eepromData.Trigger;
@@ -3327,7 +3322,7 @@ void LoadSettings(bool LNA)
   Backlight_On_Rx = eepromData.Backlight_On_Rx;
   ChannelAttributes_t att;
   for (int i = 0; i < MR_CHANNEL_LAST+1; i++) {
-    att = gMR_ChannelAttributes[i];
+    //To solve LATER att = gMR_ChannelAttributes[i];
     if (att.scanlist > validScanListCount) {validScanListCount = att.scanlist;}
   }
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
@@ -3349,9 +3344,8 @@ void LoadSettings(bool LNA)
 
 static void SaveSettings() 
 {
-  return; //To solve LATER
   SettingsEEPROM  eepromData  = {0};
-  for (int i = 0; i < 15; i++) {
+  for (int i = 0; i < 24; i++) {
     if (settings.scanListEnabled[i]) eepromData.scanListFlags |= (1 << i);
   }
   eepromData.Trigger = settings.rssiTriggerLevelUp;
@@ -3421,7 +3415,7 @@ static void ClearHistory()
 
 void ClearSettings() 
 {
-  for (int i = 1; i < 15; i++) {
+  for (int i = 1; i < 24; i++) {
     settings.scanListEnabled[i] = 0;
   }
   settings.scanListEnabled[0] = 1;
@@ -3471,12 +3465,12 @@ static bool GetScanListLabel(uint8_t scanListIndex, char* bufferOut) {
     uint16_t channel_count = 0;
 
     for (uint16_t i = 0; i < MR_CHANNEL_LAST+1; i++) {
-        att = gMR_ChannelAttributes[i];
-        if (att.scanlist == scanListIndex + 1) {
+        //To solve LATER att = gMR_ChannelAttributes[i];
+/*         if (att.scanlist == scanListIndex + 1) {
             if (first_channel == 0xFFFF)
                 first_channel = i;
             channel_count++;
-        }
+        } */
     }
     if (first_channel == 0xFFFF) return false; 
 
@@ -3504,7 +3498,7 @@ static bool GetScanListLabel(uint8_t scanListIndex, char* bufferOut) {
 
 static void BuildValidScanListIndices() {
     uint8_t ScanListCount = 0;
-    for (uint8_t i = 0; i < 15; i++) {
+    for (uint8_t i = 0; i < 24; i++) {
         char tempName[17];
         if (GetScanListLabel(i, tempName)) {
             validScanListIndices[ScanListCount++] = i;

@@ -23,7 +23,6 @@
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FR_BAND": false,
-                "ENABLE_AM_FIX": false,
                 "ENABLE_KO_BAND": false,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
@@ -64,7 +63,7 @@
                 "ENABLE_FEAT_ROBZYL_PMR": false,
                 "ENABLE_FEAT_ROBZYL_GMRS_FRS_MURS": false,
                 "ENABLE_FEAT_ROBZYL_CA": true,
-                "ENABLE_FEAT_ROBZYL_DEBUG": true,
+                "ENABLE_FEAT_ROBZYL_DEBUG": false,
                 "ENABLE_AGC_SHOW_DATA": false,
                 "ENABLE_UART_RW_BK_REGS": false,
                 "ENABLE_SWD": false,
@@ -77,14 +76,7 @@
             "name": "France",
             "inherits": "default",
             "cacheVariables": {
-                "ENABLE_SPECTRUM": true,
                 "ENABLE_FR_BAND": true,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_FEAT_ROBZYL_SCREENSHOT": true,
-                "ENABLE_FEAT_ROBZYL_PMR": true,
-                "ENABLE_FEAT_ROBZYL_VOL": true,
-                "ENABLE_FEAT_ROBZYL_AUDIO": true,
-                "ENABLE_SWD": true,
                 "EDITION_STRING": "France",
                 "TARGET": "ROBZYL.K1.France"
             }
@@ -93,14 +85,7 @@
             "name": "Kolyan",
             "inherits": "default",
             "cacheVariables": {
-                "ENABLE_SPECTRUM": true,
                 "ENABLE_KO_BAND": true,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_FEAT_ROBZYL_SCREENSHOT": true,
-                "ENABLE_FEAT_ROBZYL_PMR": true,
-                "ENABLE_FEAT_ROBZYL_VOL": true,
-                "ENABLE_FEAT_ROBZYL_AUDIO": true,
-                "ENABLE_SWD": true,
                 "EDITION_STRING": "Kolyan",
                 "TARGET": "ROBZYL.K1.Kolyan"
             }
@@ -109,14 +94,7 @@
             "name": "Russia",
             "inherits": "default",
             "cacheVariables": {
-                "ENABLE_SPECTRUM": true,
                 "ENABLE_RU_BAND": true,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_FEAT_ROBZYL_SCREENSHOT": true,
-                "ENABLE_FEAT_ROBZYL_PMR": true,
-                "ENABLE_FEAT_ROBZYL_VOL": true,
-                "ENABLE_FEAT_ROBZYL_AUDIO": true,
-                "ENABLE_SWD": true,
                 "EDITION_STRING": "Russia",
                 "TARGET": "ROBZYL.K1.Russia"
             }
@@ -125,14 +103,7 @@
             "name": "Poland",
             "inherits": "default",
             "cacheVariables": {
-                "ENABLE_SPECTRUM": true,
                 "ENABLE_PL_BAND": true,
-                "ENABLE_FMRADIO": true,
-                "ENABLE_FEAT_ROBZYL_SCREENSHOT": true,
-                "ENABLE_FEAT_ROBZYL_PMR": true,
-                "ENABLE_FEAT_ROBZYL_VOL": true,
-                "ENABLE_FEAT_ROBZYL_AUDIO": true,
-                "ENABLE_SWD": true,
                 "EDITION_STRING": "Poland",
                 "TARGET": "ROBZYL.K1.Poland"
             }
