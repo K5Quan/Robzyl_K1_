@@ -28,10 +28,15 @@ static volatile uint8_t gRequestedSpectrumState = 0;
 
 #define HISTORY_SIZE 50
 
-#define ADRESS_STATE 0xC000
+/* #define ADRESS_STATE 0xC000
 #define ADRESS_VERSION 0xC008
 #define ADRESS_PARAMS 0xC010
-#define ADRESS_HISTORY 0xD000
+#define ADRESS_HISTORY 0xD000 */
+
+#define ADRESS_STATE   0x9100
+#define ADRESS_VERSION 0x9108
+#define ADRESS_PARAMS  0x9110
+#define ADRESS_HISTORY 0x9300
 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
@@ -499,7 +504,7 @@ static void DeInitSpectrum(bool ComeBack) {
   SetState(SPECTRUM);
   if(!ComeBack) {
     uint8_t Spectrum_state = 0; //Spectrum Not Active
-    PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state,1,1);
+    PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state,1,0);
     ToggleRX(0);
     SYSTEM_DelayMs(50);
     }
@@ -507,7 +512,7 @@ static void DeInitSpectrum(bool ComeBack) {
   else {
     PY25Q16_ReadBuffer(ADRESS_STATE, &Spectrum_state, 1);
 	Spectrum_state+=10;
-    PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state,1,1);
+    PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state,1,0);
     //StorePtt_Toggle_Mode = Ptt_Toggle_Mode;To solve LATER
     SYSTEM_DelayMs(50);
     //Ptt_Toggle_Mode =0; //To solve LATER
@@ -676,14 +681,14 @@ void WriteHistory(void) {
         History.HFreqs = HFreqs[position];
         History.HCount = HCount[position];
         History.HBlacklisted = HBlacklisted[position];
-        PY25Q16_WriteBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),(uint8_t *)&History,sizeof(History),1);
+        PY25Q16_WriteBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),(uint8_t *)&History,sizeof(History),0);
     }
 
     // Marque de fin (HBlacklisted = 0xFF)
     History.HFreqs = 0;
     History.HCount = 0;
     History.HBlacklisted = 0xFF;
-    PY25Q16_WriteBuffer(ADRESS_HISTORY + indexFs * sizeof(HistoryStruct),(uint8_t *)&History,sizeof(History),1);
+    PY25Q16_WriteBuffer(ADRESS_HISTORY + indexFs * sizeof(HistoryStruct),(uint8_t *)&History,sizeof(History),0);
     ShowOSDPopup("HISTORY SAVED");
 }
 
@@ -3125,6 +3130,31 @@ static void Tick() {
   } 
 }
 
+uint32_t BOARD_fetchChannelFrequency(const uint16_t Channel)
+{
+	struct
+	{
+		uint32_t frequency;
+		uint32_t offset;
+	} __attribute__((packed)) info;
+
+	EEPROM_ReadBuffer(0x0000 + Channel * 16, &info, sizeof(info));
+	if (info.frequency == 0xFFFFFFFF) return 0;
+	else return info.frequency;
+}
+
+// Load Chanel frequencies, names into global memory lookup table
+void BOARD_gMR_LoadChannels() {
+	uint16_t  i;
+	uint32_t freq_buf;
+
+	for (i = MR_CHANNEL_FIRST; i <= MR_CHANNEL_LAST; i++)
+	{
+		freq_buf = BOARD_fetchChannelFrequency(i);
+
+		gMR_ChannelFrequencyAttributes[i].Frequency = RX_freq_check(freq_buf) == 0xFF ? 0 : freq_buf;
+	}
+}
 
 void APP_RunSpectrum(uint8_t Spectrum_state)
 {
@@ -3136,7 +3166,8 @@ void APP_RunSpectrum(uint8_t Spectrum_state)
         else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
         else mode = FREQUENCY_MODE;
         //BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, false);  // принудительно узкий в спектре ЧИНИМ ВФО
-        PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state,1,1);
+        PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state,1,0);
+        BOARD_gMR_LoadChannels();
         if (!Key_1_pressed) LoadSettings(0); 
         appMode = mode;
         ResetModifiers();
@@ -3283,7 +3314,7 @@ bool IsVersionMatching(void) {
     uint16_t stored,app_version;
     app_version = APP_VERSION;
     PY25Q16_ReadBuffer(ADRESS_VERSION, &stored, 2);
-    if (stored != APP_VERSION) PY25Q16_WriteBuffer(ADRESS_VERSION, &app_version,sizeof(app_version),1);
+    if (stored != APP_VERSION) PY25Q16_WriteBuffer(ADRESS_VERSION, &app_version,sizeof(app_version),0);
     return (stored == APP_VERSION);
 }
 
@@ -3363,11 +3394,6 @@ void LoadSettings(bool LNA)
   UOO_trigger = eepromData.UOO_trigger;
   osdPopupSetting = eepromData.osdPopupSetting;
   Backlight_On_Rx = eepromData.Backlight_On_Rx;
-  ChannelAttributes_t att;
-  for (int i = 0; i < MR_CHANNEL_LAST+1; i++) {
-    //To solve LATER att = gMR_ChannelAttributes[i];
-    if (att.scanlist > validScanListCount) {validScanListCount = att.scanlist;}
-  }
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
   BK4819_WriteRegister(BK4819_REG_29, eepromData.R29);
   BK4819_WriteRegister(BK4819_REG_19, eepromData.R19);
@@ -3377,10 +3403,10 @@ void LoadSettings(bool LNA)
   BK4819_WriteRegister(BK4819_REG_2B, eepromData.R2B);
   
   
-/*  if (!historyLoaded) {
-     ReadHistory();
+  if (!historyLoaded) {
+     //To solve LATER ReadHistory();
      historyLoaded = true;
-  } */
+  }
 }
 
 static void SaveSettings() 
@@ -3433,8 +3459,8 @@ static void SaveSettings()
 
   
   // Write in 8-byte chunks
-  //for (uint16_t addr = 0; addr < sizeof(eepromData); addr += 8) 
-    PY25Q16_WriteBuffer(ADRESS_PARAMS, ((uint8_t*)&eepromData), sizeof(eepromData),1);
+  for (uint16_t addr = 0; addr < sizeof(eepromData); addr += 8) 
+    PY25Q16_WriteBuffer(ADRESS_PARAMS, ((uint8_t*)&eepromData) + addr, 8,0);
   
   ShowOSDPopup("PARAMS SAVED");
 }
@@ -3462,7 +3488,7 @@ void ClearSettings()
   settings.listenBw = 1;
   gScanRangeStart = 43000000;
   gScanRangeStop  = 44000000;
-  DelayRssi = 12;
+  DelayRssi = 3;
   PttEmission = 2;
   settings.scanStepIndex = S_STEP_10_0kHz;
   ShowLines = 1; //СТРОКА ПО УМОЛЧАНИЮ
@@ -3471,10 +3497,10 @@ void ClearSettings()
   IndexMaxLT = 0;
   IndexPS = 0;
   Backlight_On_Rx = 1;
-  Noislvl_OFF = 70; 
-  Noislvl_ON = 55;  
+  Noislvl_OFF = 60; 
+  Noislvl_ON = 45;  
   UOO_trigger = 15;
-  osdPopupSetting = 500;
+  osdPopupSetting = 0;
   settings.bandEnabled[0] = 1;
   /* BK4819_WriteRegister(BK4819_REG_10, 0x0145); //To solve LATER
   BK4819_WriteRegister(BK4819_REG_11, 0x01B5);
