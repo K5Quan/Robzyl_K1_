@@ -908,7 +908,7 @@ static uint32_t GetMrChannelFreq(uint16_t ch)
     if (!IS_MR_CHANNEL(ch))
         return 0;
 
-    PY25Q16_ReadBuffer(0x0000 + (ch * 16), (uint8_t *)&freq, 4);
+    EEPROM_ReadBuffer(0x0000 + (ch * 16), (uint8_t *)&freq, 4);
 
     if (freq == 0xFFFFFFFF || freq < 1400000 || freq > 130000000)
         return 0;
@@ -3364,7 +3364,7 @@ bool IsVersionMatching(void) {
     uint16_t stored,app_version;
     app_version = APP_VERSION;
     EEPROM_ReadBuffer(ADRESS_VERSION, &stored, 2);
-    if (stored != APP_VERSION) EEPROM_WriteBuffer(ADRESS_VERSION, &app_version));
+    if (stored != APP_VERSION) EEPROM_WriteBuffer(ADRESS_VERSION, &app_version);
     return (stored == APP_VERSION);
 }
 
@@ -3920,7 +3920,7 @@ static void RenderScanListSelect() {
   }
   char title[24];
   snprintf(title, sizeof(title), "SCANLISTS: %u/%u", selectedCount, validScanListCount);
-  RenderList(title, validScanListCount,scanListSelectedIndex, scanListScrollOffset, GetFilteredScanListText, true);
+  RenderList(title, validScanListCount,scanListSelectedIndex, scanListScrollOffset, GetFilteredScanListText);
 }
 
 static void RenderParametersSelect() {
