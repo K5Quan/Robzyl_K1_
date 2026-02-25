@@ -55,7 +55,7 @@ enum VfoState_t
 };
 typedef enum VfoState_t VfoState_t;
 
-typedef enum {
+typedef enum : uint8_t{
     MODULATION_FM,
     MODULATION_AM,
     MODULATION_USB,

@@ -22,6 +22,7 @@
                 "ENABLE_DTMF_CALLING": false,
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
+                "ENABLE_FLASH_BAND": false,
                 "ENABLE_FR_BAND": false,
                 "ENABLE_KO_BAND": false,
                 "ENABLE_BIG_FREQ": true,
@@ -73,6 +74,15 @@
         },
        
         {
+            "name": "Flash",
+            "inherits": "default",
+            "cacheVariables": {
+                "ENABLE_FLASH_BAND": true,
+                "EDITION_STRING": "Flash",
+                "TARGET": "ROBZYL.K1.Flash"
+            }
+        },
+        {
             "name": "France",
             "inherits": "default",
             "cacheVariables": {
@@ -110,6 +120,10 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "Flash",
+            "configurePreset": "Flash"
+        },
         {
             "name": "France",
             "configurePreset": "France"

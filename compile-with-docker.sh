@@ -22,9 +22,9 @@ EXTRA_ARGS=("$@")
 # ---------------------------------------------
 # Validate preset name
 # ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(France|Kolyan|Russia|Poland|All)$ ]]; then
+if [[ ! "$PRESET" =~ ^(Flash|France|Kolyan|Russia|Poland|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: France, Kolyan,Russia,Poland, All"
+  echo "Valid presets are: Flash, France, Kolyan,Russia,Poland, All"
   exit 1
 fi
 
@@ -62,7 +62,7 @@ build_preset() {
 # Handle 'All' preset
 # ---------------------------------------------
 if [[ "$PRESET" == "All" ]]; then
-  PRESETS=(France Kolyan Russia Poland)
+  PRESETS=(Flash France Kolyan Russia Poland)
   for p in "${PRESETS[@]}"; do
     build_preset "$p"
   done
@@ -76,5 +76,34 @@ fi
 # Automatic flash
 # ---------------------------------------------
 
-echo "⚡ flash firmware on COM14..."
-    python flash.py ./build/${PRESET}/ROBZYL.K1.France.bin -p COM14
+# Définition du nom du binaire selon le preset
+case "$PRESET" in
+  "Flash")
+    BIN_NAME="ROBZYL.K1.Flash.bin"
+    ;;
+  "France")
+    BIN_NAME="ROBZYL.K1.France.bin"
+    ;;
+  "All")
+    # Pour 'All', on peut flasher un binaire par défaut ou ignorer
+    echo "⏭️  Preset 'All' détecté, flash automatique ignoré."
+    exit 0
+    ;;
+  *)
+    # Valeur par défaut si les noms suivent une logique standard
+    BIN_NAME="ROBZYL.K1.${PRESET}.bin"
+    ;;
+esac
+
+echo "⚡ Flashing firmware: ${BIN_NAME} on COM14..."
+
+# Vérification de l'existence du fichier avant de flasher
+IFILE="./build/${PRESET}/${BIN_NAME}"
+
+if [[ -f "$IFILE" ]]; then
+    python flash.py "$IFILE" -p COM14
+    echo "✅ Flash terminé avec succès !"
+else
+    echo "❌ Erreur : Le fichier binaire est introuvable : $IFILE"
+    exit 1
+fi

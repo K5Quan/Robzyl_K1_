@@ -28,10 +28,11 @@ static volatile uint8_t gRequestedSpectrumState = 0;
 
 #define HISTORY_SIZE 50
 
-#define ADRESS_STATE   0x9100
-#define ADRESS_VERSION 0x9108
-#define ADRESS_PARAMS  0x9110
-#define ADRESS_HISTORY 0x9300
+#define ADRESS_STATE   0xC000
+#define ADRESS_VERSION 0xC008
+#define ADRESS_PARAMS  0xC010
+#define ADRESS_HISTORY 0xC200
+#define ADRESS_BANDS   0xD100
 
 #define NoisLvl 60
 #define NoiseHysteresis 15
@@ -69,7 +70,7 @@ static uint16_t UOO_trigger = 15;            // case 17
 static uint8_t AUTO_KEYLOCK = AUTOLOCK_OFF;  // case 18
 static uint8_t GlitchMax = 10;               // case 19 
 static bool    SoundBoost = 1;               // case 20 
-#define PARAMETER_COUNT 20
+#define PARAMETER_COUNT 21
 ////////////////////////////////////////////////////////////////////
 
 static bool SettingsLoaded = false;
@@ -189,7 +190,6 @@ static uint8_t freqInputIndex = 0;
 static uint8_t freqInputDotIndex = 0;
 static KEY_Code_t freqInputArr[10];
 char freqInputString[11];
-static const bandparameters BParams[32];
 static uint8_t nextBandToScanIndex = 0;
 static void LookupChannelModulation();
 
@@ -533,6 +533,18 @@ static void DeInitSpectrum(bool ComeBack) {
 }
 
 /////////////////////////////EEPROM://///////////////////////////
+
+#ifdef ENABLE_FLASH_BAND
+static bandparameters BParams[64];
+void LoadBandsFromEEPROM(void) {
+    uint16_t currentAddress = ADRESS_BANDS;
+    for(int i = 0; i < 64; i++) {
+        // On lit chaque structure une par une (32 octets chacune)
+        PY25Q16_ReadBuffer(ADRESS_BANDS, (void*)&BParams[i], sizeof(bandparameters));
+        currentAddress += sizeof(bandparameters);
+    }
+}
+#endif
 
 /* static void TrimTrailingChars(char *str) {
     int len = strlen(str);
@@ -1369,6 +1381,10 @@ for (uint8_t x = left_x; x <= right_x; x += dash_step) {
     break;
     
     case SCAN_BAND_MODE:
+#ifdef ENABLE_FLASH_BAND
+      len = sprintf(&String[pos],"EE ");
+#endif
+
 #ifdef ENABLE_FR_BAND
       len = sprintf(&String[pos],"BD ");
 #endif
@@ -3388,6 +3404,9 @@ typedef struct {
 void LoadSettings(bool LNA)
 {
   if(SettingsLoaded) return;
+  #ifdef ENABLE_FLASH_BAND
+  LoadBandsFromEEPROM();
+  #endif
   SettingsEEPROM  eepromData  = {0};
   PY25Q16_ReadBuffer(ADRESS_PARAMS, &eepromData, sizeof(eepromData));
   
@@ -3905,6 +3924,10 @@ static void RenderParametersSelect() {
   RenderList("PARAMETERS:", PARAMETER_COUNT,parametersSelectedIndex, parametersScrollOffset, GetParametersText);
 }
 
+
+#ifdef ENABLE_FLASH_BAND
+      void RenderBandSelect() {RenderList("BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+#endif
 
 #ifdef ENABLE_FR_BAND
       void RenderBandSelect() {RenderList("FRA BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
