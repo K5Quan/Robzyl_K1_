@@ -36,6 +36,7 @@ static volatile uint8_t gRequestedSpectrumState = 0;
 
 #define NoisLvl 60
 #define NoiseHysteresis 15
+#define MAX_VALID_SCANLISTS 10
 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
@@ -204,10 +205,11 @@ static void LookupChannelModulation();
   static void RenderScanListChannelsDoubleLines(const char* title, uint8_t numItems, uint8_t selectedIndex, uint8_t scrollOffset);
 #endif
 
-  #define MAX_VALID_SCANLISTS 24
 static uint8_t validScanListIndices[MAX_VALID_SCANLISTS]; // stocke les index valides
-      static void MyDrawShortHLine(uint8_t y, uint8_t x_start, uint8_t x_end, uint8_t step, bool white); //ПРОСТОЙ РЕЖИМ ЛИНИИ
+#ifdef ENABLE_SPECTRUM_LINES
+static void MyDrawShortHLine(uint8_t y, uint8_t x_start, uint8_t x_end, uint8_t step, bool white); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 static void MyDrawVLine(uint8_t x, uint8_t y_start, uint8_t y_end, uint8_t step); //ПРОСТОЙ РЕЖИМ ЛИНИИ
+#endif
 
 const RegisterSpec allRegisterSpecs[] = {
  //   {"10_LNAs",  0x10, 8, 0b11,  1},
@@ -515,6 +517,10 @@ static void DeInitSpectrum(bool ComeBack) {
   gVfoConfigureMode = VFO_CONFIGURE;
   isInitialized = false;
   SetState(SPECTRUM);
+  #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        gEeprom.CURRENT_STATE = 0;
+        SETTINGS_WriteCurrentState();
+  #endif
   if(!ComeBack) {
     uint8_t Spectrum_state = 0; //Spectrum Not Active
     PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
@@ -1612,31 +1618,23 @@ static void DrawF(uint32_t f) {
     } else { //Not Classic — ПРОСТОЙ РЕЖИМ ЛИНИИ
 
     DrawMeter(4); // положение бара
-    // Горизонтальная линия
-
-    //MyDrawShortHLine(11, 0, 6, 1, false);  // верх кор лев
+#ifdef ENABLE_SPECTRUM_LINES
     MyDrawShortHLine(10, 0, 127, 2, false);  // верх кор лев
-
     MyDrawShortHLine(35, 0, 5, 1, false);  // верх кор лев
     MyDrawShortHLine(35, 122, 127, 1, false);  // верх кор прав
-
     MyDrawVLine(0,   35, 57, 1);  // левая вертикальная сплошная
     MyDrawVLine(127, 35, 57, 1);  // правая вертикальная сплошная           
-    
-    // Текст — ВСЕГДА показываем большую частоту
+#endif
     UI_DisplayFrequency(line1, 10, 2, 0); // большая частота — теперь без условия!
-
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8); // имя список
     GUI_DisplaySmallestDark(">",     2, 22, false, false);
     GUI_DisplaySmallestDark("<", 123, 22, false, false);  
     UI_PrintStringSmall(line3,  0, 0, 0, 0);  //таймер 
 
-    // RSSI числом — точно как в истории (маленький шрифт, справа вверху)
     char rssiText[16];
     sprintf(rssiText, "R:%3d", scanInfo.rssi);
     UI_PrintStringSmall(rssiText, 96, 1, 0, 0);  // x=96, y=0, BSmall
 
-    // Субтон отдельно, правее RSSI, тот же шрифт, та же строка y=0
     if (StringCode[0]) {
         UI_PrintStringSmall(StringCode, 50, 1, 0, 0);  // ← подбери 100–110
     }
@@ -1931,7 +1929,7 @@ static void OnKeyDown(uint8_t key) {
                 break;
 				        
             case KEY_MENU:
-                if (scanListSelectedIndex < 24) {
+                if (scanListSelectedIndex < MAX_VALID_SCANLISTS) {
                     ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
                     SetState(SPECTRUM);
                     ResetModifiers();
@@ -2142,7 +2140,9 @@ static void OnKeyDown(uint8_t key) {
           ResetModifiers();
           if(Key_1_pressed) {
             //Key_1_pressed = 0;
-            APP_RunSpectrum(3);
+          Spectrum_state = 3;
+          PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
+          APP_RunSpectrum();
           }
           break;
 
@@ -2228,7 +2228,7 @@ static void OnKeyDown(uint8_t key) {
           if (classic){
               ShowLines++;
               if (ShowLines > 3 || ShowLines < 1) ShowLines = 1;
-              char viewText[24];
+              char viewText[15];
               const char *viewName = "CLASSIC";
               if (ShowLines == 2) viewName = "BIG";
               else if (ShowLines == 3) viewName = "LAST RX";
@@ -2342,11 +2342,9 @@ static void OnKeyDown(uint8_t key) {
   
 /* next mode poprawione */ //СМЕНА РЕЖИМОВ
      case KEY_6:
-        // Смена режимов спектра: 0 = FR, 1 = SL, 2 = BD, 3 = RG (4 режима)
-        Spectrum_state++;
-        
-        // Цикл по 4 режимам (0 → 1 → 2 → 3 → 0)
-        if (Spectrum_state > 3) {Spectrum_state = 0;}
+        // 0 = FR, 1 = SL, 2 = BD, 3 = RG
+        if (Spectrum_state++ > 3) {Spectrum_state = 0;}
+        PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
         char sText[32];
         const char* s[] = {"FREQ", "S LIST", "BAND", "RANGE"};
         sprintf(sText, "MODE: %s", s[Spectrum_state]);
@@ -2413,7 +2411,7 @@ static void OnKeyDown(uint8_t key) {
       SetState(STILL);      
   break;
 
-  case KEY_EXIT: //exit from history
+  case KEY_EXIT: //exit from history or spectrum
   
     if (historyListActive == true) {
       gHistoryScan = false;
@@ -2594,8 +2592,7 @@ static void RenderStatus() {
   DrawStatus();
   ST7565_BlitStatusLine();
 }
-
-// Преобразование dBm → RSSI (обратное к Rssi2DBm)
+#ifdef ENABLE_SPECTRUM_LINES
 static uint16_t DBm2Rssi(int dbm)
 {
     // Формула из оригинального кода: dbm ≈ rssi - 160 (примерно)
@@ -2607,7 +2604,7 @@ static uint16_t DBm2Rssi(int dbm)
     return (uint16_t)rssi;
 }
 
-// === УНИВЕРСАЛЬНЫЕ ФУНКЦИИ ДЛЯ ЛИНИЙ (не конфликтуют с оригинальной DrawVLine) ===
+
 static void MyDrawHLine(uint8_t y, bool white)
 {
     if (y >= 64) return;
@@ -2651,43 +2648,25 @@ static void MyDrawVLine(uint8_t x, uint8_t y_start, uint8_t y_end, uint8_t step)
     }
 }
 
-// === ТВОЯ РАМКА + ДОПОЛНИТЕЛЬНЫЕ ЛИНИИ ===
 static void MyDrawFrameLines(void)
 {
-    // Основная рамка
     MyDrawHLine(50, true);   // белая горизонтальная на y=50
     MyDrawHLine(49, false);  // чёрная горизонтальная на y=49
-
     MyDrawVLine(0,   21, 49, 1);  // левая вертикальная сплошная
     MyDrawVLine(127, 21, 49, 1);  // правая вертикальная сплошная
-
     MyDrawVLine(0,   0, 17, 1);  // левая вертикальная сплошная
     MyDrawVLine(127, 0, 17, 1);  // правая вертикальная сплошная
-
-    //MyDrawHLine(19, false);                 
     MyDrawShortHLine(0, 0, 3, 1, false);  // верх кор лев
     MyDrawShortHLine(0, 4, 8, 2, false);  // верх кор лев
     MyDrawShortHLine(0, 124, 127, 1, false);  // верх кор прав
     MyDrawShortHLine(0, 118, 123, 2, false);  // верх кор прав
     MyDrawShortHLine(17, 0, 10, 1, false);  // верх кор лев
     MyDrawShortHLine(21, 0, 10, 1, false);  // верх кор лев
-    //MyDrawShortHLine(21, 11, 119, 2, false);  // центр длин
     MyDrawShortHLine(19, 11, 119, 2, false);  // центр длин
     MyDrawShortHLine(21, 120, 127, 1, false);  // кор прав
     MyDrawShortHLine(17, 120, 127, 1, false);  // кор прав
-   //MyDrawHLine(30, true);                   // белая горизонтальная на y=30
-
-
-    //MyDrawShortHLine(10, 20, 108, 4, false);  // Короткая чёрная пунктирная вверху (от x=20 до x=108, шаг 4)
-    //MyDrawVLine(64, 0, 63, 1);               // вертикальная в центре сплошная
-    //MyDrawVLine(32, 0, 63, 4);               // вертикальная пунктирная слева (шаг 4)
-    //MyDrawVLine(96, 0, 63, 3);               // вертикальная пунктирная справа (шаг 3)
-
-    // Добавь свои:
-    // MyDrawHLine(15, false);  // новая горизонтальная
-    // MyDrawVLine(48, 10, 50, 2);  // новая пунктирная вертикальная
-    // === КОНЕЦ ===
 }
+#endif
 
 
 static void RenderSpectrum()
@@ -2696,7 +2675,7 @@ static void RenderSpectrum()
         DrawNums();
         UpdateDBMaxAuto();
         DrawSpectrum();
-
+#ifdef ENABLE_SPECTRUM_LINES
  // === ЛИНИИ С ОТСТУПОМ ПО 4 ПИКСЕЛЯ (только линии, тики от края) ===
 const int LEFT_MARGIN  = 4;
 const int RIGHT_MARGIN = 4;
@@ -2744,7 +2723,7 @@ for (i = 0; i < numTickLevels; i++) {
 }
 // === КОНЕЦ СЕТКИ ===
 MyDrawFrameLines();
-
+#endif
         
   }
 
@@ -3230,17 +3209,22 @@ void BOARD_gMR_LoadChannels() {
 	}
 }
 
-void APP_RunSpectrum(uint8_t Spectrum_state)
+void APP_RunSpectrum(void)
 {
     for (;;) {
         Mode mode;
+        PY25Q16_ReadBuffer(ADRESS_STATE, &Spectrum_state, 1);
         if      (Spectrum_state == 4) mode = FREQUENCY_MODE ;
         else if (Spectrum_state == 3) mode = SCAN_RANGE_MODE ;
         else if (Spectrum_state == 2) mode = SCAN_BAND_MODE ;
         else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
         else mode = FREQUENCY_MODE;
+        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        gEeprom.CURRENT_STATE = 4;
+        SETTINGS_WriteCurrentState();
+        #endif
         //BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, false);  // принудительно узкий в спектре ЧИНИМ ВФО
-        PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
+        
         BOARD_gMR_LoadChannels();
         if (!Key_1_pressed) LoadSettings(0); 
         appMode = mode;
@@ -3310,16 +3294,16 @@ static void LoadValidMemoryChannels(void)
     memset(ScanListNumber, 0, sizeof(ScanListNumber));
     scanChannelsCount = 0;
     bool listsEnabled = false;
-    for (int CurrentScanList = 1; CurrentScanList < 25; CurrentScanList++)
+    for (int CurrentScanList = 1; CurrentScanList <= MAX_VALID_SCANLISTS; CurrentScanList++)
     {
-        if (CurrentScanList <= 24 && !settings.scanListEnabled[CurrentScanList - 1])
+        if (CurrentScanList <= MAX_VALID_SCANLISTS && !settings.scanListEnabled[CurrentScanList - 1])
             continue;
-        if (CurrentScanList <= 24 && settings.scanListEnabled[CurrentScanList - 1])
+        if (CurrentScanList <= MAX_VALID_SCANLISTS && settings.scanListEnabled[CurrentScanList - 1])
             listsEnabled = true;
-        if (CurrentScanList > 24 && listsEnabled)
+        if (CurrentScanList > MAX_VALID_SCANLISTS && listsEnabled)
             break;
         const uint8_t listId =
-            (CurrentScanList <= 24) ? (uint8_t)CurrentScanList : (uint8_t)(MR_CHANNELS_LIST + 1);
+            (CurrentScanList <= MAX_VALID_SCANLISTS) ? (uint8_t)CurrentScanList : (uint8_t)(MR_CHANNELS_LIST + 1);
 
         uint16_t offset = scanChannelsCount;
         uint16_t listChannelsCount = RADIO_ValidMemoryChannelsCount(listsEnabled, listId);
@@ -3417,7 +3401,7 @@ void LoadSettings(bool LNA)
   BK4819_WriteRegister(BK4819_REG_14, eepromData.R14);
   if (LNA) return;
   if(!IsVersionMatching()) ClearSettings();
-  for (int i = 0; i < 24; i++) {
+  for (int i = 0; i < MAX_VALID_SCANLISTS; i++) {
     settings.scanListEnabled[i] = (eepromData.scanListFlags >> i) & 0x01;
   }
   settings.rssiTriggerLevelUp = eepromData.Trigger;
@@ -3474,7 +3458,7 @@ SettingsLoaded = true;
 static void SaveSettings() 
 {
   SettingsEEPROM  eepromData  = {0};
-  for (int i = 0; i < 24; i++) {
+  for (int i = 0; i < MAX_VALID_SCANLISTS; i++) {
     if (settings.scanListEnabled[i]) eepromData.scanListFlags |= (1 << i);
   }
   eepromData.Trigger = settings.rssiTriggerLevelUp;
@@ -3543,7 +3527,7 @@ static void ClearHistory()
 
 void ClearSettings() 
 {
-  for (int i = 1; i < 24; i++) {
+  for (int i = 1; i < MAX_VALID_SCANLISTS; i++) {
     settings.scanListEnabled[i] = 0;
   }
   settings.scanListEnabled[0] = 1;
@@ -3636,8 +3620,9 @@ static bool GetScanListLabel(uint8_t scanListIndex, char* bufferOut) {
 
 static void BuildValidScanListIndices() {
     uint8_t ScanListCount = 0;
-    for (uint8_t i = 0; i < 24; i++) {
-        char tempName[17];
+    char tempName[17];
+    for (uint8_t i = 0; i < MAX_VALID_SCANLISTS; i++) {
+
         if (GetScanListLabel(i, tempName)) {
             validScanListIndices[ScanListCount++] = i;
         }
@@ -3856,16 +3841,12 @@ static void GetHistoryItemText(uint16_t index, char* buffer) {
 //*******************************СПИСКИ*****************************// */
 static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIndex, uint16_t scrollOffset,
                       void (*getItemText)(uint16_t index, char* buffer)) {
-    // Clear display buffer
-    memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
+    //memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
     
-    // Draw title - wyrównany do lewej dla maksymalnego wykorzystania miejsca
     if (!SpectrumMonitor) UI_PrintStringSmall(title, 1, LCD_WIDTH - 1, 0,0);
-    // List parameters for UI_PrintStringSmall (lines 1-7 available)
     const uint8_t FIRST_ITEM_LINE = 1;  // Start from line 1 (line 0 is title)
     const uint8_t MAX_LINES = 6;        // Lines 1-7 available for items
     
-    // Adjust scroll offset if needed
     if (numItems <= MAX_LINES) {
         scrollOffset = 0;
     } else if (selectedIndex < scrollOffset) {
@@ -3874,19 +3855,13 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
         scrollOffset = selectedIndex - MAX_LINES + 1;
     }
     
-    // Maksymalna liczba znaków na linię (128 pikseli / 7 pikseli na znak = ~18)
     const uint8_t MAX_CHARS_PER_LINE = 18;
-    // Draw visible items
     for (uint8_t i = 0; i < MAX_LINES; i++) {
         uint16_t itemIndex = i + scrollOffset;
         if (itemIndex >= numItems) break;
-        
         char itemText[32];
         getItemText(itemIndex, itemText);
-        
         uint16_t lineNumber = FIRST_ITEM_LINE + i;
-        
-        // Wyrównanie maksymalnie do lewej
         if (itemIndex == selectedIndex) {
         char displayText[MAX_CHARS_PER_LINE + 1];
         strcpy(displayText, itemText);
@@ -3896,7 +3871,6 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
         } else {
             UI_PrintStringSmall(itemText, 1, 0, lineNumber,0); // Minimalne wcięcie
           }
-          
     }
     if (historyListActive && SpectrumMonitor > 0) DrawMeter(0);
     ST7565_BlitFullScreen();

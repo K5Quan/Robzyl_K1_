@@ -50,6 +50,7 @@
                 "ENABLE_FEAT_ROBZYL": true,
                 "ENABLE_FEAT_ROBZYL_SCREENSHOT": false,
                 "ENABLE_FEAT_ROBZYL_SPECTRUM": true,
+                "ENABLE_SPECTRUM_LINES": false,
                 "ENABLE_FEAT_ROBZYL_RX_TX_TIMER": true,
                 "ENABLE_FEAT_ROBZYL_CHARGING_C": false,
                 "ENABLE_FEAT_ROBZYL_SLEEP": true,
@@ -105,6 +106,7 @@
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_RU_BAND": true,
+                "ENABLE_SPECTRUM_LINES": true,
                 "EDITION_STRING": "Russia",
                 "TARGET": "ROBZYL.K1.Russia"
             }

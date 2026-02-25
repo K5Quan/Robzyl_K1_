@@ -306,10 +306,10 @@ void Main(void)
 
         #ifdef ENABLE_SPECTRUM
         case 4:
-            APP_RunSpectrum(1);
+            APP_RunSpectrum();
             break;
         case 5:
-            APP_RunSpectrum(1);
+            APP_RunSpectrum();
             break;
         #endif
 
@@ -321,13 +321,13 @@ void Main(void)
     */
 
     #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
-        if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5) {
+/*         if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5) {
             gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
             gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;
             if (gScanRangeStart > gScanRangeStop) {
                 SWAP(gScanRangeStart, gScanRangeStop);
             }
-        }
+        } */
 
         if (gEeprom.CURRENT_STATE == 1) {
             gEeprom.SCAN_LIST_DEFAULT = gEeprom.CURRENT_LIST;
@@ -344,7 +344,7 @@ void Main(void)
         #endif
         #ifdef ENABLE_SPECTRUM
         else if (gEeprom.CURRENT_STATE == 4 || gEeprom.CURRENT_STATE == 5) {
-            APP_RunSpectrum(1);
+            APP_RunSpectrum();
         }
         #endif
     #endif

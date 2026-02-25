@@ -17,7 +17,29 @@ PRESET=${1:-France}
 shift || true  # remove preset from arguments if present
 
 # Any remaining args will be treated as CMake cache variables
-EXTRA_ARGS=("$@")
+CLEAN_BUILD=false
+EXTRA_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -c|--clean)
+      CLEAN_BUILD=true
+      shift
+      ;;
+    *)
+      EXTRA_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# ---------------------------------------------
+# Nettoyage si l'option est activée
+# ---------------------------------------------
+if [ "$CLEAN_BUILD" = true ]; then
+  echo "🧹 Cleaning build directory..."
+  rm -rf build/
+fi
 
 # ---------------------------------------------
 # Validate preset name

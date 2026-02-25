@@ -31,7 +31,7 @@
 #include "driver/crc.h"
 #include "driver/eeprom.h"
 #include "driver/gpio.h"
-
+#include "driver/py25q16.h"
 #if defined(ENABLE_UART)
 #include "driver/uart.h"
 #endif

@@ -37,8 +37,8 @@
 #endif
 
 #define FM_CHANNELS_MAX 48
-#define MR_CHANNELS_MAX 200 //To solve LATER 1024
-#define MR_CHANNELS_LIST 24
+#define MR_CHANNELS_MAX 500 //To solve LATER 1024
+#define MR_CHANNELS_LIST 10
 #define MENU_ITEMS 69
 
 // CACHE-BASED OPTIMIZATION: Only keep active channels in RAM

@@ -206,7 +206,7 @@ typedef struct PeakInfo {
   uint16_t i;
 } PeakInfo;
 
-void APP_RunSpectrum(uint8_t Spectrum_state);
+void APP_RunSpectrum(void);
 //void LookupChannelInfo();
 //void LookupChannelModulation();
 void ClearSettings(void);
