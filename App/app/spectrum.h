@@ -170,6 +170,9 @@ typedef struct bandparameters {
 } bandparameters;
 #endif
 
+#define MAX_VALID_SCANLISTS 10
+#define MAX_BANDS 64
+
 typedef struct SpectrumSettings {
   uint32_t frequencyChangeStep;  
   StepsCount stepsCount;
@@ -182,8 +185,8 @@ typedef struct SpectrumSettings {
   int16_t dbMax;  
   ModulationMode_t modulationType;
   int scanList;
-  bool scanListEnabled[24];
-  bool bandEnabled[32];
+  bool scanListEnabled[MAX_VALID_SCANLISTS];
+  bool bandEnabled[MAX_BANDS];
 } SpectrumSettings;
 
 typedef struct KeyboardState{

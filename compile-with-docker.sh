@@ -77,8 +77,15 @@ build_preset() {
     bash -c "which arm-none-eabi-gcc && arm-none-eabi-gcc --version && \
              cmake --preset ${preset} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} && \
              cmake --build --preset ${preset} -j"
+  docker run --rm -v "$PWD":/src -w /src "$IMAGE" \
+         arm-none-eabi-size ./build/${preset}/ROBZYL.K1.${preset}.elf
   echo "✅ Done: ${preset}"
 }
+
+# text : Votre code (Flash).
+# data + bss : Votre RAM statique (dont vos buffers USB et BParams).
+# La somme data + bss + _Min_Stack_Size + _Min_Heap_Size doit rester inférieure à la RAM totale du PY32 (8 Ko ou 16 Ko selon la variante).
+# Pour un projet stable, la recommandation standard est de ne pas dépasser 80% de la RAM totale en combinant data + bss + stack + heap.
 
 # ---------------------------------------------
 # Handle 'All' preset

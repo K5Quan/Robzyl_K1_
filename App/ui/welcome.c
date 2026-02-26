@@ -28,6 +28,10 @@
 #include "version.h"
 #include "bitmaps.h"
 
+#ifdef ENABLE_USB
+#include "driver/vcp.h"
+#endif
+
 #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
     #include "screenshot.h"
 #endif
@@ -40,9 +44,11 @@ void UI_DisplayReleaseKeys(void)
 #endif
     UI_DisplayClear();
 
-    UI_PrintString("RELEASE", 0, 127, 1, 10);
-    UI_PrintString("ALL KEYS", 0, 127, 3, 10);
-
+#ifdef ENABLE_USB
+    UI_PrintString("USB", 0, 127, 1, 10);
+    UI_PrintString("ACTIVATED", 0, 127, 3, 10);
+    VCP_Init();
+#endif
     ST7565_BlitStatusLine();  // blank status line
     ST7565_BlitFullScreen();
 }

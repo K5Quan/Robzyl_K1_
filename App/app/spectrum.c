@@ -36,7 +36,7 @@ static volatile uint8_t gRequestedSpectrumState = 0;
 
 #define NoisLvl 60
 #define NoiseHysteresis 15
-#define MAX_VALID_SCANLISTS 10
+
 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
@@ -942,7 +942,7 @@ static bool InitScan() {
 
     if (appMode == SCAN_BAND_MODE) {
         uint8_t checkedBandCount = 0;
-        while (checkedBandCount < 32) { 
+        while (checkedBandCount < MAX_BANDS) { 
             if (settings.bandEnabled[nextBandToScanIndex]) {
                 bl = nextBandToScanIndex; 
                 scanInfo.f = BParams[bl].Startfrequency;
@@ -951,11 +951,11 @@ static bool InitScan() {
                 if(BParams[bl].Startfrequency>0) gScanRangeStart = BParams[bl].Startfrequency;
                 if(BParams[bl].Stopfrequency>0)  gScanRangeStop = BParams[bl].Stopfrequency;
                 if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
-                nextBandToScanIndex = (nextBandToScanIndex + 1) % 32;
+                nextBandToScanIndex = (nextBandToScanIndex + 1) % MAX_BANDS;
                 scanInitializedSuccessfully = true;
                 break;
             }
-            nextBandToScanIndex = (nextBandToScanIndex + 1) % 32;
+            nextBandToScanIndex = (nextBandToScanIndex + 1) % MAX_BANDS;
             checkedBandCount++;
         }
     } else {
@@ -3410,7 +3410,7 @@ void LoadSettings(bool LNA)
   if (eepromData.RangeStart >= 1400000) gScanRangeStart = eepromData.RangeStart;
   if (eepromData.RangeStop >= 1400000) gScanRangeStop = eepromData.RangeStop;
   settings.scanStepIndex = eepromData.scanStepIndex;
-  for (int i = 0; i < 32; i++) {
+  for (int i = 0; i < MAX_BANDS; i++) {
       settings.bandEnabled[i] = (eepromData.bandListFlags >> i) & 0x01;
     }
   DelayRssi = eepromData.DelayRssi;
@@ -3480,7 +3480,7 @@ static void SaveSettings()
   if (GlitchMax < 30) eepromData.GlitchMax  = GlitchMax;    
   eepromData.SoundBoost = SoundBoost;
   
-  for (int i = 0; i < 32; i++) { 
+  for (int i = 0; i < MAX_BANDS; i++) { 
       if (settings.bandEnabled[i]) eepromData.bandListFlags |= (1 << i);
     }
   eepromData.R40 = BK4819_ReadRegister(BK4819_REG_40);
