@@ -39,12 +39,12 @@
 #define FM_CHANNELS_MAX 48
 
 #ifdef ENABLE_USB
-#define MR_CHANNELS_MAX 200 //To solve LATER 1024
+#define MR_CHANNELS_MAX 500
 #else
-#define MR_CHANNELS_MAX 999 //To solve LATER 1024
+#define MR_CHANNELS_MAX 700 //To solve LATER 1024
 #endif
 
-#define MR_CHANNELS_LIST 10
+#define MR_CHANNELS_LIST 20
 #define MENU_ITEMS 69
 
 // CACHE-BASED OPTIMIZATION: Only keep active channels in RAM

@@ -14,6 +14,7 @@ set -euo pipefail
 
 IMAGE=uvk1-uvk5v3
 PRESET=${1:-France}
+
 shift || true  # remove preset from arguments if present
 
 # Any remaining args will be treated as CMake cache variables
@@ -48,6 +49,23 @@ if [[ ! "$PRESET" =~ ^(Usb|France|Kolyan|Russia|Poland|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
   echo "Valid presets are: Usb, France, Kolyan,Russia,Poland, All"
   exit 1
+fi
+
+VERSION_FILE="App/version.h"
+if [ -f "$VERSION_FILE" ]; then
+    # On cherche la ligne, on extrait le 3ème mot (le numéro)
+    CURRENT_VERSION=$(grep "#define APP_VERSION" "$VERSION_FILE" | awk '{print $3}')
+    
+    if [ -n "$CURRENT_VERSION" ]; then
+        NEW_VERSION=$((CURRENT_VERSION + 1))
+        # Utilisation de sed pour remplacer la ligne entière
+        sed -i "s/#define APP_VERSION $CURRENT_VERSION/#define APP_VERSION $NEW_VERSION/" "$VERSION_FILE"
+        echo "🔢 Version mise à jour : $CURRENT_VERSION -> $NEW_VERSION"
+    else
+        echo "⚠️  Ligne '#define APP_VERSION' introuvable dans $VERSION_FILE"
+    fi
+else
+    echo "❌ Fichier $VERSION_FILE introuvable au chemin spécifié."
 fi
 
 # ---------------------------------------------

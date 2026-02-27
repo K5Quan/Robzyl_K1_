@@ -99,14 +99,14 @@ struct {
   u8 step;
   u8 __UNUSED03;
 
-} channel[500];
+} channel[999];
 
 // --------------------
 
 #seekto 0x004000;
 struct {
 char name[16];
-} channelname[500];
+} channelname[999];
 
 
 // --------------------
@@ -439,8 +439,8 @@ struct {
 """
 # F4HWN parameter
 FM_CHANNELS_MAX = 48
-MR_CHANNELS_MAX = 500
-MR_CHANNELS_LIST = 10
+MR_CHANNELS_MAX = 999
+MR_CHANNELS_LIST = 20
 
 # flags1
 FLAGS1_OFFSET_NONE = 0b00
@@ -677,11 +677,11 @@ BANDS_WIDE = {
         6: [470.0, 1300.0]
         }
 
-SCANLIST_LIST = ["OFF"] + [f"List [{i}]" for i in range(1, MR_CHANNELS_LIST)] + ["ALL"]
+SCANLIST_LIST = ["OFF"] + [f"{i}" for i in range(1, MR_CHANNELS_LIST)] + ["ALL"]
 
 SCANLIST_SELECT_LIST = (
-    [f"LIST [{i}]" for i in range(1, MR_CHANNELS_LIST)]
-    + ["LIST [ALL]"]
+    [f"{i}" for i in range(1, MR_CHANNELS_LIST)]
+    + ["ALL"]
 )
 
 DTMF_CHARS = "0123456789ABCD*# "
