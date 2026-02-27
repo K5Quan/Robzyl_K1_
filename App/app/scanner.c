@@ -15,7 +15,9 @@
  */
 
 #include "app/app.h"
-#include "app/dtmf.h"
+#ifdef ENABLE_DTMF_CALLING
+    #include "app/dtmf.h"
+#endif
 #include "app/generic.h"
 #include "app/menu.h"
 #include "app/scanner.h"

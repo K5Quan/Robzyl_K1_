@@ -29,7 +29,9 @@
 #include "app/scanner.h"
 #include "audio.h"
 #include "driver/keyboard.h"
-#include "dtmf.h"
+#ifdef ENABLE_DTMF_CALLING
+    #include "dtmf.h"
+#endif
 #include "external/printf/printf.h"
 #include "functions.h"
 #include "misc.h"
@@ -168,7 +170,7 @@ void GENERIC_Key_PTT(bool bKeyPressed)
     if (gScreenToDisplay != DISPLAY_MENU)     // 1of11 .. don't close the menu
         gRequestDisplayScreen = DISPLAY_MAIN;
 
-
+#ifdef ENABLE_DTMF_CALLING
     if (!gDTMF_InputMode && gDTMF_InputBox_Index == 0)
         goto start_tx;  // wasn't entering a DTMF code .. start TX'ing (maybe)
 
@@ -181,7 +183,6 @@ void GENERIC_Key_PTT(bool bKeyPressed)
         if (gDTMF_InputBox_Index < sizeof(gDTMF_InputBox))
             gDTMF_InputBox[gDTMF_InputBox_Index] = 0;             // NULL term the string
 
-#ifdef ENABLE_DTMF_CALLING
         // append our DTMF ID to the inputted DTMF code -
         //  IF the user inputted code is exactly 3 digits long and D-DCD is enabled
         if (gDTMF_InputBox_Index == 3 && gTxVfo->DTMF_DECODING_ENABLE > 0)
@@ -190,7 +191,6 @@ void GENERIC_Key_PTT(bool bKeyPressed)
             gDTMF_CallMode = DTMF_CALL_MODE_DTMF;
 
         gDTMF_State      = DTMF_STATE_0;
-#endif
         // remember the DTMF string
         gDTMF_PreviousIndex = gDTMF_InputBox_Index;
         strcpy(gDTMF_String, gDTMF_InputBox);
@@ -199,23 +199,30 @@ void GENERIC_Key_PTT(bool bKeyPressed)
 
     DTMF_clear_input_box();
 
+
 start_tx:
     // request start TX
     gFlagPrepareTX = true;
     goto done;
+#endif
 
 cancel_tx:
     if (gPttIsPressed) {
         gPttWasPressed = true;
     }
 
+#ifdef ENABLE_DTMF_CALLING
 done:
     gPttDebounceCounter = 0;
     if (gScreenToDisplay != DISPLAY_MENU
+
+
 #ifdef ENABLE_FMRADIO
         && gRequestDisplayScreen != DISPLAY_FM
 #endif
-    ) {
+    ) 
+    #endif
+    {
         // 1of11 .. don't close the menu
         gRequestDisplayScreen = DISPLAY_MAIN;
     }

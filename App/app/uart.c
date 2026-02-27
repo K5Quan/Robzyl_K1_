@@ -561,7 +561,9 @@ static void CMD_052F(uint32_t Port, const uint8_t *pBuffer)
     gEeprom.DUAL_WATCH                               = DUAL_WATCH_OFF;
     gEeprom.CROSS_BAND_RX_TX                         = CROSS_BAND_OFF;
     gEeprom.RX_VFO                                   = 0;
+#ifdef ENABLE_DTMF_CALLING
     gEeprom.DTMF_SIDE_TONE                           = false;
+#endif
     gEeprom.VfoInfo[0].FrequencyReverse              = false;
     gEeprom.VfoInfo[0].pRX                           = &gEeprom.VfoInfo[0].freq_config_RX;
     gEeprom.VfoInfo[0].pTX                           = &gEeprom.VfoInfo[0].freq_config_TX;

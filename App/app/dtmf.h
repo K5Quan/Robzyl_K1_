@@ -17,6 +17,8 @@
 #ifndef DTMF_H
 #define DTMF_H
 
+#ifdef ENABLE_DTMF_CALLING
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -116,4 +118,5 @@ void DTMF_HandleRequest(void);
 
 #endif
 
+#endif
 #endif

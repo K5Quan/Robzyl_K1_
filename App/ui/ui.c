@@ -18,7 +18,9 @@
 #include <string.h>
 
 #include "app/chFrScanner.h"
-#include "app/dtmf.h"
+#ifdef ENABLE_DTMF_CALLING
+    #include "app/dtmf.h"
+#endif
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -75,8 +77,9 @@ void GUI_SelectNextDisplay(GUI_DisplayType_t Display)
 
     if (gScreenToDisplay != Display)
     {
+#ifdef ENABLE_DTMF_CALLING
         DTMF_clear_input_box();
-
+#endif
         gInputBoxIndex       = 0;
         gIsInSubMenu         = false;
         gCssBackgroundScan   = false;

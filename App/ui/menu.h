@@ -84,7 +84,9 @@ enum
 #endif
     MENU_UPCODE,
     MENU_DWCODE,
+#ifdef ENABLE_DTMF_CALLING
     MENU_PTT_ID,
+#endif
     MENU_D_ST,
 #ifdef ENABLE_DTMF_CALLING
     MENU_D_RSP,
@@ -201,8 +203,9 @@ extern const char        gSubMenu_D_RSP[4][11];
         extern const char    gSubMenu_SET_AUD[5][6];
     #endif
 #endif
-
+#ifdef ENABLE_DTMF_CALLING
 extern const char* const gSubMenu_PTT_ID[5];
+#endif
 #ifdef ENABLE_FEAT_ROBZYL
     extern const char        gSubMenu_PONMSG[5][8];
 #else
