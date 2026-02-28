@@ -17,9 +17,7 @@
 
 #include <string.h>
 
-#ifdef ENABLE_DTMF_CALLING
-    #include "app/dtmf.h"
-#endif
+#include "app/dtmf.h"
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -264,12 +262,14 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
 
     // 0ED0..0ED7
     PY25Q16_ReadBuffer(0x00A0A8 + 0x40, Data, 8);
-#ifdef ENABLE_DTMF_CALLING
     gEeprom.DTMF_SIDE_TONE               = (Data[0] <   2) ? Data[0] : true;
+
+#ifdef ENABLE_DTMF_CALLING
     gEeprom.DTMF_SEPARATE_CODE           = DTMF_ValidateCodes((char *)(Data + 1), 1) ? Data[1] : '*';
     gEeprom.DTMF_GROUP_CALL_CODE         = DTMF_ValidateCodes((char *)(Data + 2), 1) ? Data[2] : '#';
     gEeprom.DTMF_DECODE_RESPONSE         = (Data[3] <   4) ? Data[3] : 0;
     gEeprom.DTMF_auto_reset_time         = (Data[4] <  61) ? Data[4] : (Data[4] >= 5) ? Data[4] : 10;
+#endif
     gEeprom.DTMF_PRELOAD_TIME            = (Data[5] < 101) ? Data[5] * 10 : 300;
     gEeprom.DTMF_FIRST_CODE_PERSIST_TIME = (Data[6] < 101) ? Data[6] * 10 : 100;
     gEeprom.DTMF_HASH_CODE_PERSIST_TIME  = (Data[7] < 101) ? Data[7] * 10 : 100;
@@ -278,14 +278,19 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     PY25Q16_ReadBuffer(0x00A0A8 + 0x48, Data, 8);
     gEeprom.DTMF_CODE_PERSIST_TIME  = (Data[0] < 101) ? Data[0] * 10 : 100;
     gEeprom.DTMF_CODE_INTERVAL_TIME = (Data[1] < 101) ? Data[1] * 10 : 100;
+#ifdef ENABLE_DTMF_CALLING
     gEeprom.PERMIT_REMOTE_KILL      = (Data[2] <   2) ? Data[2] : true;
+
     // 0EE0..0EE7
+
     PY25Q16_ReadBuffer(0x00A0F8, Data, sizeof(gEeprom.ANI_DTMF_ID));
     if (DTMF_ValidateCodes((char *)Data, sizeof(gEeprom.ANI_DTMF_ID))) {
         memcpy(gEeprom.ANI_DTMF_ID, Data, sizeof(gEeprom.ANI_DTMF_ID));
     } else {
         strcpy(gEeprom.ANI_DTMF_ID, "123");
     }
+
+
     // 0EE8..0EEF
     PY25Q16_ReadBuffer(0x00A0F8 + 0x8, Data, sizeof(gEeprom.KILL_CODE));
     if (DTMF_ValidateCodes((char *)Data, sizeof(gEeprom.KILL_CODE))) {
@@ -301,7 +306,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     } else {
         strcpy(gEeprom.REVIVE_CODE, "9DCBA");
     }
-
+#endif
 
     // 0EF8..0F07
     PY25Q16_ReadBuffer(0x00A0F8 + 0x18, Data, sizeof(gEeprom.DTMF_UP_CODE));
@@ -318,7 +323,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     } else {
         strcpy(gEeprom.DTMF_DOWN_CODE, "54321");
     }
-#endif
+
     // 0F18..0F1F
     PY25Q16_ReadBuffer(0x00A130, Data, 8);
 
@@ -361,9 +366,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
 #endif
 
     //gSetting_TX_EN             = (Data[7] & (1u << 0)) ? true : false;
-    #ifdef ENABLE_DTMF_CALLING
     gSetting_live_DTMF_decoder = !!(Data[7] & (1u << 1));
-    #endif
     gSetting_battery_text      = (((Data[7] >> 2) & 3u) <= 2) ? (Data[7] >> 2) & 3 : 2;
     #ifdef ENABLE_AUDIO_BAR
         gSetting_mic_bar       = !!(Data[7] & (1u << 4));
@@ -859,21 +862,24 @@ void SETTINGS_SaveSettings(void)
     State[3] = gEeprom.TX_VFO;
     State[4] = gEeprom.BATTERY_TYPE;
 
-    #ifdef ENABLE_DTMF_CALLING
     // 0x0ED0
     State = SecBuf + 0x40;
     State[0] = gEeprom.DTMF_SIDE_TONE;
+#ifdef ENABLE_DTMF_CALLING
     State[1] = gEeprom.DTMF_SEPARATE_CODE;
     State[2] = gEeprom.DTMF_GROUP_CALL_CODE;
     State[3] = gEeprom.DTMF_DECODE_RESPONSE;
     State[4] = gEeprom.DTMF_auto_reset_time;
+#endif
     State[5] = gEeprom.DTMF_PRELOAD_TIME / 10U;
     State[6] = gEeprom.DTMF_FIRST_CODE_PERSIST_TIME / 10U;
     State[7] = gEeprom.DTMF_HASH_CODE_PERSIST_TIME / 10U;
+
     // 0x0ED8
     State = SecBuf + 0x48;
     State[0] = gEeprom.DTMF_CODE_PERSIST_TIME / 10U;
     State[1] = gEeprom.DTMF_CODE_INTERVAL_TIME / 10U;
+#ifdef ENABLE_DTMF_CALLING
     State[2] = gEeprom.PERMIT_REMOTE_KILL;
 #endif
 
@@ -927,9 +933,7 @@ void SETTINGS_SaveSettings(void)
 #endif
 
     //if (!gSetting_TX_EN)             State[7] &= ~(1u << 0);
-    #ifdef ENABLE_DTMF_CALLING
     if (!gSetting_live_DTMF_decoder) State[7] &= ~(1u << 1);
-    #endif
     State[7] = (State[7] & ~(3u << 2)) | ((gSetting_battery_text & 3u) << 2);
     #ifdef ENABLE_AUDIO_BAR
         if (!gSetting_mic_bar)           State[7] &= ~(1u << 4);
@@ -1039,8 +1043,8 @@ void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO,
             | (pVFO->OUTPUT_POWER      << 2)
             | (pVFO->CHANNEL_BANDWIDTH << 1)
             | (pVFO->FrequencyReverse  << 0);
-#ifdef ENABLE_DTMF_CALLING
         State -> _8[5] = ((pVFO->DTMF_PTT_ID_TX_MODE & 7u) << 1)
+#ifdef ENABLE_DTMF_CALLING
             | ((pVFO->DTMF_DECODING_ENABLE & 1u) << 0)
 #endif
         ;

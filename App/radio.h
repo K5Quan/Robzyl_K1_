@@ -120,8 +120,9 @@ typedef struct VFO_Info_t
     uint16_t        Band;
 #ifdef ENABLE_DTMF_CALLING
     uint8_t        DTMF_DECODING_ENABLE;
-    PTT_ID_t       DTMF_PTT_ID_TX_MODE;
 #endif
+    PTT_ID_t       DTMF_PTT_ID_TX_MODE;
+
     uint8_t        BUSY_CHANNEL_LOCK;
 
     ModulationMode_t    Modulation;

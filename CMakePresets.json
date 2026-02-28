@@ -19,7 +19,7 @@
                 "ENABLE_ALARM": false,
                 "ENABLE_TX1750": true,
                 "ENABLE_PWRON_PASSWORD": false,
-                "ENABLE_DTMF_CALLING": false,
+                "ENABLE_DTMF_CALLING": true,
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,

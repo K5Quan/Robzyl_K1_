@@ -41,11 +41,8 @@
 #endif
 
 #include "app/app.h"
-#ifdef ENABLE_DTMF_CALLING
-#ifdef ENABLE_DTMF_CALLING
-    #include "app/dtmf.h"
-#endif
-#endif
+#include "app/dtmf.h"
+
 #include "driver/backlight.h"
 #include "driver/bk4819.h"
 #include "driver/gpio.h"
@@ -93,10 +90,10 @@ void Main(void)
 
 
     // Not implementing authentic device checks
-#ifdef ENABLE_DTMF_CALLING
+
     memset(gDTMF_String, '-', sizeof(gDTMF_String));
     gDTMF_String[sizeof(gDTMF_String) - 1] = 0;
-#endif
+
     BK4819_Init();
 
     BOARD_ADC_GetBatteryInfo(&gBatteryCurrentVoltage, &gBatteryCurrent);

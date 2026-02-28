@@ -21,9 +21,7 @@
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #include "app/common.h"
-#ifdef ENABLE_DTMF_CALLING
-    #include "app/dtmf.h"
-#endif
+#include "app/dtmf.h"
 #ifdef ENABLE_FLASHLIGHT
     #include "app/flashlight.h"
 #endif
@@ -212,10 +210,10 @@ void ACTION_Scan(bool bRestart)
 
 #ifdef ENABLE_DTMF_CALLING
     DTMF_clear_RX();
-
+#endif
     gDTMF_RX_live_timeout = 0;
     memset(gDTMF_RX_live, 0, sizeof(gDTMF_RX_live));
-#endif
+
     RADIO_SelectVfos();
 
 #ifdef ENABLE_NOAA
@@ -292,7 +290,6 @@ void ACTION_SwitchDemodul(void)
 
 void ACTION_Handle(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
-#ifdef ENABLE_DTMF_CALLING
     if (gScreenToDisplay == DISPLAY_MAIN && gDTMF_InputMode){
          // entering DTMF code
 
@@ -315,12 +312,13 @@ void ACTION_Handle(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
         // DTMF codes are in the input box
         gDTMF_InputBox[--gDTMF_InputBox_Index] = '-'; // delete one code
+
 #ifdef ENABLE_VOICE
         gAnotherVoiceID   = VOICE_ID_CANCEL;
 #endif
         return;
     }
-#endif
+
     enum ACTION_OPT_t funcShort = ACTION_OPT_NONE;
     enum ACTION_OPT_t funcLong  = ACTION_OPT_NONE;
     switch(Key) {

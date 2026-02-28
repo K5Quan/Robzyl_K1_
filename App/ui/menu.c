@@ -17,9 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef ENABLE_DTMF_CALLING
-    #include "../app/dtmf.h"
-#endif
+#include "../app/dtmf.h"
 #include "../app/menu.h"
 #include "../bitmaps.h"
 #include "../board.h"
@@ -114,9 +112,7 @@ const t_menu_item MenuList[] =
 #endif
     {"UPCode",      MENU_UPCODE        },
     {"DWCode",      MENU_DWCODE        },
-#ifdef ENABLE_DTMF_CALLING
     {"PTT ID",      MENU_PTT_ID        },
-#endif
     {"D ST",        MENU_D_ST          },
 #ifdef ENABLE_DTMF_CALLING
     {"D Resp",      MENU_D_RSP         },
@@ -126,8 +122,8 @@ const t_menu_item MenuList[] =
 #ifdef ENABLE_DTMF_CALLING
     {"D Decd",      MENU_D_DCD         },
     {"D List",      MENU_D_LIST        },
-    {"D Live",      MENU_D_LIVE_DEC    }, // live DTMF decoder
 #endif
+    {"D Live",      MENU_D_LIVE_DEC    }, // live DTMF decoder
 #ifndef ENABLE_FEAT_ROBZYL
     #ifdef ENABLE_AM_FIX
         {"AM Fix",      MENU_AM_FIX        },
@@ -994,7 +990,7 @@ void UI_DisplayMenu(void)
         case MENU_ANI_ID:
             strcpy(String, gEeprom.ANI_DTMF_ID);
             break;
-
+#endif
         case MENU_UPCODE:
             sprintf(String, "%.8s\n%.8s", gEeprom.DTMF_UP_CODE, gEeprom.DTMF_UP_CODE + 8);
             break;
@@ -1003,6 +999,7 @@ void UI_DisplayMenu(void)
             sprintf(String, "%.8s\n%.8s", gEeprom.DTMF_DOWN_CODE, gEeprom.DTMF_DOWN_CODE + 8);
             break;
 
+#ifdef ENABLE_DTMF_CALLING
         case MENU_D_RSP:
             strcpy(String, gSubMenu_D_RSP[gSubMenuSelection]);
             break;
@@ -1010,12 +1007,13 @@ void UI_DisplayMenu(void)
         case MENU_D_HOLD:
             sprintf(String, "%ds", gSubMenuSelection);
             break;
-        case MENU_PTT_ID:
-            strcpy(String, gSubMenu_PTT_ID[gSubMenuSelection]);
-            break;
 #endif
         case MENU_D_PRE:
             sprintf(String, "%d*10ms", gSubMenuSelection);
+            break;
+
+        case MENU_PTT_ID:
+            strcpy(String, gSubMenu_PTT_ID[gSubMenuSelection]);
             break;
 
         case MENU_BAT_TXT:

@@ -13,7 +13,7 @@
  *     See the License for the specific language governing permissions and
  *     limitations under the License.
  */
-#ifdef ENABLE_DTMF_CALLING
+
 #include <string.h>
 #include <stdio.h>   // NULL
 
@@ -27,9 +27,7 @@
 #include "driver/eeprom.h"
 #include "driver/gpio.h"
 #include "driver/system.h"
-#ifdef ENABLE_DTMF_CALLING
-    #include "dtmf.h"
-#endif
+#include "dtmf.h"
 #include "external/printf/printf.h"
 #include "misc.h"
 #include "settings.h"
@@ -45,7 +43,7 @@ uint8_t           gDTMF_PreviousIndex  = 0;
 char              gDTMF_RX_live[20];
 uint8_t           gDTMF_RX_live_timeout = 0;
 
-
+#ifdef ENABLE_DTMF_CALLING
 char              gDTMF_RX[17];
 uint8_t           gDTMF_RX_index   = 0;
 uint8_t           gDTMF_RX_timeout = 0;
@@ -66,10 +64,10 @@ bool              gDTMF_IsTx;
 
 uint8_t           gDTMF_TxStopCountdown_500ms;
 bool              gDTMF_IsGroupCall;
-
+#endif
 DTMF_ReplyState_t gDTMF_ReplyState;
 
-
+#ifdef ENABLE_DTMF_CALLING
 void DTMF_clear_RX(void)
 {
     gDTMF_RX_timeout = 0;
@@ -77,7 +75,7 @@ void DTMF_clear_RX(void)
     gDTMF_RX_pending = false;
     memset(gDTMF_RX, 0, sizeof(gDTMF_RX));
 }
-
+#endif
 
 void DTMF_SendEndOfTransmission(void)
 {
@@ -86,9 +84,9 @@ void DTMF_SendEndOfTransmission(void)
     }
 
     if ((gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_TX_DOWN || gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_BOTH)
-
+#ifdef ENABLE_DTMF_CALLING
         && gDTMF_CallState == DTMF_CALL_STATE_NONE
-
+#endif
     ) { // end-of-tx
         if (gEeprom.DTMF_SIDE_TONE) {
             AUDIO_AudioPathOn();
@@ -135,7 +133,7 @@ bool DTMF_ValidateCodes(char *pCode, const unsigned int size)
     return true;
 }
 
-
+#ifdef ENABLE_DTMF_CALLING
 bool DTMF_GetContact(const int Index, char *pContact)
 {
     if (Index < 0 || Index >= MAX_DTMF_CONTACTS || pContact == NULL) {
@@ -168,7 +166,7 @@ bool DTMF_FindContact(const char *pContact, char *pResult)
     return false;
 }
 
-
+#endif
 
 char DTMF_GetCharacter(const unsigned int code)
 {
@@ -186,7 +184,7 @@ char DTMF_GetCharacter(const unsigned int code)
         default:       return 0xff;
     }
 }
-
+#ifdef ENABLE_DTMF_CALLING
 static bool CompareMessage(const char *pMsg, const char *pTemplate, const unsigned int size, const bool bCheckGroup)
 {
     unsigned int i;
@@ -212,7 +210,7 @@ DTMF_CallMode_t DTMF_CheckGroupCall(const char *pMsg, const unsigned int size)
 
     return DTMF_CALL_MODE_NOT_GROUP;
 }
-
+#endif
 
 void DTMF_clear_input_box(void)
 {
@@ -233,7 +231,7 @@ void DTMF_Append(const char code)
         gDTMF_InputBox[gDTMF_InputBox_Index++] = code;
 }
 
-
+#ifdef ENABLE_DTMF_CALLING
 void DTMF_HandleRequest(void)
 {   // proccess the RX'ed DTMF characters
 
@@ -412,33 +410,33 @@ void DTMF_HandleRequest(void)
         }
     }
 }
-
+#endif
 
 void DTMF_Reply(void)
 {
     uint16_t    Delay;
-
+#ifdef ENABLE_DTMF_CALLING
     char        String[23];
-
+#endif
     const char *pString = NULL;
 
     switch (gDTMF_ReplyState)
     {
         case DTMF_REPLY_ANI:
-
+#ifdef ENABLE_DTMF_CALLING
             if (gDTMF_CallMode != DTMF_CALL_MODE_DTMF)
             {   // append our ID code onto the end of the DTMF code to send
                 sprintf(String, "%s%c%s", gDTMF_String, gEeprom.DTMF_SEPARATE_CODE, gEeprom.ANI_DTMF_ID);
                 pString = String;
             }
             else
-
+#endif
             {
                 pString = gDTMF_String;
             }
 
             break;
-
+#ifdef ENABLE_DTMF_CALLING
         case DTMF_REPLY_AB:
             pString = "AB";
             break;
@@ -447,13 +445,13 @@ void DTMF_Reply(void)
             sprintf(String, "%s%c%s", gEeprom.ANI_DTMF_ID, gEeprom.DTMF_SEPARATE_CODE, "AAAAA");
             pString = String;
             break;
-
+#endif
         default:
         case DTMF_REPLY_NONE:
             if (
-
+#ifdef ENABLE_DTMF_CALLING
                 gDTMF_CallState != DTMF_CALL_STATE_NONE           ||
-
+#endif
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_APOLLO ||
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_OFF    ||
                 gCurrentVfo->DTMF_PTT_ID_TX_MODE == PTT_ID_TX_DOWN)
@@ -498,4 +496,3 @@ void DTMF_Reply(void)
 
     BK4819_ExitDTMF_TX(false);
 }
-#endif

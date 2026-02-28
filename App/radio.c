@@ -19,9 +19,7 @@
 #include <string.h>
 
 #include "am_fix.h"
-#ifdef ENABLE_DTMF_CALLING
-    #include "app/dtmf.h"
-#endif
+#include "app/dtmf.h"
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -382,19 +380,23 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
             pVfo->BUSY_CHANNEL_LOCK = !!((d4 >> 5) & 1u);
             pVfo->TX_LOCK           = !!((d4 >> 6) & 1u);
         }
-#ifdef ENABLE_DTMF_CALLING
+
         if (data[5] == 0xFF)
         {
+#ifdef ENABLE_DTMF_CALLING
             pVfo->DTMF_DECODING_ENABLE = false;
+#endif
             pVfo->DTMF_PTT_ID_TX_MODE  = PTT_ID_OFF;
         }
         else
         {
+#ifdef ENABLE_DTMF_CALLING
             pVfo->DTMF_DECODING_ENABLE = ((data[5] >> 0) & 1u) ? true : false;
+#endif
             uint8_t pttId = ((data[5] >> 1) & 7u);
             pVfo->DTMF_PTT_ID_TX_MODE  = pttId < ARRAY_SIZE(gSubMenu_PTT_ID) ? pttId : PTT_ID_OFF;
         }
-#endif
+
         // ***************
 
         struct {
@@ -919,10 +921,10 @@ void RADIO_SetupRegisters(bool switchToForeground)
 
     // RX expander
     BK4819_SetCompander((gRxVfo->Modulation == MODULATION_FM && gRxVfo->Compander >= 2) ? gRxVfo->Compander : 0);
-#ifdef ENABLE_DTMF_CALLING
+
     BK4819_EnableDTMF();
     InterruptMask |= BK4819_REG_3F_DTMF_5TONE_FOUND;
-#endif
+
     //RADIO_SetupAGC(gRxVfo->Modulation == MODULATION_AM, false);
     RADIO_SetupAGC(false, false);
 
@@ -1328,9 +1330,7 @@ void RADIO_SendCssTail(void)
 void RADIO_SendEndOfTransmission(void)
 {
     BK4819_PlayRoger();
-    #ifdef ENABLE_DTMF_CALLING
     DTMF_SendEndOfTransmission();
-    #endif
 
     // send the CTCSS/DCS tail tone - allows the receivers to mute the usual FM squelch tail/crash
     if(gEeprom.TAIL_TONE_ELIMINATION)

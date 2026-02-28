@@ -33,9 +33,7 @@
 #include "audio.h"
 #include "board.h"
 #include "driver/bk4819.h"
-#ifdef ENABLE_DTMF_CALLING
-    #include "dtmf.h"
-#endif
+#include "dtmf.h"
 #include "frequencies.h"
 #include "misc.h"
 #include "radio.h"
@@ -693,7 +691,7 @@ static void MAIN_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 #endif
         return;
     }
-#ifdef ENABLE_DTMF_CALLING
+
     if (bKeyHeld && bKeyPressed) { // exit key held down
         if (gInputBoxIndex > 0 || gDTMF_InputBox_Index > 0 || gDTMF_InputMode)
         {   // cancel key input mode (channel/frequency entry)
@@ -705,7 +703,6 @@ static void MAIN_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
             gBeepToPlay           = BEEP_1KHZ_60MS_OPTIONAL;
         }
     }
-#endif
 }
 
 static void MAIN_Key_MENU(bool bKeyPressed, bool bKeyHeld)
@@ -757,11 +754,7 @@ static void MAIN_Key_MENU(bool bKeyPressed, bool bKeyHeld)
         return;
     }
 
-    if (!bKeyPressed
-#ifdef ENABLE_DTMF_CALLING
-        && !gDTMF_InputMode
-#endif
-        ) { // menu key released
+    if (!bKeyPressed && !gDTMF_InputMode) { // menu key released
         const bool bFlag = !gInputBoxIndex;
         gInputBoxIndex   = 0;
 
@@ -848,7 +841,6 @@ static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
             && gScanRangeStart == 0
 #endif      
         )
-#ifdef ENABLE_DTMF_CALLING
         {   // start entering a DTMF string
             gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
             memcpy(gDTMF_InputBox, gDTMF_String, MIN(sizeof(gDTMF_InputBox), sizeof(gDTMF_String) - 1));
@@ -860,8 +852,6 @@ static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
             gRequestDisplayScreen = DISPLAY_MAIN;
         }
         else
-#endif
-
             gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
     }
     else
@@ -999,7 +989,7 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         return;
     }
 #endif
-#ifdef ENABLE_DTMF_CALLING
+
     if (gDTMF_InputMode && bKeyPressed && !bKeyHeld) {
         const char Character = DTMF_GetCharacter(Key);
         if (Character != 0xFF)
@@ -1012,7 +1002,12 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             return;
         }
     }
-#endif
+
+    // TODO: ???
+//  if (Key > KEY_PTT)
+//  {
+//      Key = KEY_SIDE2;      // what's this doing ???
+//  }
 
     switch (Key) {
 #ifdef ENABLE_FEAT_ROBZYL

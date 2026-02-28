@@ -19,9 +19,7 @@
 #if !defined(ENABLE_OVERLAY)
     #include "py32f0xx.h"
 #endif
-#ifdef ENABLE_DTMF_CALLING
-    #include "app/dtmf.h"
-#endif
+#include "app/dtmf.h"
 #include "app/generic.h"
 #include "app/menu.h"
 #include "app/scanner.h"
@@ -328,12 +326,12 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_D_RSP) - 1;
             break;
-
+#endif
         case MENU_PTT_ID:
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_PTT_ID) - 1;
             break;
-#endif
+
         case MENU_BAT_TXT:
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_BAT_TXT) - 1;
@@ -734,11 +732,12 @@ void MENU_AcceptSetting(void)
                 gEeprom.ALARM_MODE = gSubMenuSelection;
                 break;
         #endif
-#ifdef ENABLE_DTMF_CALLING
+
         case MENU_D_ST:
             gEeprom.DTMF_SIDE_TONE = gSubMenuSelection;
             break;
 
+#ifdef ENABLE_DTMF_CALLING
         case MENU_D_RSP:
             gEeprom.DTMF_DECODE_RESPONSE = gSubMenuSelection;
             break;
@@ -746,6 +745,7 @@ void MENU_AcceptSetting(void)
         case MENU_D_HOLD:
             gEeprom.DTMF_auto_reset_time = gSubMenuSelection;
             break;
+#endif
         case MENU_D_PRE:
             gEeprom.DTMF_PRELOAD_TIME = gSubMenuSelection * 10;
             break;
@@ -754,7 +754,7 @@ void MENU_AcceptSetting(void)
             gTxVfo->DTMF_PTT_ID_TX_MODE = gSubMenuSelection;
             gRequestSaveChannel         = 1;
             return;
-#endif
+
         case MENU_BAT_TXT:
             gSetting_battery_text = gSubMenuSelection;
             break;
@@ -765,6 +765,7 @@ void MENU_AcceptSetting(void)
             DTMF_clear_RX();
             gRequestSaveChannel = 1;
             return;
+#endif
 
         case MENU_D_LIVE_DEC:
             gSetting_live_DTMF_decoder = gSubMenuSelection;
@@ -776,6 +777,7 @@ void MENU_AcceptSetting(void)
             gUpdateStatus            = true;
             break;
 
+#ifdef ENABLE_DTMF_CALLING
         case MENU_D_LIST:
             gDTMF_chosen_contact = gSubMenuSelection - 1;
             if (gIsDtmfContactValid)
@@ -1231,11 +1233,12 @@ void MENU_ShowCurrentSetting(void)
                 gSubMenuSelection = gEeprom.ALARM_MODE;
                 break;
         #endif
-#ifdef ENABLE_DTMF_CALLING
+
         case MENU_D_ST:
             gSubMenuSelection = gEeprom.DTMF_SIDE_TONE;
             break;
 
+#ifdef ENABLE_DTMF_CALLING
         case MENU_D_RSP:
             gSubMenuSelection = gEeprom.DTMF_DECODE_RESPONSE;
             break;
@@ -1243,6 +1246,7 @@ void MENU_ShowCurrentSetting(void)
         case MENU_D_HOLD:
             gSubMenuSelection = gEeprom.DTMF_auto_reset_time;
             break;
+#endif
         case MENU_D_PRE:
             gSubMenuSelection = gEeprom.DTMF_PRELOAD_TIME / 10;
             break;
@@ -1250,7 +1254,7 @@ void MENU_ShowCurrentSetting(void)
         case MENU_PTT_ID:
             gSubMenuSelection = gTxVfo->DTMF_PTT_ID_TX_MODE;
             break;
-#endif
+
         case MENU_BAT_TXT:
             gSubMenuSelection = gSetting_battery_text;
             return;
@@ -1263,10 +1267,11 @@ void MENU_ShowCurrentSetting(void)
         case MENU_D_LIST:
             gSubMenuSelection = gDTMF_chosen_contact + 1;
             break;
+#endif
         case MENU_D_LIVE_DEC:
             gSubMenuSelection = gSetting_live_DTMF_decoder;
             break;
-#endif
+
         case MENU_PONMSG:
             gSubMenuSelection = gEeprom.POWER_ON_DISPLAY_MODE;
             break;
