@@ -41,7 +41,7 @@
 #ifdef ENABLE_USB
     #define MR_CHANNELS_MAX 500
 #else
-    #define MR_CHANNELS_MAX 800 //To solve LATER 1024
+    #define MR_CHANNELS_MAX 800 // 1024
 #endif
 
 #define MR_CHANNELS_LIST 20

@@ -54,8 +54,6 @@ void SysTick_Handler(void)
     if ((gGlobalSysTickCounter % 100) == 0)
 	{
 		gNextTimeslice_1s = true;
-		//txTimeSeconds++;//To solve LATER
-		//rxTimeSeconds++;
 	} 
     if ((gGlobalSysTickCounter % 50) == 0) {
         gNextTimeslice_500ms = true;

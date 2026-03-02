@@ -618,36 +618,26 @@ static void DeleteHistoryItem(void) {
 }
 
 
-#include "settings.h" // Assurez-vous que ce fichier est inclus pour SETTINGS_SaveChannel
+#include "settings.h"
 
 static void SaveHistoryToFreeChannel(void) {
     if (!historyListActive) return;
 
     uint32_t f = HFreqs[historyListIndex];
-    if (f < 1000000) return; // Sécurité fréquence invalide
-
+    if (f < 1000000) return;
     char str[32];
-
-    // --- ÉTAPE 1 : VÉRIFIER SI LA FRÉQUENCE EXISTE DÉJÀ ---
     for (int i = 0; i < MR_CHANNEL_LAST; i++) {
         uint32_t freqInMem;
-        // Lecture des 4 premiers octets du canal (la fréquence)
         PY25Q16_ReadBuffer(0x0000 + (i * 16), (uint8_t *)&freqInMem, 4);
-        
-        // Si le canal n'est pas vide (0xFFFFFFFF) et que la fréquence correspond
         if (freqInMem != 0xFFFFFFFF && freqInMem == f) {
             sprintf(str, "Exist CH %d", i + 1);
-            
             ShowOSDPopup(str);
-            return; // On arrête ici, pas de sauvegarde
+            return;
         }
     }
-
-    // --- ÉTAPE 2 : CHERCHER UN EMPLACEMENT LIBRE ---
     int freeCh = -1;
     for (int i = 0; i < MR_CHANNEL_LAST; i++) {
         uint8_t checkByte;
-        // On vérifie juste le premier octet pour voir si le slot est libre
         PY25Q16_ReadBuffer(0x0000 + (i * 16), &checkByte, 1);
         if (checkByte == 0xFF) { 
             freeCh = i;
@@ -655,28 +645,18 @@ static void SaveHistoryToFreeChannel(void) {
         }
     }
 
-    // --- ÉTAPE 3 : SAUVEGARDER ---
-    
     if (freeCh != -1) {
         VFO_Info_t tempVFO;
         memset(&tempVFO, 0, sizeof(tempVFO)); 
-
-        // Remplissage des paramètres
         tempVFO.freq_config_RX.Frequency = f;
         tempVFO.freq_config_TX.Frequency = f; 
         tempVFO.TX_OFFSET_FREQUENCY = 0;
-        
         tempVFO.Modulation = settings.modulationType;
         tempVFO.CHANNEL_BANDWIDTH = settings.listenBw; 
-
         tempVFO.OUTPUT_POWER = OUTPUT_POWER_LOW1;
         tempVFO.STEP_SETTING = STEP_12_5kHz; 
-        // Sauvegarde propre via la fonction système
-        SETTINGS_SaveChannel(freeCh,0, &tempVFO, 2); //To solve LATER
-
-        // Rafraichir les listes
+        SETTINGS_SaveChannel(freeCh,0, &tempVFO, 2);
         LoadValidMemoryChannels();
-
         sprintf(str, "SAVED TO CH %d", freeCh + 1);
         ShowOSDPopup(str);
     } else {
