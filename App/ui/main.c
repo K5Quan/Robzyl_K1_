@@ -60,14 +60,14 @@ center_line_t center_line = CENTER_LINE_NONE;
     }
 #endif
 
-const int8_t dBmCorrTable[7] = {
+const int8_t dBmCorrTable[7] = { //Mentanah
             -15, // band 1
-            -25, // band 2
-            -20, // band 3
+            -12, // band 2
+            -10, // band 3
             -4, // band 4
             -7, // band 5
             -6, // band 6
-             -1  // band 7
+            -1  // band 7
         };
 
 const char *VfoStateStr[] = {
@@ -332,6 +332,22 @@ void DisplayRSSIBar(const bool now)
         + dBmCorrTable[gRxVfo->Band];
 
     rssi_dBm = -rssi_dBm;
+    // VHF band 2 & 3 strong signal correction //Mentanah
+    if((gRxVfo->Band == 1 ||  gRxVfo->Band == 2) && rssi_dBm < 93) {  // Band 2 & 3, signal > S9
+        if(rssi_dBm <= 63) {
+            rssi_dBm -= 4;
+        }
+        else if(rssi_dBm <= 73) {
+            rssi_dBm -= 3;
+        }
+        else if(rssi_dBm <= 85) {
+            rssi_dBm -= 1;
+        }
+    }
+    // UHF band 6 strong signal correction
+    else if(gRxVfo->Band == 5 && rssi_dBm < 93) {  // Band 6, signal > S9)
+        rssi_dBm -= 2;
+    }
 
     if(rssi_dBm > 141) rssi_dBm = 141;
     if(rssi_dBm < 53) rssi_dBm = 53;
