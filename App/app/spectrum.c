@@ -12,7 +12,7 @@
 #include "ui/main.h"
 #include "driver/py25q16.h"
 #include "version.h"
-#include "debugging.h"
+//#include "debugging.h"
 
 /*	
           /////////////////////////DEBUG//////////////////////////
@@ -737,7 +737,6 @@ if (historyListActive == true){
         if (PttEmission ==2){
             gCurrentVfo->freq_config_TX.Frequency = lastReceivingFreq;
             gCurrentVfo->freq_config_RX.Frequency = lastReceivingFreq;
-            //COMMON_SwitchVFOMode();
             }
         
         if (PttEmission ==2){ //PTT: Last Received
@@ -756,10 +755,7 @@ if (historyListActive == true){
         gCurrentVfo->STEP_SETTING = STEP_0_01kHz;
         gCurrentVfo->Modulation = MODULATION_FM;
         gCurrentVfo->OUTPUT_POWER = OUTPUT_POWER_HIGH;
-        //COMMON_SwitchVFOMode();
         }
-char str[64] = "";sprintf(str, "%d\r\n", lastReceivingFreq );LogUart(str);
-
         gRequestSaveChannel = 1;
         gComeBack = 1;
         DeInitSpectrum();
@@ -877,6 +873,7 @@ static void ToggleRX(bool on) {
 
     } else { 
         BK4819_RX_TurnOn();
+        RADIO_SetModulation(MODULATION_FM); //Test for Kolyan
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, false); //Scan in 25K bandwidth
         if(appMode!=CHANNEL_MODE) BK4819_WriteRegister(0x43, GetBWRegValueForScan());
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 0);
@@ -1721,33 +1718,50 @@ static void DrawNums() {
   
 }
 
-static void nextFrequency833() {
-    if (scanInfo.i % 3 != 1) {
-        scanInfo.f += 833;
-    } else {
-        scanInfo.f += 834;
+static void nextFrequencyinterlaced() {
+    static uint16_t lastStep = 0;
+    static uint16_t jumpSize = 2500;
+    static uint16_t loops = 1;
+    static uint32_t columns = 0;
+
+    // Recalcul des constantes si le pas change
+    if (scanInfo.scanStep != lastStep) {
+        lastStep = scanInfo.scanStep;
+        
+        uint8_t idx = 0;
+        for (uint8_t i = 0; i < sizeof(scanStepValues)/sizeof(scanStepValues[0]); i++) {
+            if (scanStepValues[i] == lastStep) {
+                idx = i;
+                break;
+            }
+        }
+        jumpSize = jumpSizes[idx];
+        loops    = interlacedLoops[idx];
+        columns = (GetStepsCount() + (loops - 1)) / loops;
+        if (columns == 0) columns = 1;
     }
+    uint32_t currentColumn = scanInfo.i % columns;
+    uint32_t currentPass   = scanInfo.i / columns;
+    scanInfo.f = gScanRangeStart + (currentColumn * jumpSize) + (currentPass * lastStep);
 }
+
 
 static void NextScanStep() {
     spectrumElapsedCount = 0;
 
-    if (appMode==CHANNEL_MODE)
-    { 
+    if (appMode == CHANNEL_MODE) { 
       if (scanChannelsCount == 0) return;
-
-      if (scanInfo.i + 1 >= scanChannelsCount)
-          scanInfo.i = 0;
-      else
-          scanInfo.i++;
-
-      int currentChannel = scanChannel[scanInfo.i];
-      scanInfo.f =  gMR_ChannelFrequencyAttributes[currentChannel].Frequency;
-} 
+        if (++scanInfo.i >= scanChannelsCount)
+            scanInfo.i = 0;
+        scanInfo.f = gMR_ChannelFrequencyAttributes[scanChannel[scanInfo.i]].Frequency;
+    } 
     else {
-          ++scanInfo.i;
-          if(scanInfo.scanStep==833) nextFrequency833();
-          else scanInfo.f += scanInfo.scanStep;
+        if (scanInfo.scanStep < 2500 || scanInfo.scanStep == 1000) {
+            nextFrequencyinterlaced();
+        } else {
+            scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
+        }
+        scanInfo.i++;
     }
 }
 
