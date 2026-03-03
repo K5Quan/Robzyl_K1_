@@ -71,6 +71,8 @@
 #include "ui/menu.h"
 #include "ui/status.h"
 #include "ui/ui.h"
+#include "app/spectrum.h"
+#include "driver/py25q16.h"
 
 #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
     #include "screenshot.h"
@@ -1233,10 +1235,13 @@ static void CheckKeys(void)
                 gPttDebounceCounter = 0;
                 gPttIsPressed       = true;
                 ProcessKey(KEY_PTT, true, false);
+                
             }
         }
-        else
-            gPttDebounceCounter = 0;        
+        else {
+                gPttDebounceCounter = 0;        
+                if (gComeBack) APP_RunSpectrum(); //Robzyl mod for Ninja
+        }
     }
 #else
     if (gPttIsPressed)

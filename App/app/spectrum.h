@@ -38,6 +38,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#define ADRESS_STATE   0xC000
+#define ADRESS_VERSION 0xC010
+#define ADRESS_PARAMS  0xC020
+#define ADRESS_HISTORY 0xC200
+//#define ADRESS_BANDS   0xD100
 
 typedef enum {
     AUTOLOCK_OFF,
@@ -209,11 +214,12 @@ typedef struct PeakInfo {
   uint16_t i;
 } PeakInfo;
 
+extern bool gComeBack;
 void APP_RunSpectrum(void);
 //void LookupChannelInfo();
 //void LookupChannelModulation();
 void ClearSettings(void);
-void LoadSettings(bool LNA);
+void LoadSettings();
 
 
 #endif 

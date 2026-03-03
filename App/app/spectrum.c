@@ -12,11 +12,11 @@
 #include "ui/main.h"
 #include "driver/py25q16.h"
 #include "version.h"
-//#include "debugging.h"
+#include "debugging.h"
 
 /*	
           /////////////////////////DEBUG//////////////////////////
-          char str[64] = "";sprintf(str, "%d\r\n", Spectrum_state );LogUart(str);
+          char str[64] = "";sprintf(str, "%d\r\n", i );LogUart(str);
 */
 
 #ifdef ENABLE_SCREENSHOT
@@ -24,22 +24,12 @@
 #endif
 
 #define MAX_VISIBLE_LINES 6
-
-static volatile bool gSpectrumChangeRequested = false;
-static volatile uint8_t gRequestedSpectrumState = 0;
-
 #define HISTORY_SIZE 50
-
-#define ADRESS_STATE   0xC000
-#define ADRESS_VERSION 0xC010
-#define ADRESS_PARAMS  0xC020
-#define ADRESS_HISTORY 0xC200
-//#define ADRESS_BANDS   0xD100
-
 #define NoisLvl 60
 #define NoiseHysteresis 15
 
-
+bool gComeBack = 0;
+static uint8_t Spectrum_state = 1; 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
@@ -68,10 +58,11 @@ static uint16_t UOO_trigger = 15;            // case 12
 static uint8_t AUTO_KEYLOCK = AUTOLOCK_OFF;  // case 13
 static uint8_t GlitchMax = 10;               // case 14 
 static bool    SoundBoost = 1;               // case 15 
-static bool gCounthistory = 1;               // case 16      
-//ClearHistory                               // case 17      
-//ClearSettings                              // case 18      
-#define PARAMETER_COUNT 19
+static uint8_t PttEmission = 0;              // case 16   
+static bool gCounthistory = 1;               // case 17      
+//ClearHistory                               // case 18      
+//ClearSettings                              // case 19      
+#define PARAMETER_COUNT 20
 ////////////////////////////////////////////////////////////////////
 
 static bool SettingsLoaded = false;
@@ -157,7 +148,6 @@ static bool newScanStart = true;
 static bool audioState = true;
 static uint8_t bl;
 static State currentState = SPECTRUM, previousState = SPECTRUM;
-static uint8_t Spectrum_state; 
 static PeakInfo peak;
 static ScanInfo scanInfo;
 static char     latestScanListName[12];
@@ -524,16 +514,16 @@ static uint16_t GetStepsCount()
 
 static uint32_t GetBW() { return GetStepsCount() * GetScanStep(); }
 
-/* static uint16_t GetRandomChannelFromRSSI(uint16_t maxChannels) {
+static uint16_t GetRandomChannelFromRSSI(uint16_t maxChannels) {
   uint32_t rssi = rssiHistory[1]*rssiHistory[maxChannels/2];
   if (maxChannels == 0 || rssi == 0) {
         return 1;  // Fallback to chanel 1 if invalid input
     }
     // Scale RSSI to [1, maxChannels]
     return 1 + (rssi % maxChannels);
-} */
+}
 
-static void DeInitSpectrum(bool ComeBack) {
+static void DeInitSpectrum() {
   
   RestoreRegisters();
   gVfoConfigureMode = VFO_CONFIGURE;
@@ -543,21 +533,8 @@ static void DeInitSpectrum(bool ComeBack) {
         gEeprom.CURRENT_STATE = 0;
         SETTINGS_WriteCurrentState();
   #endif
-  if(!ComeBack) {
-    uint8_t Spectrum_state = 0; //Spectrum Not Active
-    PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
-    ToggleRX(0);
-    SYSTEM_DelayMs(50);
-    }
-    
-  else {
-    PY25Q16_ReadBuffer(ADRESS_STATE, &Spectrum_state, 1);
-	Spectrum_state+=10;
-    PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
-    //StorePtt_Toggle_Mode = Ptt_Toggle_Mode;
-    SYSTEM_DelayMs(50);
-    //Ptt_Toggle_Mode =0; //To solve LATER
-    }
+  ToggleRX(0);
+  SYSTEM_DelayMs(50);
 }
 
 /////////////////////////////EEPROM://///////////////////////////
@@ -729,62 +706,71 @@ uint16_t BOARD_gMR_fetchChannel(const uint32_t freq)
 /////////////////////////////EEPROM://///////////////////////////*/
 
 static void ExitAndCopyToVfo() {
-  RestoreRegisters();
-
-//To solve LATER
-
+RestoreRegisters();
 if (historyListActive == true){
-      //SETTINGS_SetVfoFrequency(HFreqs[historyListIndex]);
-      gTxVfo->Modulation = MODULATION_FM;
+      SetF(HFreqs[historyListIndex]);
+      gCurrentVfo->Modulation = MODULATION_FM;
       gRequestSaveChannel = 1;
-      DeInitSpectrum(0);
+      DeInitSpectrum();
 }
-/*   switch (currentState) {
+   switch (currentState) {
     case SPECTRUM:
-      if (PttEmission ==1){
-          uint16_t randomChannel = GetRandomChannelFromRSSI(scanChannelsCount);
-          //static uint32_t rndfreq;
-          uint16_t i = 0;
-          SpectrumDelay = 0; //not compatible with ninja
+        if (PttEmission ==1){ //PTT: NINJA MODE
+            uint16_t randomChannel = GetRandomChannelFromRSSI(scanChannelsCount);
+            static uint32_t rndfreq;
+            uint16_t i = 0;
+            SpectrumDelay = 0; //not compatible with ninja
+            while (rssiHistory[randomChannel]> 120) {
+                i++;
+                randomChannel++;
+                if (randomChannel >scanChannelsCount)randomChannel = 1;
+                if (i > MR_CHANNEL_LAST) break;}
+                rndfreq = gMR_ChannelFrequencyAttributes[scanChannel[randomChannel]].Frequency;
+                gCurrentVfo->freq_config_TX.Frequency = rndfreq;
+                gCurrentVfo->freq_config_RX.Frequency = rndfreq;
+                gEeprom.MrChannel[0]     = scanChannel[randomChannel];
+		        gEeprom.ScreenChannel[0] = scanChannel[randomChannel];
+                gCurrentVfo->Modulation = MODULATION_FM;
+                gCurrentVfo->STEP_SETTING = STEP_0_01kHz;
+                gRequestSaveChannel = 1;
+            }
+        if (PttEmission ==2){
+            gCurrentVfo->freq_config_TX.Frequency = lastReceivingFreq;
+            gCurrentVfo->freq_config_RX.Frequency = lastReceivingFreq;
+            //COMMON_SwitchVFOMode();
+            }
+        
+        if (PttEmission ==2){ //PTT: Last Received
+            SpectrumDelay = 0; //not compatible
+            uint16_t ExitCh = BOARD_gMR_fetchChannel(lastReceivingFreq);
+            if (ExitCh == 0xFFFF) { //Not a known channel
+                  gCurrentVfo->freq_config_TX.Frequency = lastReceivingFreq;
+                  gCurrentVfo->freq_config_RX.Frequency = lastReceivingFreq;
+            }
+            else {
+                  gEeprom.ScreenChannel [0] = ExitCh;
+                  gEeprom.MrChannel     [0] = ExitCh;
+                  gEeprom.ScreenChannel [1] = ExitCh;
+                  gEeprom.MrChannel     [1] = ExitCh;
+            }
+        gCurrentVfo->STEP_SETTING = STEP_0_01kHz;
+        gCurrentVfo->Modulation = MODULATION_FM;
+        gCurrentVfo->OUTPUT_POWER = OUTPUT_POWER_HIGH;
+        //COMMON_SwitchVFOMode();
+        }
+char str[64] = "";sprintf(str, "%d\r\n", lastReceivingFreq );LogUart(str);
 
-          while (rssiHistory[randomChannel]> 120) //check chanel availability
-            {i++;
-            randomChannel++;
-            if (randomChannel >scanChannelsCount)randomChannel = 1;
-            if (i > MR_CHANNEL_LAST) break;}
-          //rndfreq = gMR_ChannelFrequencyAttributes[scanChannel[randomChannel]].Frequency;
-          //SETTINGS_SetVfoFrequency(rndfreq);
-          //gEeprom.MrChannel     = scanChannel[randomChannel];
-		  //gEeprom.ScreenChannel = scanChannel[randomChannel];
-          gTxVfo->Modulation = MODULATION_FM;
-          gTxVfo->STEP_SETTING = STEP_0_01kHz;
-          gRequestSaveChannel = 1;
-          }
-      else 
-          if (PttEmission ==2){
-          SpectrumDelay = 0; //not compatible
-          uint16_t ExitCh = BOARD_gMR_fetchChannel(HFreqs[historyListIndex]);
-          if (ExitCh == 0xFFFF) { //Not a known channel
-              SetF(HFreqs[historyListIndex]);
-              gTxVfo->STEP_SETTING = STEP_0_01kHz;
-              gTxVfo->Modulation = MODULATION_FM;
-              gTxVfo->OUTPUT_POWER = OUTPUT_POWER_HIGH;
-              COMMON_SwitchVFOMode();
-          }
-          else {
-            gTxVfo->freq_config_RX.Frequency = HFreqs[historyListIndex];
-            gEeprom.ScreenChannel = ExitCh;
-            gEeprom.MrChannel = ExitCh;
-            COMMON_SwitchToChannelMode();
-          }
-          gRequestSaveChannel = 1;
-          } */
-
-    DeInitSpectrum(1);
-    // Additional delay to debounce keys
-    SYSTEM_DelayMs(200);
-    isInitialized = false;
-//  }
+        gRequestSaveChannel = 1;
+        gComeBack = 1;
+        DeInitSpectrum();
+        break;      
+    
+    default:
+        DeInitSpectrum();
+        break;
+    }
+SYSTEM_DelayMs(200);
+isInitialized = false;
 }
 
 static uint8_t GetBWRegValueForScan() {
@@ -1097,7 +1083,7 @@ static void UpdateDBMaxAuto() { //Zoom
   static uint8_t z = 10;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
-        //newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -100, 0);
+        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
         newDbMax = Rssi2DBm(scanInfo.rssiMax);
 
         if (newDbMax > settings.dbMax + z) {
@@ -1110,7 +1096,7 @@ static void UpdateDBMaxAuto() { //Zoom
     }
 
     if (scanInfo.rssiMin > 0) {
-        //settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -110);
+        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
         settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
     }
 }
@@ -2186,13 +2172,18 @@ static void OnKeyDown(uint8_t key) {
                   case 15: // AF 300 SoundBoost
                       SoundBoost = !SoundBoost;
                       break;
-                  case 16: // gCounthistory
+                  case 16: // PttEmission
+                      PttEmission = isKeyD ?
+                                (PttEmission >= 2 ? 0 : PttEmission + 1) :
+                                (PttEmission <= 0 ? 2 : PttEmission - 1);
+                      break;
+                  case 17: // gCounthistory
                         gCounthistory=!gCounthistory;
                       break;
-                  case 17: // ClearHistory
+                  case 18: // ClearHistory
                         if (isKeyD) ClearHistory();
                       break;
-                  case 18: 
+                  case 19: 
                         if (isKeyD) ClearSettings();
                       break;
               }
@@ -2210,7 +2201,6 @@ static void OnKeyDown(uint8_t key) {
           if(Key_1_pressed) {
             //Key_1_pressed = 0;
           Spectrum_state = 3;
-          PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
           APP_RunSpectrum();
           }
           break;
@@ -2411,16 +2401,10 @@ static void OnKeyDown(uint8_t key) {
      case KEY_6:
         // 0 = FR, 1 = SL, 2 = BD, 3 = RG
         if (++Spectrum_state > 3) {Spectrum_state = 0;}
-        PY25Q16_WriteBuffer(ADRESS_STATE, &Spectrum_state, 1, 0);
         char sText[32];
         const char* s[] = {"FREQ", "S LIST", "BAND", "RANGE"};
         sprintf(sText, "MODE: %s", s[Spectrum_state]);
         ShowOSDPopup(sText);
-
-        gRequestedSpectrumState = Spectrum_state;
-        gSpectrumChangeRequested = true;
-     
-        // Полный сброс состояния спектра при смене режима
         isInitialized = false;
         spectrumElapsedCount = 0;
         WaitSpectrum = 0;
@@ -2428,9 +2412,8 @@ static void OnKeyDown(uint8_t key) {
         SPECTRUM_PAUSED = false;
         SpectrumPauseCount = 0;
         newScanStart = true;
-        ToggleRX(false);  // выкл RX на время смены
-
-          // обновляем индикатор режима
+        ToggleRX(false);
+        APP_RunSpectrum();
         break;
   
     case KEY_SIDE1:
@@ -2509,7 +2492,7 @@ static void OnKeyDown(uint8_t key) {
     }
 
     if (WaitSpectrum) {WaitSpectrum = 0;} //STOP wait
-    DeInitSpectrum(0);
+    DeInitSpectrum();
     break;
    
    default:
@@ -3318,20 +3301,22 @@ void APP_RunSpectrum(void)
 {
     for (;;) {
         Mode mode;
-        PY25Q16_ReadBuffer(ADRESS_STATE, &Spectrum_state, 1);
-        if      (Spectrum_state == 4) mode = FREQUENCY_MODE ;
-        else if (Spectrum_state == 3) mode = SCAN_RANGE_MODE ;
-        else if (Spectrum_state == 2) mode = SCAN_BAND_MODE ;
-        else if (Spectrum_state == 1) mode = CHANNEL_MODE ;
-        else mode = FREQUENCY_MODE;
-        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        if (!Key_1_pressed || gComeBack) LoadSettings(); 
+        gComeBack = 0;
+        switch (Spectrum_state) {
+            case 4:  mode = FREQUENCY_MODE;  break;
+            case 3:  mode = SCAN_RANGE_MODE; break;
+            case 2:  mode = SCAN_BAND_MODE;  break;
+            case 1:  mode = CHANNEL_MODE;    break;
+            default: mode = FREQUENCY_MODE;  break;
+        }
+
+#ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
         gEeprom.CURRENT_STATE = 4;
         SETTINGS_WriteCurrentState();
-        #endif
-        //BK4819_SetFilterBandwidth(BK4819_FILTER_BW_NARROW, false);  // принудительно узкий в спектре ЧИНИМ ВФО
-        
+#endif
         BOARD_gMR_LoadChannels();
-        if (!Key_1_pressed) LoadSettings(0); 
+        if (!Key_1_pressed) LoadSettings(); 
         appMode = mode;
         ResetModifiers();
         if (appMode==CHANNEL_MODE) LoadValidMemoryChannels();
@@ -3342,19 +3327,15 @@ void APP_RunSpectrum(void)
         }
         Key_1_pressed = 0;
         BackupRegisters();
-
         BK4819_WriteRegister(BK4819_REG_30, 0);
         SYSTEM_DelayMs(10);
         BK4819_RX_TurnOn();
         SYSTEM_DelayMs(50);  // Dłuższe opóźnienie
-
-        
         uint8_t CodeType = gTxVfo->pRX->CodeType;
         uint8_t Code     = gTxVfo->pRX->Code;
         BK4819_SetCDCSSCodeWord(DCS_GetGolayCodeWord(CodeType, Code));
         ResetInterrupts();
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
-
         BK4819_WriteRegister(BK4819_REG_47, 0x6040);
         BK4819_WriteRegister(BK4819_REG_48, 0xB3A8);  // AF gain
 	    ToggleRX(true), ToggleRX(false); // hack to prevent noise when squelch off
@@ -3367,20 +3348,9 @@ void APP_RunSpectrum(void)
         for (int i = 0; i < 128; ++i) { rssiHistory[i] = 0; }
         isInitialized = true;
         historyListActive = false;
-
-        while (isInitialized) {
-            Tick();
-        }
-
-        if (gSpectrumChangeRequested) {
-            Spectrum_state = gRequestedSpectrumState;
-            gSpectrumChangeRequested = false;
-            RestoreRegisters(); 
-            continue;
-        } else {
-            RestoreRegisters();
-            break;
-        }
+        while (isInitialized) {Tick();}
+        RestoreRegisters();
+        break;
     } 
 }
 
@@ -3456,12 +3426,12 @@ bool IsVersionMatching(void) {
 
 
 typedef struct {
-    // Block 1 (0x1D10 - 0x1D1F) 240 bytes max
     int ShowLines;
     uint8_t DelayRssi;
+    uint8_t PttEmission; 
     uint8_t listenBw;
     uint32_t bandListFlags;            // Bits 0-31: bandEnabled[0..31]
-    uint16_t scanListFlags;            // Bits 0-14: scanListEnabled[0..14]
+    uint32_t scanListFlags;            // Bits 0-31: scanListEnabled[0..31]
     int16_t Trigger;
     uint32_t RangeStart;
     uint32_t RangeStop;
@@ -3485,12 +3455,13 @@ typedef struct {
     uint16_t UOO_trigger;
     uint16_t osdPopupSetting;
     uint8_t GlitchMax;  
+    uint8_t Spectrum_state;  
     bool Backlight_On_Rx;
     bool SoundBoost;  
 } SettingsEEPROM;
 
 
-void LoadSettings(bool LNA)
+void LoadSettings()
 {
   if(SettingsLoaded) return;
   #ifdef ENABLE_FLASH_BAND
@@ -3504,7 +3475,6 @@ void LoadSettings(bool LNA)
   BK4819_WriteRegister(BK4819_REG_12, eepromData.R12);
   BK4819_WriteRegister(BK4819_REG_13, eepromData.R13);
   BK4819_WriteRegister(BK4819_REG_14, eepromData.R14);
-  if (LNA) return;
   if(!IsVersionMatching()) {
     ClearSettings();
   }
@@ -3522,6 +3492,7 @@ void LoadSettings(bool LNA)
     }
   DelayRssi = eepromData.DelayRssi;
   if (DelayRssi > 12) DelayRssi =12;
+    PttEmission = eepromData.PttEmission;
   validScanListCount = 0;
   ShowLines = eepromData.ShowLines;
   if (ShowLines < 1 || ShowLines > 3) ShowLines = 1;
@@ -3538,6 +3509,7 @@ void LoadSettings(bool LNA)
   osdPopupSetting = eepromData.osdPopupSetting;
   Backlight_On_Rx = eepromData.Backlight_On_Rx;
   GlitchMax = eepromData.GlitchMax;    
+  Spectrum_state = eepromData.Spectrum_state;    
   SoundBoost = eepromData.SoundBoost;    
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
   BK4819_WriteRegister(BK4819_REG_29, eepromData.R29);
@@ -3565,6 +3537,7 @@ static void SaveSettings()
   eepromData.RangeStart = gScanRangeStart;
   eepromData.RangeStop = gScanRangeStop;
   eepromData.DelayRssi = DelayRssi;
+  eepromData.PttEmission = PttEmission;
   eepromData.scanStepIndex = settings.scanStepIndex;
   eepromData.ShowLines = ShowLines;
   eepromData.SpectrumDelay = SpectrumDelay;
@@ -3634,6 +3607,7 @@ void ClearSettings()
   gScanRangeStart = 43000000;
   gScanRangeStop  = 44000000;
   DelayRssi = 3;
+  PttEmission = 2;
   settings.scanStepIndex = S_STEP_10_0kHz;
   ShowLines = 1;
   SpectrumDelay = 0;
@@ -3812,13 +3786,21 @@ static void GetParametersText(uint16_t index, char *buffer) {
             sprintf(buffer, "SoundBoost: %s", SoundBoost ? "ON" : "OFF");
             break;
         case 16:
+            if(PttEmission == 0)
+              sprintf(buffer, "PTT: Last VFO Freq");
+            else if (PttEmission == 1)
+              sprintf(buffer, "PTT: NINJA MODE");
+            else if (PttEmission == 2)
+              sprintf(buffer, "PTT: Last Received");
+            break;
+        case 17:
             if (gCounthistory) sprintf(buffer, "Freq Counting");
             else sprintf(buffer, "Time Counting");
             break;
-        case 17:
+        case 18:
             sprintf(buffer, "Clear History: >");
             break;
-        case 18:
+        case 19:
             sprintf(buffer, "Reset Default: >");
             break;
         
