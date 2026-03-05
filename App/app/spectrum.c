@@ -2205,6 +2205,7 @@ static void OnKeyDown(uint8_t key) {
 
     case KEY_8://СМЕНА РЕЖИМА
       if (historyListActive) {
+          memset(HFreqs,0,sizeof(HFreqs));
           memset(HCount,0,sizeof(HCount));
           memset(HBlacklisted,0,sizeof(HBlacklisted));
           historyListIndex = 0;
