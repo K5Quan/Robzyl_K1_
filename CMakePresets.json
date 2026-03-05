@@ -23,6 +23,7 @@
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
+                "ENABLE_DEV": false,
                 "ENABLE_FR_BAND": false,
                 "ENABLE_IN_BAND": false,
                 "ENABLE_KO_BAND": false,
@@ -76,6 +77,16 @@
             }
         },
        
+        {
+            "name": "Dev",
+            "inherits": "default",
+            "cacheVariables": {
+                "ENABLE_FR_BAND": true,
+                "ENABLE_DEV": true,
+                "EDITION_STRING": "Dev",
+                "TARGET": "ROBZYL.K1.Dev"
+            }
+        },
         {
             "name": "France",
             "inherits": "default",
@@ -178,6 +189,10 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "Dev",
+            "configurePreset": "Dev"
+        },
         {
             "name": "France",
             "configurePreset": "France"

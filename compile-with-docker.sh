@@ -13,7 +13,7 @@ set -euo pipefail
 # ---------------------------------------------
 
 IMAGE=uvk1-uvk5v3
-PRESET=${1:-France}
+PRESET=${1:-Dev}
 
 shift || true  # remove preset from arguments if present
 
@@ -45,9 +45,9 @@ fi
 # ---------------------------------------------
 # Validate preset name
 # ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(France|Kolyan|Russia|Poland|SR|Finland|International|Brasil|Romania|Czech|Turkey|All)$ ]]; then
+if [[ ! "$PRESET" =~ ^(Dev|France|Kolyan|Russia|Poland|SR|Finland|International|Brasil|Romania|Czech|Turkey|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: France Kolyan Russia Poland SR Finland International Brasil Romania Czech Turkey All"
+  echo "Valid presets are: Dev France Kolyan Russia Poland SR Finland International Brasil Romania Czech Turkey All"
   exit 1
 fi
 
@@ -125,8 +125,8 @@ fi
 
 # Définition du nom du binaire selon le preset
 case "$PRESET" in
-  "France")
-    BIN_NAME="ROBZYL.K1.France.bin"
+  "Dev")
+    BIN_NAME="ROBZYL.K1.Dev.bin"
     ;;
   "All")
     # Pour 'All', on peut flasher un binaire par défaut ou ignorer
