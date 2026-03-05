@@ -10,7 +10,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "ENABLE_LTO": false,
-                "ENABLE_FMRADIO": false,
+                "ENABLE_FMRADIO": true,
                 "ENABLE_UART": false,
                 "ENABLE_USB": true,
                 "ENABLE_NOAA": false,
@@ -19,7 +19,7 @@
                 "ENABLE_ALARM": false,
                 "ENABLE_TX1750": true,
                 "ENABLE_PWRON_PASSWORD": false,
-                "ENABLE_DTMF_CALLING": true,
+                "ENABLE_DTMF_CALLING": false,
                 "ENABLE_FLASHLIGHT": true,
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
