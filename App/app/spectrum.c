@@ -1443,7 +1443,11 @@ static void UpdateCssDetection(void) {
 static void DrawF(uint32_t f) {
     if ((f == 0) || f < 1400000 || f > 130000000) return;
     char freqStr[18];
-    snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
+    if(isListening) {
+            snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
+    } else {
+        snprintf(freqStr, sizeof(freqStr), "%u.%01u", f / 100000, (f % 100000) / 10000);
+    }
     UpdateCssDetection(); // субтон новый
     uint16_t channelFd = BOARD_gMR_fetchChannel(f);
     isKnownChannel = (channelFd != 0xFFFF);
@@ -1661,7 +1665,7 @@ static void nextFrequencyinterlaced() {
     uint32_t currentPass   = scanInfo.i / columns;
     scanInfo.f = gScanRangeStart + (currentColumn * jumpSize) + (currentPass * lastStep);
 }
-
+uint32_t f_linear;
 
 static void NextScanStep() {
     spectrumElapsedCount = 0;
@@ -1671,6 +1675,7 @@ static void NextScanStep() {
         if (++scanInfo.i >= scanChannelsCount)
             scanInfo.i = 0;
         scanInfo.f = gMR_ChannelFrequencyAttributes[scanChannel[scanInfo.i]].Frequency;
+        f_linear = scanInfo.f;
     } 
     else {
         if (scanInfo.scanStep < 2500 || scanInfo.scanStep == 1000) {
@@ -1678,6 +1683,7 @@ static void NextScanStep() {
         } else {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         }
+        f_linear = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         scanInfo.i++;
     }
 }
@@ -2742,7 +2748,7 @@ MyDrawFrameLines();
     }
     else {
       if (SpectrumMonitor) DrawF(lastReceivingFreq);
-      else DrawF(scanInfo.f);
+      else DrawF(f_linear);
     }
 }
 
