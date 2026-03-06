@@ -117,8 +117,8 @@ void UI_DisplayReleaseKeys(void)
 
 void UI_DisplayWelcome(void)
 {
-    char WelcomeString0[16];
-    char WelcomeString1[16];
+    char WelcomeString0[32];
+    char WelcomeString1[32];
     char WelcomeString2[16];
     char WelcomeString3[32];
 
@@ -178,17 +178,18 @@ void UI_DisplayWelcome(void)
         {
             if(strlen(WelcomeString0) == 0)
             {
-                strcpy(WelcomeString0, "WELCOME");
+                strcpy(WelcomeString0, "ZYLKA KOLYAN IGGY");
             }
 
             if(strlen(WelcomeString1) == 0)
             {
-                strcpy(WelcomeString1, "BIENVENUE");
+                strcpy(WelcomeString1, "FRANCOIS ROBBY (H)");
             }
         }
-
-        UI_PrintString(WelcomeString0, 0, 127, 0, 10);
-        UI_PrintString(WelcomeString1, 0, 127, 2, 10);
+        UI_PrintStringSmallNormal("K1 DEV TEAM", 0, 127, 0);
+        UI_PrintStringSmallNormal(WelcomeString0, 0, 127, 1);
+        UI_PrintStringSmallNormal(WelcomeString1, 0, 127, 2);
+        
 
 #ifdef ENABLE_FEAT_F4HWN
         UI_PrintStringSmallNormal(Version, 0, 128, 4);
