@@ -256,9 +256,9 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
     printf("spi flash write: %06x %ld %d\n", Address, Size, Append);
 #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL_DEBUG
-        gDebug++;
-    #endif
+    //#ifdef ENABLE_FEAT_ROBZYL_DEBUG
+    //    gDebug++;
+    //#endif
 
     uint32_t SecIndex = Address / SECTOR_SIZE;
     uint32_t SecAddr = SecIndex * SECTOR_SIZE;

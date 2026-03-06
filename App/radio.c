@@ -1,4 +1,3 @@
-//K1
 /* Copyright 2023 Dual Tachyon
  * https://github.com/DualTachyon
  *
@@ -103,28 +102,30 @@ bool RADIO_CheckValidList(uint8_t scanList)
     return false;
 }
 
-void RADIO_NextValidList(void)
+void RADIO_NextValidList(int8_t direction)
 {
     uint8_t startList = gEeprom.SCAN_LIST_DEFAULT;
     uint8_t attempts = 0;
-    const uint8_t MAX_LISTS = MR_CHANNELS_LIST + 2;  // 1-25, includes ALL
+    const uint8_t MAX_VALUE = MR_CHANNELS_LIST + 1;  // 25 (1-24 lists + ALL)
     
     do {
-        // Move to next scan list, wrapping around from 25 to 1
-        gEeprom.SCAN_LIST_DEFAULT = ((gEeprom.SCAN_LIST_DEFAULT + 1) % MAX_LISTS) ?: 1;
+        if (direction > 0) {
+            // Forward: 1 → 2 → ... → 25 → 1
+            gEeprom.SCAN_LIST_DEFAULT = (gEeprom.SCAN_LIST_DEFAULT % MAX_VALUE) + 1;
+        } else {
+            // Backward: 25 → 24 → ... → 1 → 25
+            gEeprom.SCAN_LIST_DEFAULT = ((gEeprom.SCAN_LIST_DEFAULT - 2 + MAX_VALUE) % MAX_VALUE) + 1;
+        }
         attempts++;
         
-        // Check if current list has valid channels
         if (RADIO_CheckValidList(gEeprom.SCAN_LIST_DEFAULT))
             return;
             
-    // Stop if we've cycled through all lists or made too many attempts
-    } while (gEeprom.SCAN_LIST_DEFAULT != startList && attempts < MAX_LISTS);
+    } while (gEeprom.SCAN_LIST_DEFAULT != startList && attempts < MAX_VALUE);
     
-    // Safety fallback: if no valid list found, switch to ALL mode
-    // This prevents infinite loops and ensures scanning can continue
+    // Safety fallback: switch to ALL mode
     if (!RADIO_CheckValidList(gEeprom.SCAN_LIST_DEFAULT)) {
-        gEeprom.SCAN_LIST_DEFAULT = MR_CHANNELS_LIST + 1;  // ALL
+        gEeprom.SCAN_LIST_DEFAULT = MAX_VALUE;  // ALL (25)
     }
 }
 
@@ -795,8 +796,8 @@ void RADIO_SetupRegisters(bool switchToForeground)
     }
     BK4819_WriteRegister(BK4819_REG_3F, 0);
 
-    // mic gain 0.5dB/step 0 to 31
-    BK4819_WriteRegister(BK4819_REG_7D, 0xE940 | (gEeprom.MIC_SENSITIVITY_TUNING & 0x1f));
+    // mic gain 0.5dB/step 0 to 63
+    BK4819_WriteRegister(BK4819_REG_7D, 0xE940 | (gEeprom.MIC_SENSITIVITY_TUNING & 0x3f));
 
     uint32_t Frequency;
     #ifdef ENABLE_NOAA
@@ -1147,23 +1148,6 @@ void RADIO_SetupAGC(bool listeningAM, bool disable) //Calypso modifications
 
 }
 
-// ============================================================================
-// VFO STATE MANAGEMENT
-// ============================================================================
-
-/**
- * @brief Set the current VFO state (normal, busy, low battery, etc)
- * @param State VFO state to set (VFO_STATE_t enum)
- * 
- * States indicate why TX might be disabled:
- * - VFO_STATE_NORMAL: OK to transmit
- * - VFO_STATE_BUSY: RX in progress
- * - VFO_STATE_BAT_LOW: Battery critically low
- * - VFO_STATE_TX_DISABLE: TX frequency/mode not allowed
- * - VFO_STATE_VOLTAGE_HIGH: Over-voltage detected
- * - VFO_STATE_TIMEOUT: TX timeout reached
- * - VFO_STATE_ALARM: Alarm/special mode active
- */
 void RADIO_SetVfoState(VfoState_t State)
 {
     if (State == VFO_STATE_NORMAL) {

@@ -1115,17 +1115,11 @@ if (inc) {
   scanInfo.scanStep = settings.scanStepIndex;
 }
 
-
-uint32_t RX_freq_min()
-{
-	return gEeprom.RX_OFFSET >= frequencyBandTable[0].lower ? 0 : frequencyBandTable[0].lower - gEeprom.RX_OFFSET;
-}
-
 static void UpdateCurrentFreq(bool inc) {
   if (inc && currentFreq < F_MAX) {
     gScanRangeStart += settings.frequencyChangeStep;
     gScanRangeStop += settings.frequencyChangeStep;
-  } else if (!inc && currentFreq > RX_freq_min() && currentFreq > settings.frequencyChangeStep) {
+  } else if (!inc && currentFreq > settings.frequencyChangeStep) {
     gScanRangeStart -= settings.frequencyChangeStep;
     gScanRangeStop -= settings.frequencyChangeStep;
   } else {
@@ -1518,8 +1512,8 @@ static void DrawF(uint32_t f) {
             }
 
             if (ShowLines == 1) {
-                UI_PrintStringSmall(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
-                UI_PrintStringSmall(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
+                UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
+                UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
                 GUI_DisplaySmallestDark(line3, 18,17, false, true);  // таймеры
                 GUI_DisplaySmallestDark	(">", 8, 17, false, false);
                 GUI_DisplaySmallestDark	("<", 118, 17, false, false);   
@@ -1533,8 +1527,8 @@ static void DrawF(uint32_t f) {
               if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
                 FormatFrequency(lastReceivingFreq, lastRxFreq, sizeof(lastRxFreq));
               }
-              UI_PrintStringSmall(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
-              UI_PrintStringSmall(lastRx, 1, LCD_WIDTH - 1, 1, 0);
+              UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
+              UI_PrintStringSmallbackground(lastRx, 1, LCD_WIDTH - 1, 1, 0);
               GUI_DisplaySmallestDark(line3, 18, 17, false, true);
               GUI_DisplaySmallestDark	(">", 8, 17, false, false);
               GUI_DisplaySmallestDark	("<", 118, 17, false, false);
@@ -1560,14 +1554,14 @@ static void DrawF(uint32_t f) {
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
     GUI_DisplaySmallestDark(">",     2, 22, false, false);
     GUI_DisplaySmallestDark("<", 123, 22, false, false);  
-    UI_PrintStringSmall(line3,  0, 0, 0, 0);
+    UI_PrintStringSmallbackground(line3,  0, 0, 0, 0);
 
     char rssiText[16];
     sprintf(rssiText, "R:%3d", scanInfo.rssi);
-    UI_PrintStringSmall(rssiText, 96, 1, 0, 0);  // x=96, y=0, BSmall
+    UI_PrintStringSmallbackground(rssiText, 96, 1, 0, 0);  // x=96, y=0, BSmall
 
     if (StringCode[0]) {
-        UI_PrintStringSmall(StringCode, 50, 1, 0, 0);  // ← подбери 100–110
+        UI_PrintStringSmallbackground(StringCode, 50, 1, 0, 0);  // ← подбери 100–110
     }
 }
 }
@@ -2457,7 +2451,7 @@ static void OnKeyDownFreqInput(uint8_t key) {
     UpdateFreqInput(key);
     break;
   case KEY_MENU: //OnKeyDownFreqInput
-    if (tempFreq < RX_freq_min() || tempFreq > F_MAX) {
+    if (tempFreq > F_MAX) {
       break;
     }
     SetState(previousState);
@@ -3832,7 +3826,7 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
                       void (*getItemText)(uint16_t index, char* buffer)) {
     //memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
     
-    if (!SpectrumMonitor) UI_PrintStringSmall(title, 1, LCD_WIDTH - 1, 0,0);
+    if (!SpectrumMonitor) UI_PrintStringSmallbackground(title, 1, LCD_WIDTH - 1, 0,0);
     const uint8_t FIRST_ITEM_LINE = 1;  // Start from line 1 (line 0 is title)
     const uint8_t MAX_LINES = 6;        // Lines 1-7 available for items
     
@@ -3856,9 +3850,9 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
         strcpy(displayText, itemText);
         char selectedText[MAX_CHARS_PER_LINE + 2];
         snprintf(selectedText, sizeof(selectedText), "%s", displayText);
-        UI_PrintStringSmall(selectedText, 1, 0, lineNumber,1);
+        UI_PrintStringSmallbackground(selectedText, 1, 0, lineNumber,1);
         } else {
-            UI_PrintStringSmall(itemText, 1, 0, lineNumber,0); // Minimalne wcięcie
+            UI_PrintStringSmallbackground(itemText, 1, 0, lineNumber,0); // Minimalne wcięcie
           }
           
     }
@@ -3946,7 +3940,7 @@ static void RenderHistoryList() {
     
     if (!SpectrumMonitor) {
         sprintf(headerString, "HISTORY: %d", count);
-      UI_PrintStringSmall(headerString, 1, LCD_WIDTH - 1, 0, 0);
+      UI_PrintStringSmallbackground(headerString, 1, LCD_WIDTH - 1, 0, 0);
     } else {
         DrawMeter(0);
     }
@@ -3984,9 +3978,9 @@ static void RenderHistoryList() {
                         PutPixel(x, y, true);
                     }
             }
-            UI_PrintStringSmall(itemText, 1, 0, lineNumber, 1);
+            UI_PrintStringSmallbackground(itemText, 1, 0, lineNumber, 1);
         } else {
-            UI_PrintStringSmall(itemText, 1, 0, lineNumber, 0);
+            UI_PrintStringSmallbackground(itemText, 1, 0, lineNumber, 0);
             }
 
         linesDrawn++;
@@ -4022,7 +4016,7 @@ static void RenderScanListChannels() {
 static void RenderScanListChannelsDoubleLines(const char* title, uint8_t numItems, 
                                              uint8_t selectedIndex, uint8_t scrollOffset) {
     memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
-    UI_PrintStringSmall(title, 1, 0, 0,1);
+    UI_PrintStringSmallbackground(title, 1, 0, 0,1);
     
     const uint8_t MAX_ITEMS_VISIBLE = 3; // 3 kanały x 2 linie = 6 linii
     
@@ -4046,13 +4040,13 @@ static void RenderScanListChannelsDoubleLines(const char* title, uint8_t numItem
         if (itemIndex == selectedIndex) {
             sprintf(nameText, "%3d: %s", channelIndex + 1, channel_name);
             sprintf(freqText, "    %s", freqStr);
-            UI_PrintStringSmall(nameText, 1, 0, line1,1);
-            UI_PrintStringSmall(freqText, 1, 0, line2,1);
+            UI_PrintStringSmallbackground(nameText, 1, 0, line1,1);
+            UI_PrintStringSmallbackground(freqText, 1, 0, line2,1);
         } else {
             sprintf(nameText, "%3d: %s", channelIndex + 1, channel_name);
             sprintf(freqText, "    %s", freqStr);
-            UI_PrintStringSmall(nameText, 1, 0, line1,0);
-            UI_PrintStringSmall(freqText, 1, 0, line2,0);
+            UI_PrintStringSmallbackground(nameText, 1, 0, line1,0);
+            UI_PrintStringSmallbackground(freqText, 1, 0, line2,0);
         }
         
 

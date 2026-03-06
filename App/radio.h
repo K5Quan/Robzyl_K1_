@@ -55,7 +55,7 @@ enum VfoState_t
 };
 typedef enum VfoState_t VfoState_t;
 
-typedef enum : uint8_t{
+typedef enum {
     MODULATION_FM,
     MODULATION_AM,
     MODULATION_USB,
@@ -149,7 +149,7 @@ extern DCS_CodeType_t gCurrentCodeType;
 extern VfoState_t     VfoState[2];
 
 bool     RADIO_CheckValidList(uint8_t scanList);
-void     RADIO_NextValidList(void);
+void     RADIO_NextValidList(int8_t direction);
 bool     RADIO_CheckValidChannel(uint16_t channel, bool checkScanList, uint8_t scanList);
 uint16_t RADIO_FindNextChannel(uint16_t ChNum, int8_t Direction, bool bCheckScanList, uint8_t RadioNum);
 void     RADIO_InitInfo(VFO_Info_t *pInfo, const uint16_t ChannelSave, const uint32_t Frequency);

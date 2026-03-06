@@ -17,6 +17,10 @@
 
 #include "crc.h"
 
+void CRC_Init(void)
+{
+}
+
 uint16_t CRC_Calculate(const void *pBuffer, uint16_t Size)
 {
     const uint8_t *pData = (const uint8_t *)pBuffer;

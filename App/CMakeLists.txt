@@ -85,7 +85,7 @@ if(NOT SQL_TONE)
 endif()
 target_compile_definitions(App INTERFACE SQL_TONE=${SQL_TONE})
 
-if(ENABLE_UART OR ENABLE_USB)
+if(ENABLE_AIRCOPY OR ENABLE_UART OR ENABLE_USB)
     target_sources(App INTERFACE 
         driver/crc.c
         driver/eeprom_compat.c
@@ -121,6 +121,10 @@ enable_feature(ENABLE_FMRADIO
     app/fm.c 
     ui/fmradio.c
 )
+enable_feature(ENABLE_AIRCOPY
+    app/aircopy.c 
+    ui/aircopy.c
+)
 enable_feature(ENABLE_NOAA)
 enable_feature(ENABLE_VOICE 
     driver/voice.c
@@ -142,20 +146,7 @@ enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
 )
 enable_feature(ENABLE_BIG_FREQ)
-enable_feature(ENABLE_FLASH_BAND)
-enable_feature(ENABLE_DEV)
-enable_feature(ENABLE_FR_BAND)
-enable_feature(ENABLE_IN_BAND)
-enable_feature(ENABLE_KO_BAND)
-enable_feature(ENABLE_PL_BAND)
-enable_feature(ENABLE_RU_BAND)
-enable_feature(ENABLE_SR_BAND)
-enable_feature(ENABLE_FI_BAND)
-enable_feature(ENABLE_BR_BAND)
-enable_feature(ENABLE_RO_BAND)
-enable_feature(ENABLE_CZ_BAND)
-enable_feature(ENABLE_TU_BAND)
-enable_feature(ENABLE_SPECTRUM_LINES)
+enable_feature(ENABLE_SMALL_BOLD)
 enable_feature(ENABLE_CUSTOM_MENU_LAYOUT)
 enable_feature(ENABLE_KEEP_MEM_NAME)
 enable_feature(ENABLE_WIDE_RX)
@@ -175,6 +166,20 @@ enable_feature(ENABLE_REDUCE_LOW_MID_TX_POWER)
 enable_feature(ENABLE_BYP_RAW_DEMODULATORS)
 enable_feature(ENABLE_BLMIN_TMP_OFF)
 enable_feature(ENABLE_SCAN_RANGES)
+enable_feature(ENABLE_FLASH_BAND)
+enable_feature(ENABLE_DEV)
+enable_feature(ENABLE_FR_BAND)
+enable_feature(ENABLE_IN_BAND)
+enable_feature(ENABLE_KO_BAND)
+enable_feature(ENABLE_PL_BAND)
+enable_feature(ENABLE_RU_BAND)
+enable_feature(ENABLE_SR_BAND)
+enable_feature(ENABLE_FI_BAND)
+enable_feature(ENABLE_BR_BAND)
+enable_feature(ENABLE_RO_BAND)
+enable_feature(ENABLE_CZ_BAND)
+enable_feature(ENABLE_TU_BAND)
+enable_feature(ENABLE_SPECTRUM_LINES)
 enable_feature(ENABLE_SCANLIST_SHOW_DETAIL)
 
 # ---- CONTRIB MODS ----
@@ -189,6 +194,9 @@ enable_feature(ENABLE_EXTRA_UART_CMD)
 # ---- ROBZYL MODS ----
 
 enable_feature(ENABLE_FEAT_ROBZYL)
+enable_feature(ENABLE_FEAT_ROBZYL_GAME 
+    app/breakout.c
+)
 enable_feature(ENABLE_FEAT_ROBZYL_SCREENSHOT 
     screenshot.c
 )
@@ -208,6 +216,7 @@ enable_feature(ENABLE_FEAT_ROBZYL_PMR)
 enable_feature(ENABLE_FEAT_ROBZYL_GMRS_FRS_MURS)
 enable_feature(ENABLE_FEAT_ROBZYL_CA)
 enable_feature(ENABLE_FEAT_ROBZYL_DEBUG)
+enable_feature(ENABLE_FEAT_ROBZYL_MEM)
 
 # ---- DEBUGGING ----
 

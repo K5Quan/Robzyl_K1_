@@ -27,6 +27,9 @@ enum BOOT_Mode_t
     #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
         BOOT_MODE_RESCUE_OPS,
     #endif
+    #ifdef ENABLE_AIRCOPY
+        BOOT_MODE_AIRCOPY
+    #endif
 };
 
 typedef enum BOOT_Mode_t BOOT_Mode_t;
