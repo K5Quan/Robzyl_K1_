@@ -256,7 +256,7 @@ void PY25Q16_WriteBuffer(uint32_t Address, const void *pBuffer, uint32_t Size, b
     printf("spi flash write: %06x %ld %d\n", Address, Size, Append);
 #endif
 
-    //#ifdef ENABLE_FEAT_ROBZYL_DEBUG
+    //#ifdef ENABLE_FEAT_F4HWN_DEBUG
     //    gDebug++;
     //#endif
 

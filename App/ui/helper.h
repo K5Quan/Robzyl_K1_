@@ -29,7 +29,7 @@ void UI_PrintStringSmallBold(const char *pString, uint8_t Start, uint8_t End, ui
 void UI_PrintStringSmallBufferNormal(const char *pString, uint8_t *buffer);
 void UI_PrintStringSmallBufferBold(const char *pString, uint8_t * buffer);
 void UI_DisplayFrequency(const char *string, uint8_t X, uint8_t Y, bool center);
-
+void UI_PrintStringSmallbackground(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t background);
 void UI_DisplayPopup(const char *string);
 
 void UI_DrawPixelBuffer(uint8_t (*buffer)[128], uint8_t x, uint8_t y, bool black);

@@ -19,7 +19,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 
 enable_language(C ASM)
 
-if(ENABLE_FEAT_ROBZYL)
+if(ENABLE_FEAT_F4HWN)
     if(NOT AUTHOR_STRING_1)
         set(AUTHOR_STRING_1 "EGZUMER")
     endif()
@@ -105,7 +105,7 @@ add_custom_command(
 
 # Pack
 # TODO: Incorparate venv?
-# if(ENABLE_FEAT_ROBZYL)
+# if(ENABLE_FEAT_F4HWN)
 #     add_custom_command(
 #         TARGET ${EXE_NAME}
 #         POST_BUILD

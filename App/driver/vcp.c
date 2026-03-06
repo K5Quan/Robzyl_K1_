@@ -18,7 +18,7 @@
 #include "usb_config.h"
 #include "py32f071_ll_bus.h"
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
 #include "driver/keyboard.h"
 // Packet types for serial key injection (K5Viewer → radio)
 #define VCP_TYPE_KEY       0x03
@@ -45,7 +45,7 @@ void VCP_Init()
     NVIC_EnableIRQ(USBD_IRQn);
 }
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
 bool VCP_ScreenshotPing(void)
 {
     // State machine for parsing incoming packets:
@@ -146,4 +146,4 @@ bool VCP_ScreenshotPing(void)
 
     return connected;
 }
-#endif // ENABLE_FEAT_ROBZYL_SCREENSHOT
+#endif // ENABLE_FEAT_F4HWN_SCREENSHOT

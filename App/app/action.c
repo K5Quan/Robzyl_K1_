@@ -103,7 +103,7 @@ void (*action_opt_table[])(void) = {
     [ACTION_OPT_BLMIN_TMP_OFF] = &FUNCTION_NOP,
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     [ACTION_OPT_RXMODE] = &ACTION_RxMode,
     [ACTION_OPT_MAINONLY] = &ACTION_MainOnly,
     [ACTION_OPT_PTT] = &ACTION_Ptt,
@@ -114,13 +114,13 @@ void (*action_opt_table[])(void) = {
     //#else
     //    [ACTION_OPT_MUTE] = &FUNCTION_NOP,
     //#endif
-    #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         [ACTION_OPT_RXA] = &ACTION_RxA,
     #else
         [ACTION_OPT_RXA] = &FUNCTION_NOP,
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         [ACTION_OPT_POWER_HIGH] = &ACTION_Power_High,
         [ACTION_OPT_REMOVE_OFFSET] = &ACTION_Remove_Offset,
     #endif
@@ -238,7 +238,7 @@ void ACTION_Scan(bool bRestart)
         // channel mode. Keep scanning but toggle between scan lists
         RADIO_NextValidList(1);
 
-        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
             SETTINGS_WriteCurrentState();
         #endif
 
@@ -491,7 +491,7 @@ void ACTION_BlminTmpOff(void)
 }
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
 void ACTION_Update(void)
 {
     gSaveRxMode          = false;
@@ -534,7 +534,7 @@ void ACTION_MainOnly(void)
     ACTION_Update();
 }
 
-#ifdef ENABLE_FEAT_ROBZYL_AUDIO
+#ifdef ENABLE_FEAT_F4HWN_AUDIO
 void ACTION_RxA(void)
 {
     gSetting_set_audio = (gSetting_set_audio + 1) % 5;
@@ -554,7 +554,7 @@ void ACTION_Wn(void)
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_AM, true);
         return;
     }
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         bool narrower = 0;
         if (FUNCTION_IsRx())
         {
@@ -658,7 +658,7 @@ void ACTION_Mute(void)
     gUpdateStatus = true;
 }
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
 void ACTION_Power_High(void)
 {
     gPowerHigh = !gPowerHigh;

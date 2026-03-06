@@ -64,10 +64,10 @@ void SysTick_Handler(void)
     if ((gGlobalSysTickCounter % 50) == 0) {
         gNextTimeslice_500ms = true;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         DECREMENT_AND_TRIGGER(gVfoSaveCountdown_10ms, gScheduleVfoSave);
         DECREMENT_AND_TRIGGER(gTxTimerCountdownAlert_500ms - ALERT_TOT * 2, gTxTimeoutReachedAlert);
-        #ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
+        #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
             DECREMENT(gRxTimerCountdown_500ms);
         #endif
 #endif

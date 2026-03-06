@@ -45,7 +45,7 @@ const uint16_t    key_debounce_10ms                =    20 / 10;   // 20ms
 
 const uint8_t     scan_delay_10ms                  =   210 / 10;   // 210ms
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     const uint16_t    dual_watch_count_after_tx_10ms   =  420;         // 4.2 sec after TX ends
     const uint16_t    dual_watch_count_after_rx_10ms   =  1000 / 10;   // 1 sec after RX ends ?
     const uint16_t    dual_watch_count_after_1_10ms    =  5000 / 10;   // 5 sec
@@ -89,7 +89,7 @@ const uint32_t    gDefaultAesKey[4]                = {0x4AA5CC60, 0x0312CC5F, 0x
 
 const uint8_t     gMicGain_dB2[9]                  = {3, 8, 16, 24, 32, 40, 48, 56, 63}; // BK4819 {3, 8, 16, 24, 31};
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     bool              gSetting_350TX;
 #endif
 
@@ -97,7 +97,7 @@ const uint8_t     gMicGain_dB2[9]                  = {3, 8, 16, 24, 32, 40, 48, 
 bool              gSetting_KILLED;
 #endif
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
 bool              gSetting_200TX;
 bool              gSetting_500TX;
 #endif
@@ -111,12 +111,12 @@ enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     bool          gSetting_AM_fix = true;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP 
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
     uint8_t       gSetting_set_off = 1;
     bool          gWakeUp = false;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     uint8_t       gSetting_set_pwr = 1;
     bool          gSetting_set_ptt = 0;
     uint8_t       gSetting_set_tot = 0;
@@ -126,15 +126,15 @@ enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     bool          gSetting_set_lck = false;
     bool          gSetting_set_met = 0;
     bool          gSetting_set_gui = 0;
-    #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         uint8_t       gSetting_set_audio = 0;
     #endif
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         bool          gSetting_set_nfm = 0;
     #endif
     bool          gSetting_set_tmr = 0;
     bool          gSetting_set_ptt_session;
-    #ifdef ENABLE_FEAT_ROBZYL_DEBUG
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
         int16_t   gDebug;
     #endif
     uint8_t       gDW = 0;
@@ -145,7 +145,7 @@ enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     uint8_t       gAircopyStep = 0;
     uint8_t       gAircopyCurrentMapIndex = 0;
     bool          gAirCopyBootMode = 0;
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         bool          gPowerHigh = false;
         bool          gRemoveOffset = false;
     #endif
@@ -198,14 +198,14 @@ volatile bool     gNextTimeslice_1s;
 volatile uint16_t gTxTimerCountdown_500ms;
 volatile bool     gTxTimeoutReached;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     volatile uint16_t gTxTimerCountdownAlert_500ms;
     volatile bool     gTxTimeoutReachedAlert;
     volatile uint16_t gTxTimeoutToneAlert = 800;
-    #ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
+    #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
         volatile uint16_t gRxTimerCountdown_500ms;
     #endif
-    #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+    #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
         volatile uint8_t  gUART_LockScreenshot = 0; // lock screenshot if Chirp is used
         bool gUSB_ScreenshotEnabled = false;
     #endif
@@ -326,7 +326,7 @@ volatile uint8_t  boot_counter_10ms;
 uint8_t           gIsLocked = 0xFF;
 
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     bool          gK5startup = true;
     bool          gBackLight = false;
     bool          gMute = false;
@@ -389,7 +389,7 @@ unsigned long StrToUL(const char * str)
 
 // Cache hit/miss statistics (optional, for debugging)
 
-#ifdef ENABLE_FEAT_ROBZYL_DEBUG
+#ifdef ENABLE_FEAT_F4HWN_DEBUG
     static uint32_t cache_hits = 0;
     static uint32_t cache_misses = 0;
 #endif
@@ -496,7 +496,7 @@ ChannelAttributes_t* MR_GetChannelAttributes(uint16_t channel_id)
     
     if (cache_index >= 0) {
         // CACHE HIT
-        #ifdef ENABLE_FEAT_ROBZYL_DEBUG
+        #ifdef ENABLE_FEAT_F4HWN_DEBUG
             cache_hits++;
         #endif
         
@@ -507,7 +507,7 @@ ChannelAttributes_t* MR_GetChannelAttributes(uint16_t channel_id)
     }
     
     // CACHE MISS - Load from Flash
-    #ifdef ENABLE_FEAT_ROBZYL_DEBUG
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
         cache_misses++;
     #endif
     
@@ -610,7 +610,7 @@ void MR_InitChannelAttributesCache(void)
 // Debugging / Statistics (optional, for development)
 // 
 
-#ifdef ENABLE_FEAT_ROBZYL_DEBUG
+#ifdef ENABLE_FEAT_F4HWN_DEBUG
 
 uint32_t MR_GetCacheHits(void)
 {

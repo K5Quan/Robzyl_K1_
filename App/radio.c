@@ -53,7 +53,7 @@ const char gModulationStr[MODULATION_UKNOWN][4] = {
 #endif
 };
 
-#ifdef ENABLE_FEAT_ROBZYL_AUDIO
+#ifdef ENABLE_FEAT_F4HWN_AUDIO
     static void AUDIO_ApplyProfile(uint8_t profile)
     {
         switch (profile)
@@ -309,7 +309,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         pVfo->StepFrequency = gStepFrequencyTable[tmp];
 
         tmp = data[7];
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         if (tmp > (ARRAY_SIZE(gSubMenu_SCRAMBLER) - 1))
             tmp = 0;
         pVfo->SCRAMBLING_TYPE = tmp;
@@ -464,7 +464,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
 
     pVfo->Compander = att->compander;
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if(gRemoveOffset)
     {
         pVfo->pTX = &pVfo->freq_config_RX;
@@ -601,7 +601,7 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
 
     PY25Q16_ReadBuffer(0x100D0 + (Band * 16) + (Op * 3), Txp, 3);
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     // make low and mid even lower
     // and use calibration values 
     // be aware with toxic fucking closed firmwares
@@ -744,7 +744,7 @@ void RADIO_SetupRegisters(bool switchToForeground)
 {
     BK4819_FilterBandwidth_t Bandwidth = gRxVfo->CHANNEL_BANDWIDTH;
 
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         if(Bandwidth == BK4819_FILTER_BW_NARROW && gSetting_set_nfm == 1)
         {
             Bandwidth = BK4819_FILTER_BW_NARROWER;
@@ -880,7 +880,7 @@ void RADIO_SetupRegisters(bool switchToForeground)
                     break;
             }
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
             if (gRxVfo->SCRAMBLING_TYPE > 0 && gSetting_ScrambleEnable)
                 BK4819_EnableScramble(gRxVfo->SCRAMBLING_TYPE - 1);
             else
@@ -987,7 +987,7 @@ void RADIO_SetTxParameters(void)
 {
     BK4819_FilterBandwidth_t Bandwidth = gCurrentVfo->CHANNEL_BANDWIDTH;
 
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         if(Bandwidth == BK4819_FILTER_BW_NARROW && gSetting_set_nfm == 1)
         {
             Bandwidth = BK4819_FILTER_BW_NARROWER;
@@ -1098,7 +1098,7 @@ void RADIO_SetModulation(ModulationMode_t modulation)
         BK4819_WriteRegister(0x2f,0x9890);
         //BK4819_WriteRegister(0x54, 0x9009);
         //BK4819_WriteRegister(0x55, 0x31a9);
-        #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+        #ifdef ENABLE_FEAT_F4HWN_AUDIO
             AUDIO_ApplyProfile(gSetting_set_audio);
         #else
             BK4819_WriteRegister(0x54, 0x9009);
@@ -1191,7 +1191,7 @@ void RADIO_PrepareTX(void)
 
     RADIO_SelectCurrentVfo();
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         if(TX_freq_check(gCurrentVfo->pTX->Frequency) != 0 && gCurrentVfo->TX_LOCK == true
     #if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
             && gAlarmState != ALARM_STATE_SITE_ALARM
@@ -1277,14 +1277,14 @@ void RADIO_PrepareTX(void)
             gTxTimerCountdown_500ms = 120 * 15;  // 15 minutes
         */
 
-#ifdef ENABLE_FEAT_ROBZYL 
+#ifdef ENABLE_FEAT_F4HWN 
         gTxTimerCountdownAlert_500ms = gTxTimerCountdown_500ms;
 #endif
     }
 
     gTxTimeoutReached    = false;
 
-#ifdef ENABLE_FEAT_ROBZYL 
+#ifdef ENABLE_FEAT_F4HWN 
     gTxTimeoutReachedAlert = false;
 #endif
     

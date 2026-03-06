@@ -5,9 +5,8 @@
     #define VER     ""
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     const char Version[]      = AUTHOR_STRING_2 " " VERSION_STRING_2;
-    const char Edition[]      = EDITION_STRING;
 #else
     const char Version[]      = AUTHOR_STRING VER APP_VERSION;
 #endif

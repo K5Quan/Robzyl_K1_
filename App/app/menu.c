@@ -222,7 +222,7 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             *pMax = ARRAY_SIZE(gSubMenu_RX_TX) - 1;
             break;
 
-        #ifndef ENABLE_FEAT_ROBZYL
+        #ifndef ENABLE_FEAT_F4HWN
             #ifdef ENABLE_AM_FIX
                 case MENU_AM_FIX:
             #endif
@@ -241,16 +241,16 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
         #ifdef ENABLE_NOAA
             case MENU_NOAA_S:
         #endif
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_350TX:
         case MENU_200TX:
         case MENU_500TX:
 #endif
         case MENU_350EN:
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCREN:
 #endif
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         case MENU_SET_TMR:
         case MENU_S_PRI:
 #endif
@@ -262,7 +262,7 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             *pMax = ARRAY_SIZE(gModulationStr) - 1;
             break;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCR:
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_SCRAMBLER) - 1;
@@ -385,13 +385,13 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             *pMax = gSubMenu_SIDEFUNCTIONS_size-1;
             break;
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
         case MENU_SET_OFF:
             *pMax = 120;
             break;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         case MENU_SET_PWR:
             *pMax = ARRAY_SIZE(gSubMenu_SET_PWR) - 1;
             break;
@@ -404,14 +404,14 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_SET_TOT) - 1;
             break;
-        #ifdef ENABLE_FEAT_ROBZYL_CTR
+        #ifdef ENABLE_FEAT_F4HWN_CTR
         case MENU_SET_CTR:
             *pMin = 1;
             *pMax = 15;
             break;
         #endif
         case MENU_TX_LOCK:
-        #ifdef ENABLE_FEAT_ROBZYL_INV
+        #ifdef ENABLE_FEAT_F4HWN_INV
         case MENU_SET_INV:
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_OFF_ON) - 1;
@@ -426,25 +426,25 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_SET_MET) - 1;
             break;
-        #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+        #ifdef ENABLE_FEAT_F4HWN_AUDIO
         case MENU_SET_AUD:
             //*pMin = 0;
             *pMax = ARRAY_SIZE(gSubMenu_SET_AUD) - 1;
             break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+        #ifdef ENABLE_FEAT_F4HWN_NARROWER
             case MENU_SET_NFM:
                 //*pMin = 0;
                 *pMax = ARRAY_SIZE(gSubMenu_SET_NFM) - 1;
                 break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_VOL
+        #ifdef ENABLE_FEAT_F4HWN_VOL
             case MENU_SET_VOL:
                 //*pMin = 0;
                 *pMax = 63;
                 break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+        #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
             case MENU_SET_KEY:
                 //*pMin = 0;
                 *pMax = 4;
@@ -554,7 +554,7 @@ void MENU_AcceptSetting(void)
             gRequestSaveChannel       = 1;
             return;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCR:
             gTxVfo->SCRAMBLING_TYPE = gSubMenuSelection;
             #if 0
@@ -619,7 +619,7 @@ void MENU_AcceptSetting(void)
 
         case MENU_ABR:
             gEeprom.BACKLIGHT_TIME = gSubMenuSelection;
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
                 gBackLight = false;
             #endif
             break;
@@ -642,7 +642,7 @@ void MENU_AcceptSetting(void)
             gEeprom.DUAL_WATCH = (gEeprom.TX_VFO + 1) * (gSubMenuSelection & 1);
             gEeprom.CROSS_BAND_RX_TX = (gEeprom.TX_VFO + 1) * ((gSubMenuSelection & 2) > 0);
 
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
                 gDW = gEeprom.DUAL_WATCH;
                 gCB = gEeprom.CROSS_BAND_RX_TX;
                 gSaveRxMode = true;
@@ -803,7 +803,7 @@ void MENU_AcceptSetting(void)
             gRequestSaveChannel = 1;
             return;
 
-        #ifndef ENABLE_FEAT_ROBZYL
+        #ifndef ENABLE_FEAT_F4HWN
             #ifdef ENABLE_AM_FIX
                 case MENU_AM_FIX:
                     gSetting_AM_fix = gSubMenuSelection;
@@ -830,7 +830,7 @@ void MENU_AcceptSetting(void)
             SETTINGS_FactoryReset(gSubMenuSelection);
             return;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_350TX:
             gSetting_350TX = gSubMenuSelection;
             break;
@@ -839,7 +839,7 @@ void MENU_AcceptSetting(void)
         case MENU_F_LOCK: {
             if(gSubMenuSelection == F_LOCK_NONE) { // select 10 times to enable
                 gUnlockAllTxConfCnt++;
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
                 if(gUnlockAllTxConfCnt < 3)
 #else
                 if(gUnlockAllTxConfCnt < 10)
@@ -851,14 +851,14 @@ void MENU_AcceptSetting(void)
 
             gSetting_F_LOCK = gSubMenuSelection;
 
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
             if(gSetting_F_LOCK == F_LOCK_ALL) {
                 SETTINGS_ResetTxLock();
             }
             #endif
             break;
         }
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_200TX:
             gSetting_200TX = gSubMenuSelection;
             break;
@@ -872,7 +872,7 @@ void MENU_AcceptSetting(void)
             gVfoConfigureMode    = VFO_CONFIGURE_RELOAD;
             gFlagResetVfos       = true;
             break;
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCREN:
             gSetting_ScrambleEnable = gSubMenuSelection;
             gFlagReconfigureVfos    = true;
@@ -921,13 +921,13 @@ void MENU_AcceptSetting(void)
             }
             break;
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP 
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
         case MENU_SET_OFF:
             gSetting_set_off = gSubMenuSelection;
             break;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         case MENU_SET_PWR:
             gSetting_set_pwr = gSubMenuSelection;
             gRequestSaveChannel = 1;
@@ -942,7 +942,7 @@ void MENU_AcceptSetting(void)
         case MENU_SET_EOT:
             gSetting_set_eot = gSubMenuSelection;
             break;
-        #ifdef ENABLE_FEAT_ROBZYL_CTR
+        #ifdef ENABLE_FEAT_F4HWN_CTR
         case MENU_SET_CTR:
             gSetting_set_ctr = gSubMenuSelection;
             break;
@@ -959,25 +959,25 @@ void MENU_AcceptSetting(void)
         case MENU_SET_GUI:
             gSetting_set_gui = gSubMenuSelection;
             break;
-        #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+        #ifdef ENABLE_FEAT_F4HWN_AUDIO
         case MENU_SET_AUD:
             gSetting_set_audio = gSubMenuSelection;
             RADIO_SetModulation(gRxVfo->Modulation);
             break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+        #ifdef ENABLE_FEAT_F4HWN_NARROWER
             case MENU_SET_NFM:
                 gSetting_set_nfm = gSubMenuSelection;
                 RADIO_SetTxParameters();
                 RADIO_SetupRegisters(true);
                 break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_VOL
+        #ifdef ENABLE_FEAT_F4HWN_VOL
             case MENU_SET_VOL:
                 gEeprom.VOLUME_GAIN = gSubMenuSelection;
                 break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+        #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
             case MENU_SET_KEY:
                 gEeprom.SET_KEY = gSubMenuSelection;
                 break;
@@ -1093,7 +1093,7 @@ void MENU_ShowCurrentSetting(void)
             gSubMenuSelection = gTxVfo->CHANNEL_BANDWIDTH;
             break;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCR:
             gSubMenuSelection = gTxVfo->SCRAMBLING_TYPE;
             break;
@@ -1126,7 +1126,7 @@ void MENU_ShowCurrentSetting(void)
 #endif
 
         case MENU_ABR:
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
                 if(gBackLight)
                 {
                     gSubMenuSelection = gBacklightTimeOriginal;
@@ -1284,7 +1284,7 @@ void MENU_ShowCurrentSetting(void)
             gSubMenuSelection = gTxVfo->Modulation;
             break;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     #ifdef ENABLE_AM_FIX
             case MENU_AM_FIX:
                 gSubMenuSelection = gSetting_AM_fix;
@@ -1306,7 +1306,7 @@ void MENU_ShowCurrentSetting(void)
             #endif
             break;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_350TX:
             gSubMenuSelection = gSetting_350TX;
             break;
@@ -1316,7 +1316,7 @@ void MENU_ShowCurrentSetting(void)
             gSubMenuSelection = gSetting_F_LOCK;
             break;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_200TX:
             gSubMenuSelection = gSetting_200TX;
             break;
@@ -1330,7 +1330,7 @@ void MENU_ShowCurrentSetting(void)
             gSubMenuSelection = gSetting_350EN;
             break;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCREN:
             gSubMenuSelection = gSetting_ScrambleEnable;
             break;
@@ -1378,13 +1378,13 @@ void MENU_ShowCurrentSetting(void)
             break;
         }
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP 
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
         case MENU_SET_OFF:
             gSubMenuSelection = gSetting_set_off;
             break;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         case MENU_SET_PWR:
             gSubMenuSelection = gSetting_set_pwr;
             break;
@@ -1397,7 +1397,7 @@ void MENU_ShowCurrentSetting(void)
         case MENU_SET_EOT:
             gSubMenuSelection = gSetting_set_eot;
             break;
-        #ifdef ENABLE_FEAT_ROBZYL_CTR
+        #ifdef ENABLE_FEAT_F4HWN_CTR
         case MENU_SET_CTR:
             gSubMenuSelection = gSetting_set_ctr;
             break;
@@ -1414,22 +1414,22 @@ void MENU_ShowCurrentSetting(void)
         case MENU_SET_GUI:
             gSubMenuSelection = gSetting_set_gui;
             break;
-        #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+        #ifdef ENABLE_FEAT_F4HWN_AUDIO
         case MENU_SET_AUD:
             gSubMenuSelection = gSetting_set_audio;
             break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+        #ifdef ENABLE_FEAT_F4HWN_NARROWER
             case MENU_SET_NFM:
                 gSubMenuSelection = gSetting_set_nfm;
                 break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_VOL
+        #ifdef ENABLE_FEAT_F4HWN_VOL
             case MENU_SET_VOL:
                 gSubMenuSelection = gEeprom.VOLUME_GAIN;
                 break;
         #endif
-        #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+        #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
             case MENU_SET_KEY:
                 gSubMenuSelection = gEeprom.SET_KEY;
                 break;

@@ -26,7 +26,7 @@
 #include <driver/backlight.h>
 
 enum POWER_OnDisplayMode_t {
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     POWER_ON_DISPLAY_MODE_ALL,
     POWER_ON_DISPLAY_MODE_SOUND,
 #else
@@ -41,17 +41,17 @@ typedef enum POWER_OnDisplayMode_t POWER_OnDisplayMode_t;
 enum TxLockModes_t {
     F_LOCK_DEF, //all default frequencies + configurable
     F_LOCK_FCC,
-#ifdef ENABLE_FEAT_ROBZYL_CA
+#ifdef ENABLE_FEAT_F4HWN_CA
     F_LOCK_CA,
 #endif
     F_LOCK_CE,
     F_LOCK_GB,
     F_LOCK_430,
     F_LOCK_438,
-#ifdef ENABLE_FEAT_ROBZYL_PMR
+#ifdef ENABLE_FEAT_F4HWN_PMR
     F_LOCK_PMR,
 #endif
-#ifdef ENABLE_FEAT_ROBZYL_GMRS_FRS_MURS
+#ifdef ENABLE_FEAT_F4HWN_GMRS_FRS_MURS
     F_LOCK_GMRS_FRS_MURS,
 #endif
     F_LOCK_ALL, // disable TX on all frequencies
@@ -111,7 +111,7 @@ enum ACTION_OPT_t {
     ACTION_OPT_VFO_MR,
     ACTION_OPT_SWITCH_DEMODUL,
     ACTION_OPT_BLMIN_TMP_OFF, //BackLight Minimum Temporay OFF
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     ACTION_OPT_RXMODE,
     ACTION_OPT_MAINONLY,
     ACTION_OPT_PTT,
@@ -119,7 +119,7 @@ enum ACTION_OPT_t {
     ACTION_OPT_BACKLIGHT,
     ACTION_OPT_MUTE,
     ACTION_OPT_RXA,
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         ACTION_OPT_POWER_HIGH,
         ACTION_OPT_REMOVE_OFFSET,
     #endif
@@ -193,11 +193,11 @@ typedef struct {
     uint8_t               SQUELCH_LEVEL;
     uint8_t               TX_TIMEOUT_TIMER;
     bool                  KEY_LOCK;
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     bool                  KEY_LOCK_PTT;
     bool                  SET_NAV;
 #endif
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     bool                  MENU_LOCK;
     uint8_t               SET_KEY;
 #endif
@@ -218,7 +218,7 @@ typedef struct {
     uint8_t               SCAN_LIST_DEFAULT;
     bool                  SCAN_LIST_ENABLED;
     uint16_t              SCANLIST_PRIORITY_CH[6];
-//#ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE // Fix me !!! What the hell is this?
+//#ifdef ENABLE_FEAT_F4HWN_RESUME_STATE // Fix me !!! What the hell is this?
     uint8_t               CURRENT_STATE;
     uint8_t               CURRENT_LIST;
 //#endif                                // Fix me !!! What the hell is this?
@@ -278,7 +278,7 @@ typedef struct {
     bool              NOAA_AUTO_SCAN;
 #endif
     uint8_t               VOLUME_GAIN;
-    #ifdef ENABLE_FEAT_ROBZYL
+    #ifdef ENABLE_FEAT_F4HWN
         uint8_t           VOLUME_GAIN_BACKUP;
     #endif
     uint8_t               DAC_GAIN;
@@ -323,13 +323,13 @@ void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO,
 void SETTINGS_SaveBatteryCalibration(const uint16_t * batteryCalibration);
 void SETTINGS_UpdateChannel(uint16_t channel, const VFO_Info_t *pVFO, bool keep, bool check, bool save);
 void SETTINGS_WriteBuildOptions(void);
-#ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+#ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
     void SETTINGS_WriteCurrentState(void);
 #endif
-#ifdef ENABLE_FEAT_ROBZYL_VOL
+#ifdef ENABLE_FEAT_F4HWN_VOL
     void SETTINGS_WriteCurrentVol(void);
 #endif
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     void SETTINGS_ResetTxLock(void);
 #endif
 #endif

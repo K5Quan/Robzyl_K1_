@@ -44,7 +44,7 @@
 #include "py32f0xx.h"
 #include "audio.h"
 #include "board.h"
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     // #include "bsp/dp32g030/pwmplus.h"
 #endif
 #include "driver/backlight.h"
@@ -77,7 +77,7 @@
 #include "app/spectrum.h"
 #include "driver/py25q16.h"
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     #include "screenshot.h"
 #endif
 
@@ -494,7 +494,7 @@ void APP_StartListening(FUNCTION_Type_t function)
 {
     const unsigned int vfo = gEeprom.RX_VFO;
 
-#ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
+#ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
     gRxTimerCountdown_500ms = 7200;
 #endif
 
@@ -581,7 +581,7 @@ uint32_t APP_SetFreqByStepAndLimits(VFO_Info_t *pInfo, int8_t direction, uint32_
 {
     uint32_t Frequency = FREQUENCY_RoundToStep(pInfo->freq_config_RX.Frequency + (direction * pInfo->StepFrequency), pInfo->StepFrequency);
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     if (Frequency > upper)
 #else
     if (Frequency >= upper)
@@ -769,7 +769,7 @@ static void CheckRadioInterrupts(void)
         if (interrupts.sqlLost) {
             g_SquelchLost = true;
             BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
-            #ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
+            #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
                 gRxTimerCountdown_500ms = 7200;
             #endif
         }
@@ -899,7 +899,7 @@ void APP_Update(void)
     }
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     if (gCurrentFunction == FUNCTION_TRANSMIT && (gTxTimeoutReachedAlert || SerialConfigInProgress()))
     {
         if(gSetting_set_tot >= 2)
@@ -949,7 +949,7 @@ void APP_Update(void)
     {   // transmitter timed out or must de-key
         gTxTimeoutReached = false;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         if(gBacklightCountdown_500ms > 0 || gEeprom.BACKLIGHT_TIME == 61)
         {
             //BACKLIGHT_TurnOn();
@@ -974,7 +974,7 @@ void APP_Update(void)
                 //if (gKeyReading1 != KEY_INVALID)
                 //  gPttWasReleased = true;
             }
-            #if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+            #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
             ST7565_ContrastAndInv();
             #endif
         }
@@ -1125,7 +1125,7 @@ void APP_Update(void)
         {   // dual watch mode off or scanning or rssi update request
             // go back to sleep
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
             gPowerSave_10ms = gEeprom.BATTERY_SAVE * (gWakeUp ? 200 : 10); // deep sleep now indexed on BatSav
 #else
             gPowerSave_10ms = gEeprom.BATTERY_SAVE * 10;
@@ -1167,7 +1167,7 @@ static void CheckKeys(void)
 #endif
 
 // -------------------- PTT ------------------------
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     if (gSetting_set_ptt_session)
     {
         if (GPIO_IsPttPressed() && !SerialConfigInProgress() && gPttOnePushCounter == 0)
@@ -1205,7 +1205,7 @@ static void CheckKeys(void)
                 if (gKeyReading1 != KEY_INVALID)
                     gPttWasReleased = true;
                 gPttOnePushCounter = 0;
-                #if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+                #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
                 ST7565_ContrastAndInv();
                 #endif
             }
@@ -1227,7 +1227,7 @@ static void CheckKeys(void)
                     gPttIsPressed = false;
                     if (gKeyReading1 != KEY_INVALID)
                         gPttWasReleased = true;
-                    #if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+                    #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
                     ST7565_ContrastAndInv();
                     #endif
                 }
@@ -1398,7 +1398,7 @@ void APP_TimeSlice10ms(void)
         UI_DisplayStatus();
     }
 
-    #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+    #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     if (gUpdateDisplayCurrent || gUpdateStatusCurrent) {
         getScreenShot(false);
     }
@@ -1411,7 +1411,7 @@ void APP_TimeSlice10ms(void)
         return;
 #endif
 
-#if !defined(ENABLE_FEAT_ROBZYL) || defined(ENABLE_FEAT_ROBZYL_RESCUE_OPS)
+#if !defined(ENABLE_FEAT_F4HWN) || defined(ENABLE_FEAT_F4HWN_RESCUE_OPS)
     #ifdef ENABLE_FLASHLIGHT
         FlashlightTimeSlice();
     #endif
@@ -1606,7 +1606,7 @@ void APP_TimeSlice500ms(void)
         BACKLIGHT_TurnOff();
     }
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     if (gSleepModeCountdown_500ms == gSetting_set_off * 120 && gWakeUp) {
         //ST7565_Init();
         ST7565_FixInterfGlitch();
@@ -1839,7 +1839,7 @@ static void ALARM_Off(void)
 
 static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
-    #ifdef ENABLE_FEAT_ROBZYL_SLEEP
+    #ifdef ENABLE_FEAT_F4HWN_SLEEP
     if(gWakeUp)
     {
         if(!bKeyPressed || Key == KEY_PTT)
@@ -1949,7 +1949,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
     bool lowBatPopup = gLowBattery && !gLowBatteryConfirmed &&  gScreenToDisplay == DISPLAY_MAIN;
 
-#ifdef ENABLE_FEAT_ROBZYL // Disable PTT if KEY_LOCK
+#ifdef ENABLE_FEAT_F4HWN // Disable PTT if KEY_LOCK
     bool lck_condition = false;
 
     if(gSetting_set_lck)
@@ -2028,7 +2028,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         }
     }
 
-#ifdef ENABLE_FEAT_ROBZYL // For F + SIDE1 or F + SIDE2
+#ifdef ENABLE_FEAT_F4HWN // For F + SIDE1 or F + SIDE2
     if (gWasFKeyPressed && (Key == KEY_PTT || Key == KEY_EXIT)) { 
 #else
     if (gWasFKeyPressed && (Key == KEY_PTT || Key == KEY_EXIT || Key == KEY_SIDE1 || Key == KEY_SIDE2)) { 
@@ -2072,7 +2072,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
                     BK4819_ExitDTMF_TX(false);
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
                     if (gCurrentVfo->SCRAMBLING_TYPE == 0 || !gSetting_ScrambleEnable)
                         BK4819_DisableScramble();
                     else
@@ -2114,7 +2114,7 @@ static void ProcessKey(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
     }
     else if (gScreenToDisplay != DISPLAY_INVALID && (
             (Key != KEY_SIDE1 && Key != KEY_SIDE2)
-#ifdef ENABLE_FEAT_ROBZYL // For F + SIDE1 or F + SIDE2
+#ifdef ENABLE_FEAT_F4HWN // For F + SIDE1 or F + SIDE2
             || (gWasFKeyPressed && (Key == KEY_SIDE1 || Key == KEY_SIDE2))
 #endif
     )) {

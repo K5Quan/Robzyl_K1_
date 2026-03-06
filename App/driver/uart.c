@@ -23,7 +23,7 @@
 #include "py32f071_ll_gpio.h"
 #include "py32f071_ll_usart.h"
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
 #include "driver/keyboard.h"
 // Packet types for serial key injection (K5Viewer → radio)
 #define UART_TYPE_KEY       0x03
@@ -153,7 +153,7 @@ void UART_LogSend(const void *pBuffer, uint32_t Size)
     }
 }
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     bool UART_IsCableConnected(void) {
         bool connected = false;
 

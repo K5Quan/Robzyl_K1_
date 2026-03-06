@@ -34,11 +34,11 @@
 #endif
 
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     #include "screenshot.h"
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_MEM
+#ifdef ENABLE_FEAT_F4HWN_MEM
 // Linker symbols (provided by the linker script)
 extern uint8_t _sdata;          // Start of .data in RAM
 extern uint8_t _edata;          // End of .data in RAM
@@ -98,7 +98,7 @@ static inline uint16_t pct_x100(uint32_t used, uint32_t total)
 void UI_DisplayReleaseKeys(void)
 {
     memset(gStatusLine,  0, sizeof(gStatusLine));
-#if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+#if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
         ST7565_ContrastAndInv();
 #endif
     UI_DisplayClear();
@@ -124,12 +124,12 @@ void UI_DisplayWelcome(void)
 
     memset(gStatusLine,  0, sizeof(gStatusLine));
 
-#if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+#if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
         ST7565_ContrastAndInv();
 #endif
     UI_DisplayClear();
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     ST7565_BlitStatusLine();
     ST7565_BlitFullScreen();
     
@@ -190,7 +190,7 @@ void UI_DisplayWelcome(void)
         UI_PrintString(WelcomeString0, 0, 127, 0, 10);
         UI_PrintString(WelcomeString1, 0, 127, 2, 10);
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         UI_PrintStringSmallNormal(Version, 0, 128, 4);
 
         UI_DrawLineBuffer(gFrameBuffer, 0, 35, 18, 35, 1);
@@ -203,7 +203,7 @@ void UI_DisplayWelcome(void)
         gFrameBuffer[4][108] ^= 0x7F;
         UI_DrawLineBuffer(gFrameBuffer, 109, 35, 127, 35, 1);
 
-        #ifdef ENABLE_FEAT_ROBZYL_MEM
+        #ifdef ENABLE_FEAT_F4HWN_MEM
             uint32_t ram_used   = 0;
             uint32_t flash_used = 0;
             build_usage(&ram_used, &flash_used);
@@ -221,7 +221,7 @@ void UI_DisplayWelcome(void)
             ST7565_BlitStatusLine();
         #endif
 
-        sprintf(WelcomeString3, "%s Edition", Edition);
+        sprintf(WelcomeString3, "%s Edition", EDITION_STRING);
         UI_PrintStringSmallNormal(WelcomeString3, 0, 127, 6);
 
 #else
@@ -231,7 +231,7 @@ void UI_DisplayWelcome(void)
         //ST7565_BlitStatusLine();  // blank status line : I think it's useless
         ST7565_BlitFullScreen();
 
-        #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+        #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
             getScreenShot(true);
         #endif
     }

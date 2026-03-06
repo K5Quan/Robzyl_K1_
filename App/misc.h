@@ -156,7 +156,7 @@ extern const uint16_t        scan_pause_delay_in_7_10ms;
 
 extern const uint8_t         gMicGain_dB2[9];
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
 extern bool                  gSetting_350TX;
 #endif
 
@@ -164,7 +164,7 @@ extern bool                  gSetting_350TX;
 extern bool                  gSetting_KILLED;
 #endif
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
 extern bool                  gSetting_200TX;
 extern bool                  gSetting_500TX;
 #endif
@@ -179,12 +179,12 @@ extern enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     extern bool              gSetting_AM_fix;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP 
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
     extern uint8_t           gSetting_set_off;
     extern bool              gWakeUp;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     extern uint8_t            gSetting_set_pwr;
     extern bool               gSetting_set_ptt;
     extern uint8_t            gSetting_set_tot;
@@ -194,15 +194,15 @@ extern enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     extern bool               gSetting_set_lck;
     extern bool               gSetting_set_met;
     extern bool               gSetting_set_gui;
-    #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         extern uint8_t            gSetting_set_audio;
     #endif
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         extern bool               gSetting_set_nfm;
     #endif
     extern bool               gSetting_set_tmr;
     extern bool               gSetting_set_ptt_session;
-    #ifdef ENABLE_FEAT_ROBZYL_DEBUG
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
         extern int16_t        gDebug;
     #endif
     extern uint8_t            gDW;
@@ -213,7 +213,7 @@ extern enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
     extern uint8_t            gAircopyStep;
     extern uint8_t            gAircopyCurrentMapIndex;
     extern bool               gAirCopyBootMode;
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         extern bool               gPowerHigh;
         extern bool               gRemoveOffset;
     #endif
@@ -322,14 +322,14 @@ extern volatile bool         gNextTimeslice_1s;
 extern volatile uint16_t     gTxTimerCountdown_500ms;
 extern volatile bool         gTxTimeoutReached;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     extern volatile uint16_t gTxTimerCountdownAlert_500ms;
     extern volatile bool     gTxTimeoutReachedAlert;
     extern volatile uint16_t gTxTimeoutToneAlert;
-    #ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
+    #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
         extern volatile uint16_t gRxTimerCountdown_500ms;
     #endif
-    #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+    #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
         extern volatile uint8_t  gUART_LockScreenshot; // lock screenshot if Chirp is used
         extern bool gUSB_ScreenshotEnabled;
     #endif
@@ -453,7 +453,7 @@ extern volatile uint8_t      gVFOStateResumeCountdown_500ms;
 extern uint8_t               gIsLocked;
 extern volatile uint8_t      boot_counter_10ms;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     extern bool                  gK5startup;
     extern bool                  gBackLight;
     extern bool                  gMute;

@@ -529,7 +529,7 @@ static void DeInitSpectrum() {
   gVfoConfigureMode = VFO_CONFIGURE;
   isInitialized = false;
   SetState(SPECTRUM);
-  #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+  #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 0;
         SETTINGS_WriteCurrentState();
   #endif
@@ -1432,6 +1432,8 @@ static void UpdateCssDetection(void) {
 static void DrawF(uint32_t f) {
     if ((f == 0) || f < 1400000 || f > 130000000) return;
     char freqStr[18];
+    int len = 0;
+    int pos = 0;
     if(isListening) {
             snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     } else {
@@ -1476,47 +1478,38 @@ static void DrawF(uint32_t f) {
     }
 
     line3[0] = '\0';
-    int pos = 0;
+    pos = 0;
 
-    if (MaxListenTime > 0) {
-        pos += sprintf(&line3[pos], "RX%d|%s", spectrumElapsedCount / 1000, labels[IndexMaxLT]);
-        
-        if (WaitSpectrum > 0) {
-            if (WaitSpectrum < 61000) {
-                pos += sprintf(&line3[pos], "%d", WaitSpectrum / 1000);
-            } else {
-                pos += sprintf(&line3[pos], "End OO");
-            }
+        if (WaitSpectrum > 0 && WaitSpectrum <61000) {
+              len = sprintf(&line3[pos],"End %d ", WaitSpectrum/1000);
+              pos += len;
+        } else if (WaitSpectrum > 61000){
+            len = sprintf(&line3[pos],"End OO "); //locked
+            pos += len;
         }
-    }
-    else {
-        pos += sprintf(&line3[pos], "RX%d", spectrumElapsedCount / 1000);
-        
-        if (WaitSpectrum > 0) {
-            if (WaitSpectrum < 61000) {
-                pos += sprintf(&line3[pos], "%d", WaitSpectrum / 1000);
+        if (isListening){
+            if (MaxListenTime){
+                  len = sprintf(&line3[pos],"Max %d/%s", spectrumElapsedCount/1000, labels[IndexMaxLT]);
+                  pos += len;
             } else {
-                pos += sprintf(&line3[pos], "End OO");
+                  len = sprintf(&line3[pos],"Rx %d ", spectrumElapsedCount/1000); //elapsed receive time
             }
-        }
-    }
+      }
+    
     
     if (classic) {
             if (ShowLines == 2) {
                 UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
-                GUI_DisplaySmallestDark(StringCode, 80, 17, false, false);  // CSS субтон
-                GUI_DisplaySmallestDark(line2,      18, 17, false, true);  // имя канала / бэнд / список
-                GUI_DisplaySmallestDark	(">", 8, 17, false, false);
-                GUI_DisplaySmallestDark	("<", 118, 17, false, false);   
+                GUI_DisplaySmallest(StringCode, 80, 17, false, false);  // CSS субтон
+                GUI_DisplaySmallest(line2,      2, 17, false, true);  // имя канала / бэнд / список
                 ArrowLine = 3;
             }
 
             if (ShowLines == 1) {
                 UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
                 UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
-                GUI_DisplaySmallestDark(line3, 18,17, false, true);  // таймеры
-                GUI_DisplaySmallestDark	(">", 8, 17, false, false);
-                GUI_DisplaySmallestDark	("<", 118, 17, false, false);   
+                GUI_DisplaySmallest(line3, 2,17, false, true);  // таймеры
+
                 ArrowLine = 3;
             }
 
@@ -1529,9 +1522,7 @@ static void DrawF(uint32_t f) {
               }
               UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
               UI_PrintStringSmallbackground(lastRx, 1, LCD_WIDTH - 1, 1, 0);
-              GUI_DisplaySmallestDark(line3, 18, 17, false, true);
-              GUI_DisplaySmallestDark	(">", 8, 17, false, false);
-              GUI_DisplaySmallestDark	("<", 118, 17, false, false);
+              GUI_DisplaySmallest(line3, 2, 17, false, true);
               ArrowLine = 3;
             }
     if (Fmax) 
@@ -1552,8 +1543,6 @@ static void DrawF(uint32_t f) {
 #endif
     UI_DisplayFrequency(line1, 10, 2, 0);
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
-    GUI_DisplaySmallestDark(">",     2, 22, false, false);
-    GUI_DisplaySmallestDark("<", 123, 22, false, false);  
     UI_PrintStringSmallbackground(line3,  0, 0, 0, 0);
 
     char rssiText[16];
@@ -3229,7 +3218,7 @@ void APP_RunSpectrum(void)
             default: mode = FREQUENCY_MODE;  break;
         }
 
-#ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+#ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 4;
         SETTINGS_WriteCurrentState();
 #endif

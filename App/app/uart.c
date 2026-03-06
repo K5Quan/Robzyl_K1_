@@ -299,7 +299,7 @@ static void SendVersion(uint32_t Port)
     SendReply(Port, &Reply, sizeof(Reply));
 }
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
 static bool IsBadChallenge(const uint32_t *pKey, const uint32_t *pIn, const uint32_t *pResponse)
 {
     // PY32 has no AES hardware
@@ -506,7 +506,7 @@ static void CMD_0529(uint32_t Port)
     SendReply(Port, &Reply, sizeof(Reply));
 }
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
 static void CMD_052D(uint32_t Port, const uint8_t *pBuffer)
 {
     const CMD_052D_t *pCmd = (const CMD_052D_t *)pBuffer;
@@ -834,7 +834,7 @@ void UART_HandleCommand(uint32_t Port)
             CMD_0529(Port);
             break;
 
-        #ifndef ENABLE_FEAT_ROBZYL
+        #ifndef ENABLE_FEAT_F4HWN
             case 0x052D:
                 CMD_052D(Port, pUART_Command->Buffer);
                 break;
@@ -864,7 +864,7 @@ void UART_HandleCommand(uint32_t Port)
 #endif
     } // switch
 
-    #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+    #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
         gUART_LockScreenshot = 20; // lock screenshot
     #endif
 }

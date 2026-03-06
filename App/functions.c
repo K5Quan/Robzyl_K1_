@@ -117,7 +117,7 @@ void FUNCTION_Foreground(const FUNCTION_Type_t PreviousFunction)
 }
 
 void FUNCTION_PowerSave() {
-    #ifdef ENABLE_FEAT_ROBZYL_SLEEP
+    #ifdef ENABLE_FEAT_F4HWN_SLEEP
         gPowerSave_10ms = gEeprom.BATTERY_SAVE * (gWakeUp ? 200 : 10); // deep sleep now indexed on BatSav
     #else
         gPowerSave_10ms = gEeprom.BATTERY_SAVE * 10;
@@ -218,7 +218,7 @@ void FUNCTION_Transmit()
     }
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     BK4819_DisableScramble();
 #else
     if (gCurrentVfo->SCRAMBLING_TYPE > 0 && gSetting_ScrambleEnable)

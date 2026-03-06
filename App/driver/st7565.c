@@ -125,7 +125,7 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
 }
 
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     // Optimization
     //
     // ST7565_BlitScreen(0) = ST7565_BlitStatusLine()
@@ -164,7 +164,7 @@ void ST7565_DrawLine(const unsigned int Column, const unsigned int Line, const u
     void ST7565_BlitLine(unsigned line)
     {
         ST7565_BlitScreen(line + 1);
-        #ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+        #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
             getScreenShot(true);  // Force immediate capture
         #endif
     }
@@ -276,7 +276,7 @@ uint8_t cmds[] = {
     ST7565_CMD_DISPLAY_ON_OFF | 1,          // Display ON/OFF: ON
 };
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     static void ST7565_Cmd(uint8_t i)
     {
         switch(i) {
@@ -291,7 +291,7 @@ uint8_t cmds[] = {
         }
     }
 
-    #if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+    #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
     void ST7565_ContrastAndInv(void)
     {
         CS_Assert();
@@ -338,7 +338,7 @@ void ST7565_Init(void)
 
     for(uint8_t i = 0; i < 8; i++)
     {
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         ST7565_Cmd(i);
 #else
         ST7565_WriteByte(cmds[i]);
@@ -363,7 +363,7 @@ void ST7565_Init(void)
     ST7565_FillScreen(0x00);
 }
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     void ST7565_ShutDown(void)
     {
         CS_Assert();
@@ -378,7 +378,7 @@ void ST7565_FixInterfGlitch(void)
 {
     CS_Assert();
     for(uint8_t i = 0; i < ARRAY_SIZE(cmds); i++)
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         ST7565_Cmd(i);
 #else
         ST7565_WriteByte(cmds[i]);

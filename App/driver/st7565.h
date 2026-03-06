@@ -33,7 +33,7 @@ void ST7565_BlitLine(unsigned line);
 void ST7565_BlitStatusLine(void);
 void ST7565_FillScreen(uint8_t Value);
 void ST7565_Init(void);
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     void ST7565_ShutDown(void);
 #endif
 void ST7565_FixInterfGlitch(void);
@@ -41,8 +41,8 @@ void ST7565_HardwareReset(void);
 void ST7565_SelectColumnAndLine(uint8_t Column, uint8_t Line);
 void ST7565_WriteByte(uint8_t Value);
 
-#ifdef ENABLE_FEAT_ROBZYL
-    #if defined(ENABLE_FEAT_ROBZYL_CTR) || defined(ENABLE_FEAT_ROBZYL_INV)
+#ifdef ENABLE_FEAT_F4HWN
+    #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
     void ST7565_ContrastAndInv(void);
     #endif
     //#if !defined(ENABLE_SPECTRUM) || !defined(ENABLE_FMRADIO)

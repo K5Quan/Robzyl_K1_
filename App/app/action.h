@@ -35,7 +35,7 @@ void ACTION_SwitchDemodul(void);
     void ACTION_BlminTmpOff(void);
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     void ACTION_RxMode(void);
     void ACTION_MainOnly(void);
     void ACTION_Ptt(void);
@@ -43,10 +43,10 @@ void ACTION_SwitchDemodul(void);
     void ACTION_BackLightOnDemand(void);
     void ACTION_BackLight(void);
     void ACTION_Mute(void);
-    #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         void ACTION_RxA(void);
     #endif
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         void ACTION_Power_High(void);
         void ACTION_Remove_Offset(void);
     #endif

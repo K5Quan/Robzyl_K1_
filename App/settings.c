@@ -108,7 +108,7 @@ void SETTINGS_InitEEPROM(void)
 
     // 0E70..0E77
     PY25Q16_ReadBuffer(0x00A000, Data, 8);
-    #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         gSetting_set_audio = (Data[0] < 5) ? Data[0] : 0;
     #endif
     gEeprom.SQUELCH_LEVEL        = (Data[1] < 10) ? Data[1] : 1;
@@ -116,7 +116,7 @@ void SETTINGS_InitEEPROM(void)
     #ifdef ENABLE_NOAA
         gEeprom.NOAA_AUTO_SCAN   = (Data[3] <  2) ? Data[3] : false;
     #endif
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         gEeprom.KEY_LOCK = (Data[4] & 0x01) != 0;
         gEeprom.MENU_LOCK = (Data[4] & 0x02) != 0;
         gEeprom.SET_KEY = ((Data[4] >> 2) & 0x0F) > 4 ? 0 : (Data[4] >> 2) & 0x0F;
@@ -142,17 +142,17 @@ void SETTINGS_InitEEPROM(void)
     gEeprom.BATTERY_SAVE          = (Data[3] < 6) ? Data[3] : 4;
     gEeprom.DUAL_WATCH            = (Data[4] < 3) ? Data[4] : DUAL_WATCH_CHAN_A;
     gEeprom.BACKLIGHT_TIME        = (Data[5] < 62) ? Data[5] : 12;
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         gEeprom.TAIL_TONE_ELIMINATION = Data[6] & 0x01;
         gSetting_set_nfm = (Data[6] >> 1) & 0x01;
-        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
             gEeprom.VFO_OPEN = ((Data[6] >> 2) & 0x01) != 0 ? true : true;
         #endif
     #else
         gEeprom.TAIL_TONE_ELIMINATION = (Data[6] < 2) ? Data[6] : false;
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE =  Data[7]        & 0x07;   // bits 0..2
         gEeprom.CURRENT_LIST  = (Data[7] >> 3)  & 0x1F;   // bits 3..7
     #else
@@ -228,7 +228,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     gEeprom.KEY_2_LONG_PRESS_ACTION      = (Data[4] < ACTION_OPT_LEN) ? Data[4] : ACTION_OPT_NONE;
     gEeprom.SCAN_RESUME_MODE             = (Data[5] < 105)            ? Data[5] : 14;
     gEeprom.AUTO_KEYPAD_LOCK             = (Data[6] < 41)             ? Data[6] : 0;
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     gEeprom.POWER_ON_DISPLAY_MODE        = (Data[7] < 6)              ? Data[7] : POWER_ON_DISPLAY_MODE_VOLTAGE;
 #else
     gEeprom.POWER_ON_DISPLAY_MODE        = (Data[7] < 4)              ? Data[7] : POWER_ON_DISPLAY_MODE_VOLTAGE;
@@ -351,18 +351,18 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     // 0F40..0F47
     PY25Q16_ReadBuffer(0x00A150, Data, 8);
     gSetting_F_LOCK            = (Data[0] < F_LOCK_LEN) ? Data[0] : F_LOCK_DEF;
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     gSetting_350TX             = (Data[1] < 2) ? Data[1] : false;  // was true
 #endif
 #ifdef ENABLE_DTMF_CALLING
     gSetting_KILLED            = (Data[2] < 2) ? Data[2] : false;
 #endif
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     gSetting_200TX             = (Data[3] < 2) ? Data[3] : false;
     gSetting_500TX             = (Data[4] < 2) ? Data[4] : false;
 #endif
     gSetting_350EN             = (Data[5] < 2) ? Data[5] : true;
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     gSetting_ScrambleEnable    = false;
 #else
     gSetting_ScrambleEnable    = (Data[6] < 2) ? Data[6] : true;
@@ -374,7 +374,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     #ifdef ENABLE_AUDIO_BAR
         gSetting_mic_bar       = !!(Data[7] & (1u << 4));
     #endif
-    #ifndef ENABLE_FEAT_ROBZYL
+    #ifndef ENABLE_FEAT_F4HWN
         #ifdef ENABLE_AM_FIX
             gSetting_AM_fix        = !!(Data[7] & (1u << 5));
         #endif
@@ -432,7 +432,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     // 0F30..0F3F
     PY25Q16_ReadBuffer(0x00A138, gCustomAesKey, sizeof(gCustomAesKey));
     bHasCustomAesKey = false;
-    #ifndef ENABLE_FEAT_ROBZYL
+    #ifndef ENABLE_FEAT_F4HWN
         for (unsigned int i = 0; i < ARRAY_SIZE(gCustomAesKey); i++)
         {
             if (gCustomAesKey[i] != 0xFFFFFFFFu)
@@ -443,7 +443,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
         }
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL
+    #ifdef ENABLE_FEAT_F4HWN
         // 1FF0..0x1FF7
         // TODO: address TBD
         PY25Q16_ReadBuffer(0x00A158, Data, 8);
@@ -467,7 +467,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
 
         int tmp = (Data[5] & 0xF0) >> 4;
 
-#ifdef ENABLE_FEAT_ROBZYL_INV
+#ifdef ENABLE_FEAT_F4HWN_INV
         gSetting_set_inv = (tmp >> 0) & 0x01;
 #else
         gSetting_set_inv = 0;
@@ -476,7 +476,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
         gSetting_set_met = (tmp >> 2) & 0x01;
         gSetting_set_gui = (tmp >> 3) & 0x01;
 
-#ifdef ENABLE_FEAT_ROBZYL_CTR
+#ifdef ENABLE_FEAT_F4HWN_CTR
         int ctr_value = Data[5] & 0x0F;
         gSetting_set_ctr = (ctr_value > 0 && ctr_value < 16) ? ctr_value : 10;
 #else
@@ -484,7 +484,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
 #endif
 
         gSetting_set_tmr = Data[4] & 0x01;
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
         gSetting_set_off = (Data[4] >> 1) > 120 ? 60 : (Data[4] >> 1); 
 #endif
 
@@ -554,7 +554,7 @@ void SETTINGS_LoadCalibration(void)
         gEeprom.VOLUME_GAIN          = (Misc.VOLUME_GAIN < 64) ? Misc.VOLUME_GAIN : 58;
         gEeprom.DAC_GAIN             = (Misc.DAC_GAIN    < 16) ? Misc.DAC_GAIN    : 8;
 
-        #ifdef ENABLE_FEAT_ROBZYL
+        #ifdef ENABLE_FEAT_F4HWN
             gEeprom.VOLUME_GAIN_BACKUP   = gEeprom.VOLUME_GAIN;
         #endif
 
@@ -623,7 +623,7 @@ void SETTINGS_FactoryReset(bool bIsAll)
     }
 
     // Prevent reset to restart in RO mode...
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         // Bloc 0x0E70..0x0E7F -> offset 0x00A000
         uint8_t Data8[0x10];
         PY25Q16_ReadBuffer(0x00A000, Data8, sizeof(Data8));
@@ -639,7 +639,7 @@ void SETTINGS_FactoryReset(bool bIsAll)
         // SET_NAV to false
         Data8[4] &= (uint8_t)~0x40;  // Clear bit 6 (SET_NAV) for UV-K1 by default
 
-        #ifdef ENABLE_FEAT_ROBZYL_RESET_VFO
+        #ifdef ENABLE_FEAT_F4HWN_RESET_VFO
             Data8[7] = (1 & 0x01);
         #endif
 
@@ -650,7 +650,7 @@ void SETTINGS_FactoryReset(bool bIsAll)
     #endif
 
     // Reset VFO for the first time...
-    #ifdef ENABLE_FEAT_ROBZYL_RESET_VFO
+    #ifdef ENABLE_FEAT_F4HWN_RESET_VFO
         RADIO_InitInfo(&gEeprom.VfoInfo[0], FREQ_CHANNEL_FIRST + BAND3_137MHz, 14550000);
         RADIO_InitInfo(&gEeprom.VfoInfo[1], FREQ_CHANNEL_FIRST + BAND6_400MHz, 43350000);
 
@@ -747,7 +747,7 @@ void SETTINGS_SaveSettings(void)
 
     // 0x0E70
     State = SecBuf;
-    #ifdef ENABLE_FEAT_ROBZYL_AUDIO
+    #ifdef ENABLE_FEAT_F4HWN_AUDIO
         State[0] = gSetting_set_audio;
     #endif
     State[1] = gEeprom.SQUELCH_LEVEL;
@@ -758,7 +758,7 @@ void SETTINGS_SaveSettings(void)
         State[3] = false;
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         State[4] =
             (gEeprom.KEY_LOCK        ? 0x01 : 0) |
             (gEeprom.MENU_LOCK       ? 0x02 : 0) |
@@ -785,7 +785,7 @@ void SETTINGS_SaveSettings(void)
     State[3] = gEeprom.BATTERY_SAVE;
     State[4] = gEeprom.DUAL_WATCH;
 
-    #ifdef ENABLE_FEAT_ROBZYL
+    #ifdef ENABLE_FEAT_F4HWN
         if(!gSaveRxMode)
         {
             State[2] = gCB;
@@ -803,11 +803,11 @@ void SETTINGS_SaveSettings(void)
         State[5] = gEeprom.BACKLIGHT_TIME;
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL_NARROWER
+    #ifdef ENABLE_FEAT_F4HWN_NARROWER
         State[6] =
             (gEeprom.TAIL_TONE_ELIMINATION & 0x01) |
             ((gSetting_set_nfm & 0x01) << 1)
-        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
           | ((gEeprom.VFO_OPEN & 0x01) << 2)
         #endif
     ;
@@ -815,7 +815,7 @@ void SETTINGS_SaveSettings(void)
         State[6] = gEeprom.TAIL_TONE_ELIMINATION;
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         State[7] = (gEeprom.CURRENT_STATE & 0x07) | ((gEeprom.SCAN_LIST_DEFAULT & 0x1F) << 3);
     #else
         State[7] = gEeprom.VFO_OPEN;
@@ -922,18 +922,18 @@ void SETTINGS_SaveSettings(void)
     // 0x0F40
     State = SecBuf;
     State[0]  = gSetting_F_LOCK;
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     State[1]  = gSetting_350TX;
 #endif
 #ifdef ENABLE_DTMF_CALLING
     State[2]  = gSetting_KILLED;
 #endif
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     State[3]  = gSetting_200TX;
     State[4]  = gSetting_500TX;
 #endif
     State[5]  = gSetting_350EN;
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     State[6]  = false;
 #else
     State[6]  = gSetting_ScrambleEnable;
@@ -945,7 +945,7 @@ void SETTINGS_SaveSettings(void)
     #ifdef ENABLE_AUDIO_BAR
         if (!gSetting_mic_bar)           State[7] &= ~(1u << 4);
     #endif
-    #ifndef ENABLE_FEAT_ROBZYL
+    #ifndef ENABLE_FEAT_F4HWN
         #ifdef ENABLE_AM_FIX
             if (!gSetting_AM_fix)            State[7] &= ~(1u << 5);
         #endif
@@ -956,7 +956,7 @@ void SETTINGS_SaveSettings(void)
 
     // ------------------
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     // 0x1FF0
     State = SecBuf;
     // TODO: TBD
@@ -984,7 +984,7 @@ void SETTINGS_SaveSettings(void)
         tmp = tmp | (1 << 3);
     */
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP 
+#ifdef ENABLE_FEAT_F4HWN_SLEEP 
     State[4] = (gSetting_set_off << 1) | (gSetting_set_tmr & 0x01);
 #else
     State[4] = gSetting_set_tmr ? (1 << 0) : 0;
@@ -1004,7 +1004,7 @@ void SETTINGS_SaveSettings(void)
     PY25Q16_WriteBuffer(0x00A158, SecBuf, 8, false);
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_VOL
+#ifdef ENABLE_FEAT_F4HWN_VOL
     SETTINGS_WriteCurrentVol();
 #endif
 }
@@ -1056,7 +1056,7 @@ void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO,
 #endif
         ;
         State -> _8[6] =  pVFO->STEP_SETTING;
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         State -> _8[7] =  0;
 #else
         State -> _8[7] =  pVFO->SCRAMBLING_TYPE;
@@ -1127,7 +1127,7 @@ void SETTINGS_UpdateChannel(uint16_t channel, const VFO_Info_t *pVFO, bool keep,
 
         state.__val = att.__val;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
         save = true;
 #endif
         if(save)
@@ -1153,7 +1153,7 @@ void SETTINGS_WriteBuildOptions(void)
 {
     uint8_t State[8];
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     // 0x1FF0
     PY25Q16_ReadBuffer(0x00A158, State, sizeof(State));
 #endif
@@ -1195,7 +1195,7 @@ State[1] = 0
 #ifdef ENABLE_BYP_RAW_DEMODULATORS
     | (1 << 2)
 #endif
-#ifdef ENABLE_FEAT_ROBZYL_GAME
+#ifdef ENABLE_FEAT_F4HWN_GAME
     | (1 << 3)
 #endif
 #ifdef ENABLE_AM_FIX
@@ -1204,14 +1204,14 @@ State[1] = 0
 #ifdef ENABLE_SPECTRUM
     | (1 << 5)
 #endif
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     | (1 << 6)
 #endif
 ;
     PY25Q16_WriteBuffer(0x00A158, State, sizeof(State), false);
 }
 
-#ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+#ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
     void SETTINGS_WriteCurrentState(void)
     {
         uint8_t State[0x08];
@@ -1242,7 +1242,7 @@ State[1] = 0
     }
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_VOL
+#ifdef ENABLE_FEAT_F4HWN_VOL
     void SETTINGS_WriteCurrentVol(void)
     {
         uint8_t State[8];
@@ -1253,7 +1253,7 @@ State[1] = 0
     }
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
 
 void SETTINGS_ResetTxLock(void)
 {

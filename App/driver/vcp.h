@@ -29,7 +29,7 @@ extern volatile uint32_t VCP_RxBufPointer;
 
 void VCP_Init();
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
 bool VCP_ScreenshotPing(void);
 #endif
 

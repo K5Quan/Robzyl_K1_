@@ -163,12 +163,12 @@ int32_t TX_freq_check(const uint32_t Frequency)
             if (Frequency >= frequencyBandTable[BAND3_137MHz].lower && Frequency < frequencyBandTable[BAND3_137MHz].upper)
                 return 0;
             if (Frequency >= frequencyBandTable[BAND4_174MHz].lower && Frequency < frequencyBandTable[BAND4_174MHz].upper)
-            #ifndef ENABLE_FEAT_ROBZYL
+            #ifndef ENABLE_FEAT_F4HWN
                 if (gSetting_200TX)
             #endif
                     return 0;
             if (Frequency >= frequencyBandTable[BAND5_350MHz].lower && Frequency < frequencyBandTable[BAND5_350MHz].upper)
-            #ifndef ENABLE_FEAT_ROBZYL
+            #ifndef ENABLE_FEAT_F4HWN
                 if (gSetting_350TX && gSetting_350EN)
             #else
                 if (gSetting_350EN)                
@@ -177,7 +177,7 @@ int32_t TX_freq_check(const uint32_t Frequency)
             if (Frequency >= frequencyBandTable[BAND6_400MHz].lower && Frequency < frequencyBandTable[BAND6_400MHz].upper)
                 return 0;
             if (Frequency >= frequencyBandTable[BAND7_470MHz].lower && Frequency <= 60000000)
-            #ifndef ENABLE_FEAT_ROBZYL
+            #ifndef ENABLE_FEAT_F4HWN
                 if (gSetting_500TX)
             #endif
                     return 0;
@@ -218,14 +218,14 @@ int32_t TX_freq_check(const uint32_t Frequency)
                 return 0;
             break;
 
-#ifdef ENABLE_FEAT_ROBZYL_PMR
+#ifdef ENABLE_FEAT_F4HWN_PMR
         case F_LOCK_PMR:
             if (Frequency >= 44600625 && Frequency <= 44619375)
                 return 0;
             break;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_GMRS_FRS_MURS
+#ifdef ENABLE_FEAT_F4HWN_GMRS_FRS_MURS
         case F_LOCK_GMRS_FRS_MURS:
             // https://forums.radioreference.com/threads/the-great-unofficial-radioreference-frs-gmrs-murs-fact-sheet.275370/
             if ((Frequency >= 46255000 && Frequency <= 46272500) ||
@@ -240,7 +240,7 @@ int32_t TX_freq_check(const uint32_t Frequency)
             break;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_CA 
+#ifdef ENABLE_FEAT_F4HWN_CA 
         case F_LOCK_CA:
             if (Frequency >= 14400000 && Frequency < 14800000)
                 return 0;

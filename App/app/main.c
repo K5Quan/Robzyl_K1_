@@ -31,7 +31,7 @@
 #include "app/spectrum.h"
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_GAME
+#ifdef ENABLE_FEAT_F4HWN_GAME
 #include "app/breakout.h"
 #endif
 
@@ -99,7 +99,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 {
     uint8_t Vfo = gEeprom.TX_VFO;
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if(gEeprom.MENU_LOCK == true) {
         if(Key == 2) { // Enable A/B only
             gVfoConfigureMode     = VFO_CONFIGURE;
@@ -198,7 +198,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             break;
 
         case KEY_2:
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
                 gVfoConfigureMode     = VFO_CONFIGURE;
             #endif
             COMMON_SwitchVFOs();
@@ -207,7 +207,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
             break;
 
         case KEY_3:
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
                 gVfoConfigureMode     = VFO_CONFIGURE;
             #endif
             COMMON_SwitchVFOMode();
@@ -289,7 +289,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
                 gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
             break;
 
-#ifdef ENABLE_FEAT_ROBZYL // Set Squelch F + UP or Down and Step F + SIDE1 or F + SIDE2
+#ifdef ENABLE_FEAT_F4HWN // Set Squelch F + UP or Down and Step F + SIDE1 or F + SIDE2
         case KEY_UP:
         case KEY_DOWN:
             {
@@ -364,7 +364,7 @@ void channelMove(uint16_t Channel)
     //gRequestSaveVFO            = true;
     gVfoConfigureMode          = VFO_CONFIGURE_RELOAD;
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     gRemoveOffset = false;
     gPowerHigh = false;
 #endif
@@ -445,13 +445,13 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             switch(Key) {
                 case KEY_0:
                     gEeprom.SCAN_LIST_DEFAULT = MR_CHANNELS_LIST + 1;
-                    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+                    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
                         SETTINGS_WriteCurrentState();
                     #endif
                     break;
                 case KEY_1...KEY_9:
                     gEeprom.SCAN_LIST_DEFAULT = Key;
-                    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+                    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
                         SETTINGS_WriteCurrentState();
                     #endif
                     break;
@@ -476,7 +476,7 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
             if (value == 0)
             {
                 gEeprom.SCAN_LIST_DEFAULT = MR_CHANNELS_LIST + 1;
-            #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+            #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
                 SETTINGS_WriteCurrentState();
             #endif
                 return;
@@ -495,7 +495,7 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
                     RADIO_NextValidList(1);
                 }
 
-            #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+            #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
                 SETTINGS_WriteCurrentState();
             #endif
             }
@@ -653,10 +653,10 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         ACTION_BackLight();
         return;
     }
-    #ifdef ENABLE_FEAT_ROBZYL_GAME
+    #ifdef ENABLE_FEAT_F4HWN_GAME
     else if(Key == 7)
     {
-        #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+        #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
             if(gEeprom.MENU_LOCK == true) {
                 return;
             }
@@ -785,7 +785,7 @@ static void MAIN_Key_MENU(bool bKeyPressed, bool bKeyHeld)
     if (bKeyHeld) { // menu key held down (long press)
         if (bKeyPressed) { // long press MENU key
 
-            #ifdef ENABLE_FEAT_ROBZYL
+            #ifdef ENABLE_FEAT_F4HWN
             // Exclude channel
             if(gScanStateDir != SCAN_OFF)
             {
@@ -838,7 +838,7 @@ static void MAIN_Key_MENU(bool bKeyPressed, bool bKeyHeld)
                 return;
             }
 
-            #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+            #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
             if(gEeprom.MENU_LOCK == false) {
             #endif
 
@@ -848,7 +848,7 @@ static void MAIN_Key_MENU(bool bKeyPressed, bool bKeyHeld)
                 gAnotherVoiceID   = VOICE_ID_MENU;
             #endif
 
-            #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+            #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
             }
             #endif
         }
@@ -861,7 +861,7 @@ static void MAIN_Key_MENU(bool bKeyPressed, bool bKeyHeld)
 static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
 {
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if(gEeprom.MENU_LOCK == true) {
         return; // prevent F function if MENU LOCK is true
     }
@@ -881,7 +881,7 @@ static void MAIN_Key_STAR(bool bKeyPressed, bool bKeyHeld)
             return; 
 
         /*
-        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         if(gScanRangeStart == 0) // No ScanRange
         {
             gEeprom.CURRENT_STATE = 1;
@@ -956,14 +956,14 @@ static void MAIN_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
         Direction = -Direction;
     }
 
-#ifdef ENABLE_FEAT_ROBZYL // Set Squelch F + UP or Down
+#ifdef ENABLE_FEAT_F4HWN // Set Squelch F + UP or Down
     if(gWasFKeyPressed) {
         processFKeyFunction(Direction == 1 ? KEY_UP : KEY_DOWN, false);
         return;
     }
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     gRemoveOffset = false;
     gPowerHigh = false;
 #endif
@@ -1075,7 +1075,7 @@ void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 //  }
 
     switch (Key) {
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         case KEY_SIDE1:
         case KEY_SIDE2:
 #endif

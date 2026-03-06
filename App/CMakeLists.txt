@@ -64,7 +64,7 @@ endmacro()
 
 # compile options (see README.md for descriptions)
 
-if(ENABLE_FEAT_ROBZYL)
+if(ENABLE_FEAT_F4HWN)
     target_compile_definitions(App INTERFACE 
         "AUTHOR_STRING_1=\"${AUTHOR_STRING_1}\""
         "AUTHOR_STRING_2=\"${AUTHOR_STRING_2}\""
@@ -191,32 +191,30 @@ enable_feature(ENABLE_REGA
 # Thank you @reppad
 enable_feature(ENABLE_EXTRA_UART_CMD)
 
-# ---- ROBZYL MODS ----
-
-enable_feature(ENABLE_FEAT_ROBZYL)
-enable_feature(ENABLE_FEAT_ROBZYL_GAME 
+enable_feature(ENABLE_FEAT_F4HWN)
+enable_feature(ENABLE_FEAT_F4HWN_GAME 
     app/breakout.c
 )
-enable_feature(ENABLE_FEAT_ROBZYL_SCREENSHOT 
+enable_feature(ENABLE_FEAT_F4HWN_SCREENSHOT 
     screenshot.c
 )
-enable_feature(ENABLE_FEAT_ROBZYL_SPECTRUM)
-enable_feature(ENABLE_FEAT_ROBZYL_RX_TX_TIMER)
-enable_feature(ENABLE_FEAT_ROBZYL_CHARGING_C)
-enable_feature(ENABLE_FEAT_ROBZYL_SLEEP)
-enable_feature(ENABLE_FEAT_ROBZYL_RESUME_STATE)
-enable_feature(ENABLE_FEAT_ROBZYL_NARROWER)
-enable_feature(ENABLE_FEAT_ROBZYL_INV)
-enable_feature(ENABLE_FEAT_ROBZYL_CTR)
-enable_feature(ENABLE_FEAT_ROBZYL_RESCUE_OPS)
-enable_feature(ENABLE_FEAT_ROBZYL_VOL)
-enable_feature(ENABLE_FEAT_ROBZYL_AUDIO)
-enable_feature(ENABLE_FEAT_ROBZYL_RESET_VFO)
-enable_feature(ENABLE_FEAT_ROBZYL_PMR)
-enable_feature(ENABLE_FEAT_ROBZYL_GMRS_FRS_MURS)
-enable_feature(ENABLE_FEAT_ROBZYL_CA)
-enable_feature(ENABLE_FEAT_ROBZYL_DEBUG)
-enable_feature(ENABLE_FEAT_ROBZYL_MEM)
+enable_feature(ENABLE_FEAT_F4HWN_SPECTRUM)
+enable_feature(ENABLE_FEAT_F4HWN_RX_TX_TIMER)
+enable_feature(ENABLE_FEAT_F4HWN_CHARGING_C)
+enable_feature(ENABLE_FEAT_F4HWN_SLEEP)
+enable_feature(ENABLE_FEAT_F4HWN_RESUME_STATE)
+enable_feature(ENABLE_FEAT_F4HWN_NARROWER)
+enable_feature(ENABLE_FEAT_F4HWN_INV)
+enable_feature(ENABLE_FEAT_F4HWN_CTR)
+enable_feature(ENABLE_FEAT_F4HWN_RESCUE_OPS)
+enable_feature(ENABLE_FEAT_F4HWN_VOL)
+enable_feature(ENABLE_FEAT_F4HWN_AUDIO)
+enable_feature(ENABLE_FEAT_F4HWN_RESET_VFO)
+enable_feature(ENABLE_FEAT_F4HWN_PMR)
+enable_feature(ENABLE_FEAT_F4HWN_GMRS_FRS_MURS)
+enable_feature(ENABLE_FEAT_F4HWN_CA)
+enable_feature(ENABLE_FEAT_F4HWN_DEBUG)
+enable_feature(ENABLE_FEAT_F4HWN_MEM)
 
 # ---- DEBUGGING ----
 

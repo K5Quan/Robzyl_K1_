@@ -29,7 +29,7 @@
 #include "settings.h"
 #include "version.h"
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     #ifdef ENABLE_FMRADIO
         #include "app/action.h"
         #include "ui/ui.h"
@@ -100,7 +100,7 @@ void Main(void)
 
     SETTINGS_InitEEPROM();
 
-    #ifdef ENABLE_FEAT_ROBZYL
+    #ifdef ENABLE_FEAT_F4HWN
         gDW = gEeprom.DUAL_WATCH;
         gCB = gEeprom.CROSS_BAND_RX_TX;
     #endif
@@ -126,7 +126,7 @@ void Main(void)
 
     BOOT_Mode_t  BootMode = BOOT_GetMode();
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if (BootMode == BOOT_MODE_RESCUE_OPS)
     {
         gEeprom.MENU_LOCK = !gEeprom.MENU_LOCK;
@@ -144,7 +144,7 @@ void Main(void)
     */
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+#ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if (BootMode == BOOT_MODE_F_LOCK && gEeprom.MENU_LOCK == true)
     {
         BootMode = BOOT_MODE_NORMAL;
@@ -155,7 +155,7 @@ void Main(void)
     {
 
         gF_LOCK = true;            // flag to say include the hidden menu items
-        #ifdef ENABLE_FEAT_ROBZYL
+        #ifdef ENABLE_FEAT_F4HWN
             gEeprom.KEY_LOCK = 0;
             SETTINGS_SaveSettings();
             gMenuCursor = MENU_ITEMS; 
@@ -213,7 +213,7 @@ void Main(void)
 
         BACKLIGHT_TurnOn();
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
         if (gEeprom.POWER_ON_DISPLAY_MODE != POWER_ON_DISPLAY_MODE_NONE && gEeprom.POWER_ON_DISPLAY_MODE != POWER_ON_DISPLAY_MODE_SOUND)
 #else
         if (gEeprom.POWER_ON_DISPLAY_MODE != POWER_ON_DISPLAY_MODE_NONE)
@@ -280,7 +280,7 @@ void Main(void)
     }
 
     /*
-    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
     if(gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5)
     {
             gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
@@ -323,7 +323,7 @@ void Main(void)
     #endif
     */
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
 /*         if (gEeprom.CURRENT_STATE == 2 || gEeprom.CURRENT_STATE == 5) {
             gScanRangeStart = gScanRangeStart ? 0 : gTxVfo->pRX->Frequency;
             gScanRangeStop = gEeprom.VfoInfo[!gEeprom.TX_VFO].freq_config_RX.Frequency;

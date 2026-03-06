@@ -25,7 +25,7 @@
 #include "settings.h"
 #include "external/printf/printf.h"
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     #include "driver/system.h"
     #include "audio.h"
     #include "misc.h"
@@ -46,7 +46,7 @@ static uint32_t dutyCycle[DUTY_CYCLE_LEVELS];
 uint16_t gBacklightCountdown_500ms = 0;
 bool backlightOn;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     const uint8_t value[] = {
         0,    // 0 off
         8,    // 1 visible in the dark
@@ -62,7 +62,7 @@ bool backlightOn;
     };
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL_SLEEP
+#ifdef ENABLE_FEAT_F4HWN_SLEEP
     uint16_t gSleepModeCountdown_500ms = 0;
 #endif
 
@@ -113,17 +113,17 @@ static void BACKLIGHT_Sound(void)
 
 void BACKLIGHT_TurnOn(void)
 {
-    #ifdef ENABLE_FEAT_ROBZYL_SLEEP
+    #ifdef ENABLE_FEAT_F4HWN_SLEEP
         gSleepModeCountdown_500ms = gSetting_set_off * 120;
     #endif
 
-    #ifdef ENABLE_FEAT_ROBZYL
+    #ifdef ENABLE_FEAT_F4HWN
         gBacklightBrightnessOld = BACKLIGHT_GetBrightness();
     #endif
 
     if (gEeprom.BACKLIGHT_TIME == 0) {
         BACKLIGHT_TurnOff();
-        #ifdef ENABLE_FEAT_ROBZYL
+        #ifdef ENABLE_FEAT_F4HWN
             if(gK5startup == true) 
             {
                 BACKLIGHT_Sound();
@@ -134,7 +134,7 @@ void BACKLIGHT_TurnOn(void)
 
     backlightOn = true;
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     if(gK5startup == true) {
         #if defined(ENABLE_FMRADIO) && defined(ENABLE_SPECTRUM)
             BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MAX);

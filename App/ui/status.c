@@ -34,8 +34,8 @@
 #include "ui/ui.h"
 #include "ui/status.h"
 
-#ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
-#ifndef ENABLE_FEAT_ROBZYL_DEBUG
+#ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
+#ifndef ENABLE_FEAT_F4HWN_DEBUG
 static void convertTime(uint8_t *line, uint8_t type) 
 {
     uint16_t t = (type == 0) ? (gTxTimerCountdown_500ms / 2) : (3600 - gRxTimerCountdown_500ms / 2);
@@ -145,7 +145,7 @@ void UI_DisplayStatus()
     }
     x += 10;  // font character width
 
-    #ifdef ENABLE_FEAT_ROBZYL_DEBUG
+    #ifdef ENABLE_FEAT_F4HWN_DEBUG
         // Only for debug
         // Only for debug
         // Only for debug
@@ -164,7 +164,7 @@ void UI_DisplayStatus()
         #endif
 
         if(!SCANNER_IsScanning()) {
-        #ifdef ENABLE_FEAT_ROBZYL_RX_TX_TIMER
+        #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
             if(gCurrentFunction == FUNCTION_TRANSMIT && gSetting_set_tmr == true)
             {
                 convertTime(line, 0);
@@ -176,7 +176,7 @@ void UI_DisplayStatus()
             else
         #endif
             {
-                #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+                #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
                 if(gEeprom.MENU_LOCK == true) {
                     memcpy(line + x + 2, gFontRO, sizeof(gFontRO));
                 }
@@ -198,7 +198,7 @@ void UI_DisplayStatus()
                         if(!gAirCopyBootMode)
                             memcpy(line + x + 2, gFontMO, sizeof(gFontMO));
                     }
-                #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+                #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
                 }
                 #endif
             }
@@ -215,7 +215,7 @@ void UI_DisplayStatus()
     x += sizeof(gFontVox) + 3;
 #endif
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     // PTT indicator
     if(!gAirCopyBootMode) {
         if (gSetting_set_ptt_session) {
@@ -242,7 +242,7 @@ void UI_DisplayStatus()
         size = sizeof(gFontKeyLock);
     }
     else if (gWasFKeyPressed) {
-        #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+        #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
         if (!gEeprom.MENU_LOCK) {
             src = gFontF;
             size = sizeof(gFontF);
@@ -252,7 +252,7 @@ void UI_DisplayStatus()
         size = sizeof(gFontF);
         #endif
     }
-    #ifdef ENABLE_FEAT_ROBZYL
+    #ifdef ENABLE_FEAT_F4HWN
         else if (gMute) {
             src = gFontMute;
             size = sizeof(gFontMute);
@@ -262,7 +262,7 @@ void UI_DisplayStatus()
         src = gFontLight;
         size = sizeof(gFontLight);
     }
-    #ifdef ENABLE_FEAT_ROBZYL_CHARGING_C
+    #ifdef ENABLE_FEAT_F4HWN_CHARGING_C
     else if (gChargingWithTypeC) {
         src = BITMAP_USB_C;
         size = sizeof(BITMAP_USB_C);

@@ -43,7 +43,7 @@ BOOT_Mode_t BOOT_GetMode(void)
         SYSTEM_DelayMs(20);
     }
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESCUE_OPS
+    #ifdef ENABLE_FEAT_F4HWN_RESCUE_OPS
     if (Keys[0] == (10 + gEeprom.SET_KEY))
     {
         return BOOT_MODE_RESCUE_OPS;  // Secret KEY pressed
@@ -75,7 +75,7 @@ void BOOT_ProcessMode(BOOT_Mode_t Mode)
 {
     if (Mode == BOOT_MODE_F_LOCK)
     {
-        #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+        #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
             gEeprom.CURRENT_STATE = 0; // Don't resume is active...
         #endif 
         GUI_SelectNextDisplay(DISPLAY_MENU);
@@ -115,7 +115,7 @@ void BOOT_ProcessMode(BOOT_Mode_t Mode)
             gEeprom.BACKLIGHT_TIME = 61;
             gEeprom.KEY_LOCK = 0;
 
-            #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+            #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
                 gEeprom.CURRENT_STATE = 0; // Don't resume is active...
             #endif 
 

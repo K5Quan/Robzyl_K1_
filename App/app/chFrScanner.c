@@ -27,7 +27,7 @@ scan_next_chan_t    currentScanList;
 uint32_t            initialFrqOrChan;
 uint8_t             initialCROSS_BAND_RX_TX;
 
-#ifndef ENABLE_FEAT_ROBZYL
+#ifndef ENABLE_FEAT_F4HWN
     uint32_t lastFoundFrqOrChan;
 #else
     uint32_t lastFoundFrqOrChan;
@@ -74,7 +74,7 @@ void CHFRSCANNER_Start(const bool storeBackupSettings, const int8_t scan_directi
         NextFreqChannel();
     }
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     lastFoundFrqOrChanOld = lastFoundFrqOrChan;
 #endif
 
@@ -176,7 +176,7 @@ void CHFRSCANNER_Found(void)
     }
     */
 
-#ifdef ENABLE_FEAT_ROBZYL
+#ifdef ENABLE_FEAT_F4HWN
     lastFoundFrqOrChanOld = lastFoundFrqOrChan;
 #endif
 
@@ -221,7 +221,7 @@ void CHFRSCANNER_Stop(void)
         }
     }
 
-    #ifdef ENABLE_FEAT_ROBZYL_RESUME_STATE
+    #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 0;
         SETTINGS_WriteCurrentState();
     #endif

@@ -27,7 +27,7 @@ KEY_Code_t gKeyReading1     = KEY_INVALID;
 uint16_t   gDebounceCounter = 0;
 bool       gWasFKeyPressed  = false;
 
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
 // Short press: hold key for SERIAL_KEY_SHORT_POLLS calls.
 // Must exceed key_debounce_10ms (2) to trigger ProcessKey(key, true, false).
 #define SERIAL_KEY_SHORT_POLLS  5
@@ -114,7 +114,7 @@ static const KEY_Code_t keyboard[5][4] = {
 
 KEY_Code_t KEYBOARD_Poll(void)
 {
-#ifdef ENABLE_FEAT_ROBZYL_SCREENSHOT
+#ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     // Serial-injected key: hold it for SHORT or LONG polls depending on press type,
     // so the debounce counter in app.c reaches the right threshold:
     //   - Short: key_debounce_10ms (2)  → ProcessKey(key, true, false)
