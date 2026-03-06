@@ -20,29 +20,6 @@
 #include "bsp/dp32g030/irq.h"
 #include "driver/spi.h"
 
-void SPI0_Init(void)
-{
-    SPI_Config_t Config;
-
-    SPI_Disable(&SPI0->CR);
-
-    Config.TXFIFO_EMPTY = 0;
-    Config.RXFIFO_HFULL = 0;
-    Config.RXFIFO_FULL = 0;
-    Config.RXFIFO_OVF = 0;
-    Config.MSTR = 1;
-    Config.SPR = 2;
-    Config.CPHA = 1;
-    Config.CPOL = 1;
-    Config.LSB = 0;
-    Config.TF_CLR = 0;
-    Config.RF_CLR = 0;
-    Config.TXFIFO_HFULL = 0;
-    SPI_Configure(SPI0, &Config);
-
-    SPI_Enable(&SPI0->CR);
-}
-
 void SPI_WaitForUndocumentedTxFifoStatusBit(void)
 {
     uint32_t Timeout;

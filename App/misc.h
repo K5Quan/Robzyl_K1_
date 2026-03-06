@@ -39,7 +39,7 @@
 #define FM_CHANNELS_MAX 48
 
 #ifdef ENABLE_USB
-    #define MR_CHANNELS_MAX 600
+    #define MR_CHANNELS_MAX 600 //800 Max 97% RAM
 #else
     #define MR_CHANNELS_MAX 999 // 1024
 #endif

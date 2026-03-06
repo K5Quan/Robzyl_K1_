@@ -769,10 +769,6 @@ SYSTEM_DelayMs(200);
 isInitialized = false;
 }
 
-static uint8_t GetBWRegValueForScan() {
-  return scanStepBWRegValues[settings.scanStepIndex];
-}
-
 static uint16_t GetRssi(void) {
     uint16_t rssi;
     //BK4819_ReadRegister(0x63);
@@ -872,10 +868,9 @@ static void ToggleRX(bool on) {
         BK4819_WriteRegister(BK4819_REG_3F, BK4819_REG_02_CxCSS_TAIL);
 
     } else { 
-        BK4819_RX_TurnOn();
         RADIO_SetModulation(MODULATION_FM); //Test for Kolyan
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, false); //Scan in 25K bandwidth
-        if(appMode!=CHANNEL_MODE) BK4819_WriteRegister(0x43, GetBWRegValueForScan());
+        //if(appMode!=CHANNEL_MODE) BK4819_WriteRegister(0x43, GetBWRegValueForScan());
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 0);
     }
     if (on != audioState) {
