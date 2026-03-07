@@ -2239,7 +2239,8 @@ static void OnKeyDown(uint8_t key) {
               gScanRangeStart -= RangeStep;
               RelaunchScan();
               break;
-      }
+        }
+        Skip();
     }
     break;
   case KEY_DOWN: //History
@@ -2280,7 +2281,8 @@ static void OnKeyDown(uint8_t key) {
             gScanRangeStart += RangeStep;
             RelaunchScan();
             break;
-      }
+        }
+        Skip();
     }
   break;
   

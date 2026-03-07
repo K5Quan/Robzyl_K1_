@@ -1313,7 +1313,7 @@ void RADIO_SendCssTail(void)
 
 void RADIO_SendEndOfTransmission(void)
 {
-    BK4819_PlayRoger();
+    BK4819_PlayRoger(gEeprom.ROGER);
     DTMF_SendEndOfTransmission();
 
     // send the CTCSS/DCS tail tone - allows the receivers to mute the usual FM squelch tail/crash

@@ -32,7 +32,9 @@
 #define PIN_SCL GPIO_MAKE_PIN(GPIOB, LL_GPIO_PIN_8)
 #define PIN_SDA GPIO_MAKE_PIN(GPIOB, LL_GPIO_PIN_9)
 
-static const uint16_t FSK_RogerTable[7] = {0xF1A2, 0x7446, 0x61A4, 0x6544, 0x4E8A, 0xE044, 0xEA84};
+#ifdef ENABLE_DTMF_CALLING
+    static const uint16_t FSK_RogerTable[7] = {0xF1A2, 0x7446, 0x61A4, 0x6544, 0x4E8A, 0xE044, 0xEA84};
+#endif
 
 //static const uint8_t DTMF_TONE1_GAIN = 65;
 //static const uint8_t DTMF_TONE2_GAIN = 93;
@@ -1792,7 +1794,7 @@ static void BK4819_PlayRogerNormal(void)
     BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);   // 1 1 0000 0 1 1111 1 1 1 0
 }
 
-
+#ifdef ENABLE_DTMF_CALLING
 void BK4819_PlayRogerMDC(void)
 {
     struct reg_value {
@@ -1817,8 +1819,6 @@ void BK4819_PlayRogerMDC(void)
         { BK4819_REG_5C, 0xAA30 },  // Disable CRC
     };
 
-    BK4819_SetAF(BK4819_AF_MUTE);
-
     for (unsigned int i = 0; i < ARRAY_SIZE(RogerMDC_Configuration); i++) {
         BK4819_WriteRegister(RogerMDC_Configuration[i].reg, RogerMDC_Configuration[i].value);
     }
@@ -1840,14 +1840,123 @@ void BK4819_PlayRogerMDC(void)
     BK4819_WriteRegister(BK4819_REG_70, 0x0000);
     BK4819_WriteRegister(BK4819_REG_58, 0x0000);
 }
+#endif
 
-void BK4819_PlayRoger(void)
-{
-    if (gEeprom.ROGER == ROGER_MODE_ROGER) {
-        BK4819_PlayRogerNormal();
-    } else if (gEeprom.ROGER == ROGER_MODE_MDC) {
-        BK4819_PlayRogerMDC();
+//###########################################################################################
+
+void play_morse_element(uint32_t freq, uint32_t duration_ms) {
+    BK4819_WriteRegister(BK4819_REG_71, scale_freq(freq));
+    BK4819_ExitTxMute();
+    SYSTEM_DelayMs(duration_ms);
+    BK4819_EnterTxMute();
+    SYSTEM_DelayMs(50); // Small gap after each element
+}
+
+void play_morse_letter(const char *pattern) {
+    while (*pattern) {
+        if (*pattern == '.') {
+            play_morse_element(400, 50);
+        } else if (*pattern == '-') {
+            play_morse_element(400, 150);
+        }
+        pattern++;
     }
+    SYSTEM_DelayMs(100); // Adjust for letter gap
+}
+
+void send_robzyl_morse() {
+    play_morse_letter(".-."); 	//R
+    play_morse_letter("---"); 	//O
+    play_morse_letter("-...");  //B
+    play_morse_letter("--..");	//Z
+    play_morse_letter("-.--");	//Y
+    play_morse_letter(".-..");	//L
+} 
+
+//###########################################################################################
+
+
+void play_note(uint32_t freq, uint32_t duration) {
+    BK4819_WriteRegister(BK4819_REG_71, scale_freq(freq));
+    BK4819_ExitTxMute();
+    SYSTEM_DelayMs(duration);
+    BK4819_EnterTxMute();
+    //SYSTEM_DelayMs(10);
+}
+
+void play_mario_intro() {
+    play_note(660, 100);
+    play_note(660, 100);
+    play_note(0, 100);
+    play_note(660, 100);
+    play_note(0, 100);
+    play_note(523, 100);
+    play_note(660, 100);
+    play_note(0, 100);
+    play_note(784, 100);
+    play_note(0, 300);
+    play_note(392, 100);
+}
+
+//###########################################################################################
+ void roger_beep_r2d2_rnd(void){
+// R2-D2 Style Acknowledgment Beep
+play_note(1046, 50);  // C6
+play_note(1318, 50);  // E6
+play_note(1568, 70);  // G6
+play_note(0, 30);     // Micro-pause for chirp effect
+play_note(1760, 40);  // A6
+play_note(1568, 40);  // G6
+play_note(1318, 100); // E6 (ending the phrase)
+} 
+//###########################################################################################
+void roger_beep_3(void) {
+    for (uint16_t i=2000;i>500;i-=50) play_note(i, 5); 
+	for (uint16_t i=2000;i>500;i-=50) play_note(i, 5); 
+	for (uint16_t i=500;i<2550;i+=50) play_note(i, 7);
+}
+//###########################################################################################
+
+void BK4819_PlayRoger(uint8_t song)
+{
+	BK4819_EnterTxMute();
+	BK4819_SetAF(BK4819_AF_MUTE);
+    BK4819_WriteRegister(BK4819_REG_70, BK4819_REG_70_ENABLE_TONE1 | (66u << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
+	BK4819_EnableTXLink();
+	SYSTEM_DelayMs(50);
+switch (song)
+{
+	case 1:
+		play_mario_intro();
+	break;
+
+	case 2:
+		roger_beep_3();	
+	break;
+	
+	case 3:
+		roger_beep_r2d2_rnd();	
+	break;
+	
+	case 4:
+		BK4819_PlayRogerNormal();
+	break;
+
+    case 5:
+        send_robzyl_morse();
+	break;
+
+#ifdef ENABLE_DTMF_CALLING	
+	case 6:
+        BK4819_PlayRogerMDC();
+	break;
+#endif
+
+default:
+	break;
+}
+	BK4819_WriteRegister(BK4819_REG_70, 0x0000);
+	BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);   // 1 1 0000 0 1 1111 1 1 1 0
 }
 
 void BK4819_Enable_AfDac_DiscMode_TxDsp(void)

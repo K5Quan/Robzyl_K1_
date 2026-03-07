@@ -41,7 +41,11 @@
 #ifdef ENABLE_USB
     #define MR_CHANNELS_MAX 600 //800 Max 97% RAM
 #else
-    #define MR_CHANNELS_MAX 999 // 1024
+    #ifdef ENABLE_UART
+        #define MR_CHANNELS_MAX 800 // 1024
+    #else
+        #define MR_CHANNELS_MAX 999 // 1024
+    #endif
 #endif
 
 #define MR_CHANNELS_LIST 20

@@ -296,8 +296,14 @@ const char gSubMenu_PONMSG[][8] =
 const char gSubMenu_ROGER[][6] =
 {
     "OFF",
+    "MARIO",
+	"BLAST",
+	"R2D2",
     "ROGER",
-    "MDC"
+    "MORSE"
+#ifdef ENABLE_DTMF_CALLING
+    "MDC",
+#endif
 };
 
 const char gSubMenu_RESET[][4] =
