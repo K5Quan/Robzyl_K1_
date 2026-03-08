@@ -131,8 +131,7 @@ static uint16_t ctcssFreq;
 #define Bottom_print 51 //Robby69
 static Mode appMode;
 #define UHF_NOISE_FLOOR 5
-static uint16_t scanChannel[MR_CHANNEL_LAST + 3];
-static uint8_t ScanListNumber[MR_CHANNEL_LAST + 3];
+
 static uint16_t scanChannelsCount;
 static void ToggleScanList();
 static void SaveSettings();
@@ -156,11 +155,16 @@ static ScanInfo scanInfo;
 static char     latestScanListName[12];
 static bool IsBlacklisted(uint32_t f);
 
+/***************************BIG RAM******************************************/
+static uint16_t scanChannel[MR_CHANNEL_LAST + 3];
+static uint8_t ScanListNumber[MR_CHANNEL_LAST + 3];
 typedef struct
 {
 	uint32_t     Frequency;
 }  __attribute__((packed)) ChannelFrequencyAttributes;
 ChannelFrequencyAttributes gMR_ChannelFrequencyAttributes[MR_CHANNEL_LAST +1];
+
+/****************************************************************************/
 
 SpectrumSettings settings = {stepsCount: STEPS_128,
                              scanStepIndex: S_STEP_500kHz,
@@ -1532,7 +1536,7 @@ static void DrawF(uint32_t f) {
 #endif
     UI_DisplayFrequency(line1, 10, 2, 0);
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
-    UI_PrintStringSmallbackground(line3,  0, 0, 0, 0);
+    UI_PrintStringSmallbackground(line3,  1, 0, 0, 0);
 
     char rssiText[16];
     sprintf(rssiText, "R:%3d", scanInfo.rssi);
@@ -2508,7 +2512,7 @@ static void OnKeyDownStill(KEY_Code_t key) {
             UpdateScanStep(0);
       break;
       case KEY_5:
-        FreqInput();
+        //FreqInput();
       break;
       case KEY_0:
       break;
@@ -3809,7 +3813,7 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
                       void (*getItemText)(uint16_t index, char* buffer)) {
     //memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
     
-    if (!SpectrumMonitor) UI_PrintStringSmallbackground(title, 1, LCD_WIDTH - 1, 0,0);
+    if (!SpectrumMonitor) UI_PrintStringSmallbackground(title, 2, LCD_WIDTH - 1, 0,0);
     const uint8_t FIRST_ITEM_LINE = 1;  // Start from line 1 (line 0 is title)
     const uint8_t MAX_LINES = 6;        // Lines 1-7 available for items
     
@@ -3833,9 +3837,9 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
         strcpy(displayText, itemText);
         char selectedText[MAX_CHARS_PER_LINE + 2];
         snprintf(selectedText, sizeof(selectedText), "%s", displayText);
-        UI_PrintStringSmallbackground(selectedText, 1, 0, lineNumber,1);
+        UI_PrintStringSmallbackground(selectedText, 2, 0, lineNumber,1);
         } else {
-            UI_PrintStringSmallbackground(itemText, 1, 0, lineNumber,0); // Minimalne wcięcie
+            UI_PrintStringSmallbackground(itemText, 2, 0, lineNumber,0);
           }
           
     }
@@ -3879,7 +3883,7 @@ static void RenderHistoryList() {
     
     if (!SpectrumMonitor) {
         sprintf(headerString, "HISTORY: %d", count);
-      UI_PrintStringSmallbackground(headerString, 1, LCD_WIDTH - 1, 0, 0);
+      UI_PrintStringSmallbackground(headerString, 2, LCD_WIDTH - 1, 0, 0);
     } else {
         DrawMeter(0);
     }
@@ -3917,9 +3921,9 @@ static void RenderHistoryList() {
                         PutPixel(x, y, true);
                     }
             }
-            UI_PrintStringSmallbackground(itemText, 1, 0, lineNumber, 1);
+            UI_PrintStringSmallbackground(itemText, 2, 0, lineNumber, 1);
         } else {
-            UI_PrintStringSmallbackground(itemText, 1, 0, lineNumber, 0);
+            UI_PrintStringSmallbackground(itemText, 2, 0, lineNumber, 0);
             }
 
         linesDrawn++;

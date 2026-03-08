@@ -132,25 +132,31 @@ void UI_PrintStringSmallNormalInverse(const char *pString, uint8_t Start, uint8_
 void UI_PrintStringSmallbackground(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t background)
 {
     const size_t Length = strlen(pString);
-
     const unsigned int char_width  = ARRAY_SIZE(gFontSmall[0]);
-    const unsigned int spacing     = 1;   // espacement minimal entre caractères
-    const unsigned int space_width = 4;   // largeur spéciale pour ' '
+    const unsigned int spacing     = 1;
+    const unsigned int space_width = 4;
 
-    // cast pour éviter le warning
     size_t start_pos = (size_t)Start;
     size_t end_pos   = (size_t)End;
 
     if (end_pos > start_pos)
         start_pos += (((end_pos - start_pos) - (Length * (char_width + spacing))) + 1) / 2;
 
-    uint8_t *pFb = gFrameBuffer[Line] + start_pos;
+    uint8_t *pFb = gFrameBuffer[Line];
     
-    // remplir le fond
-    if (background) memset(pFb, 0xFF, 127);
+if (background) {
+    // 1. On limite le remplissage à la largeur restante de la ligne UNIQUEMENT
+    memset(pFb, 0xFF, 128);
+
+    // 2. On trace la ligne noire juste au dessus (Dernier pixel de la ligne précédente)
+    if (Line > 0) {
+        for (uint8_t x = 0; x < 128; x++) {
+            PutPixel(x, (Line * 8) - 1, 1);
+        }
+    }
+}
     
-    // position courante
-    uint8_t *cursor = pFb;
+    uint8_t *cursor = gFrameBuffer[Line] + start_pos;;
 
     for (size_t i = 0; i < Length; i++)
     {
@@ -177,7 +183,7 @@ void UI_PrintStringSmallbackground(const char *pString, uint8_t Start, uint8_t E
                 cursor += char_width_used + spacing;
             }
         }
-        else // espace
+        else
         {
             cursor += space_width;
         }
