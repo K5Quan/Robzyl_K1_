@@ -14,7 +14,7 @@
 #include "version.h"
 
 #ifdef ENABLE_DEV
-    //#include "debugging.h"
+    #include "debugging.h"
 #endif
 
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
@@ -31,7 +31,7 @@
 #endif
 
 #define MAX_VISIBLE_LINES 6
-#define HISTORY_SIZE 50
+#define HISTORY_SIZE 200
 #define NoisLvl 45
 #define NoiseHysteresis 15
 
@@ -979,9 +979,11 @@ static void Measure() {
             peak.f = scanInfo.f;
             peak.i = scanInfo.i;
         }
-        if (settings.rssiTriggerLevelUp < 50) gIsPeak = true;
-        UpdateNoiseOff();
-        UpdateGlitch();
+        if (settings.rssiTriggerLevelUp < 50) {
+            gIsPeak = true;
+            UpdateNoiseOff();
+            UpdateGlitch();
+        }
     } 
 
     if (!gIsPeak || !isListening) previousRssi = rssi;
@@ -2595,7 +2597,8 @@ MyDrawFrameLines();
     }
     else {
       if (SpectrumMonitor) DrawF(lastReceivingFreq);
-      else DrawF(f_linear);
+      //else DrawF(f_linear);
+      else DrawF(scanInfo.f);
     }
 }
 
@@ -3153,7 +3156,7 @@ static void LoadActiveScanFrequencies(void)
                 }
             }
             else {ScanFrequencies[ch] = 0;} //Not valid
-        //char str[64] = "";sprintf(str, "EN %d CH %d F %d SF %d\r\n",settings.scanListEnabled[cache.scanlist-1], ch, freq,ScanFrequencies[ch]);LogUart(str);
+        char str[64] = "";sprintf(str, "EN %d CH %d F %d SF %d\r\n",settings.scanListEnabled[cache.scanlist-1], ch, freq,ScanFrequencies[ch]);LogUart(str);
     }
 }
 
