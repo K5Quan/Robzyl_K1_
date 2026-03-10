@@ -139,8 +139,7 @@ void UI_PrintStringSmallbackground(const char *pString, uint8_t Start, uint8_t E
     size_t start_pos = (size_t)Start;
     size_t end_pos   = (size_t)End;
 
-    if (end_pos > start_pos)
-        start_pos += (((end_pos - start_pos) - (Length * (char_width + spacing))) + 1) / 2;
+    //if (end_pos > start_pos) start_pos += (((end_pos - start_pos) - (Length * (char_width + spacing))) + 1) / 2;
 
     uint8_t *pFb = gFrameBuffer[Line];
     

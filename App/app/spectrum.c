@@ -1308,8 +1308,8 @@ switch(SpectrumMonitor) {
       pos += len;
     break;
   } 
-  if (settings.rssiTriggerLevelUp == 50) len = sprintf(&String[pos],"UOO ");
-  else len = sprintf(&String[pos],"U%d ", settings.rssiTriggerLevelUp);
+  if (settings.rssiTriggerLevelUp == 50) len = sprintf(&String[pos],"");
+  else len = sprintf(&String[pos],"DS%d ", settings.rssiTriggerLevelUp);
   pos += len;
   
   len = sprintf(&String[pos],"%dms %s BW%s ", DelayRssi, gModulationStr[settings.modulationType],bwNames[settings.listenBw]);
@@ -1404,7 +1404,7 @@ static void DrawF(uint32_t f) {
         if (isListening && isKnownChannel) {
             snprintf(line2, sizeof(line2), "%-3s%s ", prefix, channelName);
     } else {
-            snprintf(line2, sizeof(line2), "%-3s%s", prefix, BParams[bl].BandName);
+            snprintf(line2, sizeof(line2), "%s%s", prefix, BParams[bl].BandName);
         }
     } else if (appMode == CHANNEL_MODE) {
 /*         if (ScanListNumber[scanInfo.i] && ScanListNumber[scanInfo.i] < 16) {
@@ -1413,9 +1413,9 @@ static void DrawF(uint32_t f) {
             snprintf(prefix, sizeof(prefix), "ALL ");
               } */
         if (channelName[0] != '\0') {
-            snprintf(line2, sizeof(line2), "%-3s%s ", prefix, channelName);
+            snprintf(line2, sizeof(line2), "%s%s ", prefix, channelName);
         } else {
-            snprintf(line2, sizeof(line2), "%-3s", prefix);
+            snprintf(line2, sizeof(line2), "%s", prefix);
         }
     } else {
         line2[0] = '\0';
@@ -1423,20 +1423,14 @@ static void DrawF(uint32_t f) {
    
     if (classic) {
             if (ShowLines == 2) {
-                UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
-                GUI_DisplaySmallest(StringCode, 80, 17, false, true);  // CSS субтон
+                UI_DisplayFrequency(line1, 2, 0, 0);  // BIG FREQUENCY
                 ArrowLine = 2;
             }
 
             if (ShowLines == 1) {
                 UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
                 UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
-              char lastRxFreq[19] = "---";
-              if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
-                FormatFrequency(lastReceivingFreq, lastRxFreq, sizeof(lastRxFreq));
-              }
-              UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 2, 0);
-              ArrowLine = 3;
+                ArrowLine = 2;
             }
     if (Fmax) 
       {
@@ -1624,10 +1618,10 @@ static void Skip() {
 static void SetTrigger50(){
   char triggerText[32];
   if (settings.rssiTriggerLevelUp == 50) {
-      sprintf(triggerText, "TRIGGER: 00");
+      sprintf(triggerText, "DYN SQUELCH: OFF");
   }
   else {
-      sprintf(triggerText, "TRIGGER: %d", settings.rssiTriggerLevelUp);
+      sprintf(triggerText, "DYN SQUELCH: %d", settings.rssiTriggerLevelUp);
   }
   ShowOSDPopup(triggerText);
 }
@@ -3565,7 +3559,7 @@ static void GetParametersText(uint16_t index, char *buffer) {
             break;
 
         case 12:
-            sprintf(buffer, "UOO Trigger: %d", UOO_trigger);
+            sprintf(buffer, "Record Trig: %d", UOO_trigger);
             break;
         case 13:
          if (AUTO_KEYLOCK) sprintf(buffer, "Keylock: %ds", durations[AUTO_KEYLOCK]/2);

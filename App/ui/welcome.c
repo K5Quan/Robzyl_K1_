@@ -178,12 +178,12 @@ void UI_DisplayWelcome(void)
         {
             if(strlen(WelcomeString0) == 0)
             {
-                strcpy(WelcomeString0, "ZYLKA KOLYAN IGGY");
+                strcpy(WelcomeString0, "Telegram");
             }
 
             if(strlen(WelcomeString1) == 0)
             {
-                strcpy(WelcomeString1, "FRANCOIS ROBBY (H)");
+                strcpy(WelcomeString1, "t.me/k5robby69");
             }
         }
         UI_PrintStringSmallNormal("K1 DEV TEAM", 0, 127, 0);

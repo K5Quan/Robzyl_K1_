@@ -42,7 +42,7 @@
 #define ADRESS_VERSION 0xC010
 #define ADRESS_PARAMS  0xC020
 #define ADRESS_HISTORY 0xC200
-//#define ADRESS_BANDS   0xD100
+#define ADRESS_BANDS   0xD100
 
 typedef enum {
     AUTOLOCK_OFF,
