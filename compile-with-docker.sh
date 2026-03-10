@@ -13,7 +13,7 @@ set -euo pipefail
 # ---------------------------------------------
 
 IMAGE=uvk1-uvk5v3
-PRESET=${1:-Dev}
+PRESET=${1:-USB}
 
 shift || true  # remove preset from arguments if present
 

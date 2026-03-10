@@ -12,7 +12,6 @@
 #include "ui/main.h"
 #include "driver/py25q16.h"
 #include "version.h"
-#include <stdlib.h> // malloc/free
 #include "debugging.h"
 
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
@@ -25,7 +24,7 @@
 */
 
 #define MAX_VISIBLE_LINES 6
-#define HISTORY_SIZE 200
+#define HISTORY_SIZE 100
 #define NoisLvl 45
 #define NoiseHysteresis 15
 
@@ -155,11 +154,10 @@ static bool IsBlacklisted(uint32_t f);
 
 /***************************BIG RAM******************************************/
 
-static uint32_t *ScanFrequencies = NULL;
-static uint32_t    *HFreqs = NULL;
-static uint8_t     *HCount = NULL;
-static bool  *HBlacklisted = NULL;
-
+static	uint32_t ScanFrequencies[MR_CHANNEL_LAST +1];
+static uint32_t    HFreqs[HISTORY_SIZE];
+static uint8_t     HCount[HISTORY_SIZE];
+static bool  HBlacklisted[HISTORY_SIZE];
 
 /****************************************************************************/
 
@@ -192,27 +190,6 @@ static uint8_t validScanListIndices[MR_CHANNELS_LIST]; // stocke les index valid
 static void MyDrawShortHLine(uint8_t y, uint8_t x_start, uint8_t x_end, uint8_t step, bool white); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 static void MyDrawVLine(uint8_t x, uint8_t y_start, uint8_t y_end, uint8_t step); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 #endif
-
-
-#include <errno.h>
-#include <sys/types.h>
-
-extern int _end; // Défini par le linker script (.ld)
-
-caddr_t _sbrk(int incr) {
-    static unsigned char *heap_ptr = NULL;
-    unsigned char *prev_heap_ptr;
-
-    if (heap_ptr == NULL) {
-        heap_ptr = (unsigned char *)&_end;
-    }
-
-    prev_heap_ptr = heap_ptr;
-    // Optionnel : vérifier ici le dépassement de la RAM (Stack collision)
-    
-    heap_ptr += incr;
-    return (caddr_t)prev_heap_ptr;
-}
 
 const RegisterSpec allRegisterSpecs[] = {
  //   {"10_LNAs",  0x10, 8, 0b11,  1},
@@ -2074,9 +2051,9 @@ static void OnKeyDown(uint8_t key) {
 
     case KEY_8://СМЕНА РЕЖИМА
       if (historyListActive) {
-          memset(HFreqs,0,(HISTORY_SIZE) * sizeof(uint32_t));
-          memset(HCount,0,(HISTORY_SIZE) * sizeof(uint8_t));
-          memset(HBlacklisted,0,(HISTORY_SIZE) * sizeof(bool));
+          memset(HFreqs,0,sizeof(HFreqs));
+          memset(HCount,0,sizeof(HCount));
+          memset(HBlacklisted,0,sizeof(HBlacklisted));
           historyListIndex = 0;
           historyScrollOffset = 0;
           indexFs = 0;
@@ -3091,19 +3068,6 @@ uint16_t BOARD_gMR_fetchChannel(const uint32_t freq)
 
 void APP_RunSpectrum(void)
 {
-    if (ScanFrequencies == NULL) {
-        ScanFrequencies = (uint32_t *)malloc((MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
-    }
-    if (HFreqs == NULL) {
-        HFreqs = (uint32_t *)malloc((HISTORY_SIZE) * sizeof(uint32_t));
-    }
-    if (HCount == NULL) {
-        HCount = (uint8_t *)malloc((HISTORY_SIZE) * sizeof(uint8_t));
-    }
-    if (HBlacklisted == NULL) {
-        HBlacklisted = (bool *)malloc((HISTORY_SIZE) * sizeof(bool));
-    }
-
     for (;;) {
         Mode mode;
         if (!Key_1_pressed || gComeBack) LoadSettings(); 
@@ -3123,7 +3087,6 @@ void APP_RunSpectrum(void)
         if (!Key_1_pressed) LoadSettings(); 
         appMode = mode;
         ResetModifiers();
-        //if (appMode==CHANNEL_MODE) LoadActiveScanFrequencies();
         if (appMode==FREQUENCY_MODE && !Key_1_pressed) {
             currentFreq = gTxVfo->pRX->Frequency;
             gScanRangeStart = currentFreq - (GetBW() >> 1);
@@ -3161,10 +3124,6 @@ void APP_RunSpectrum(void)
             continue;
         } else {
             RestoreRegisters();
-            free(ScanFrequencies);
-            free(HFreqs);
-            free(HCount);
-            free(HBlacklisted);
             break;
         }
 
@@ -3183,7 +3142,8 @@ uint16_t RADIO_ValidMemoryChannelsCount(bool bCheckScanList, uint8_t CurrentScan
 
 static void LoadActiveScanFrequencies(void)
 {   if(appMode!=CHANNEL_MODE)return;
-    memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
+    //memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
+    memset(ScanFrequencies,0,sizeof(ScanFrequencies));
     scanChannelsCount = 0;
     ChannelAttributes_t cache;
     for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
@@ -3374,9 +3334,9 @@ static void SaveSettings()
 
 static void ClearHistory() 
 {
-    memset(HFreqs,0,(HISTORY_SIZE) * sizeof(uint32_t));
-    memset(HCount,0,(HISTORY_SIZE) * sizeof(uint8_t));
-    memset(HBlacklisted,0,(HISTORY_SIZE) * sizeof(bool));
+    memset(HFreqs,0,sizeof(HFreqs));
+    memset(HCount,0,sizeof(HCount));
+    memset(HBlacklisted,0,sizeof(HBlacklisted));
     historyListIndex = 0;
     historyScrollOffset = 0;
     indexFs = HISTORY_SIZE;

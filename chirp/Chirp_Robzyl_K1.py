@@ -24,7 +24,7 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
 # TODO: remove the driver version when it's in mainline chirp 
-DRIVER_VERSION = "Quansheng UV-K1 driver ver: 2026/03/06 (c) ROBZYL v6.6"
+DRIVER_VERSION = "Quansheng UV-K1 driver ver: 2026/03/06 (c) ROBZYL"
 FIRMWARE_VERSION_UPDATE = "https://github.com/armel/uv-k1-k5v3-firmware-custom/releases"
 CHIRP_DRIVER_VERSION_UPDATE = "https://github.com/armel/uv-k1-k5v3-chirp-driver/releases"
 
@@ -1869,7 +1869,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
 # add menu firmware with version and option display if version 3.0 and up
         ValFirm = "Firmware : " + self.FIRMWARE_VERSION 
-        Compair1 = "ROBZYL v6.6"  
+        Compair1 = "ROBZYL v6.8"  
 
         if self.FIRMWARE_VERSION == "":
             ValFirm = "Firmware : Only when read from the radio "

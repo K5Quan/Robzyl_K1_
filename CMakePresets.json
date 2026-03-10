@@ -75,7 +75,7 @@
                 "ENABLE_SWD": false,
                 "ENABLE_SCANLIST_SHOW_DETAIL":false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "V6.7" 
+                "VERSION_STRING_2": "V6.8" 
             }
         },
        
@@ -97,6 +97,7 @@
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": true,
+                "ENABLE_FMRADIO": true,
                 "EDITION_STRING": "USB",
                 "TARGET": "ROBZYL.K1.USB"
             }
