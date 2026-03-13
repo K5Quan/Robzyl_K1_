@@ -28,11 +28,6 @@
 #include "ui/status.h"
 #include "version.h"
 #include "bitmaps.h"
-#ifdef ENABLE_USB
-#include "py32f071_ll_bus.h"
-#include "driver/vcp.h"
-#endif
-
 
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     #include "screenshot.h"
@@ -103,14 +98,9 @@ void UI_DisplayReleaseKeys(void)
 #endif
     UI_DisplayClear();
 
-#ifdef ENABLE_USB
-    UI_PrintString("USB", 0, 127, 1, 10);
-    UI_PrintString("ACTIVATED", 0, 127, 3, 10);
-    VCP_Init();
-#else 
-    UI_PrintString("USB", 0, 127, 1, 10);
-    UI_PrintString("REMOVED", 0, 127, 3, 10);
-#endif
+    UI_PrintString("RELEASE", 0, 127, 1, 10);
+    UI_PrintString("ALL KEYS", 0, 127, 3, 10);
+
     ST7565_BlitStatusLine();  // blank status line
     ST7565_BlitFullScreen();
 }

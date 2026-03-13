@@ -188,4 +188,8 @@ void BOARD_Init(void)
     BK1080_Init0();
 #endif
 
+#if defined(ENABLE_UART) || defined(ENABLED_AIRCOPY)
+    CRC_Init();
+#endif
+
 }

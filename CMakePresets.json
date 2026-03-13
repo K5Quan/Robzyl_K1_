@@ -97,6 +97,7 @@
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": true,
+                "ENABLE_UART": false,
                 "ENABLE_FMRADIO": true,
                 "EDITION_STRING": "USB",
                 "TARGET": "ROBZYL.K1.USB"
