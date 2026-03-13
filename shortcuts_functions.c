@@ -6,6 +6,8 @@ UpdateNoiseOff();
 UpdateGlitch();
 UpdateListening();
 
+LoadActiveScanFrequencies();
+
 boot
 UI_DisplayReleaseKeys()
 UI_DisplayMain();

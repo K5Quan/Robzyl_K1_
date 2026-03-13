@@ -1569,6 +1569,27 @@ static void Skip() {
   }
 }
 
+void NextAppMode(void) {
+        // 0 = FR, 1 = SL, 2 = BD, 3 = RG
+        if (++Spectrum_state > 3) {Spectrum_state = 0;}
+        if (!scanChannelsCount && Spectrum_state ==1) Spectrum_state++; //No SL skip SL mode
+        char sText[32];
+        const char* s[] = {"FREQ", "S LIST", "BAND", "RANGE"};
+        sprintf(sText, "MODE: %s", s[Spectrum_state]);
+        ShowOSDPopup(sText);
+        gRequestedSpectrumState = Spectrum_state;
+        gSpectrumChangeRequested = true;
+        isInitialized = false;
+        spectrumElapsedCount = 0;
+        WaitSpectrum = 0;
+        gIsPeak = false;
+        SPECTRUM_PAUSED = false;
+        SpectrumPauseCount = 0;
+        newScanStart = true;
+        ToggleRX(false);
+}
+
+
 static void SetTrigger50(){
   char triggerText[32];
   if (settings.rssiTriggerLevelUp == 50) {
@@ -2151,22 +2172,7 @@ static void OnKeyDown(uint8_t key) {
     break;
   
      case KEY_6: // next mode
-        // 0 = FR, 1 = SL, 2 = BD, 3 = RG
-        if (++Spectrum_state > 3) {Spectrum_state = 0;}
-        char sText[32];
-        const char* s[] = {"FREQ", "S LIST", "BAND", "RANGE"};
-        sprintf(sText, "MODE: %s", s[Spectrum_state]);
-        ShowOSDPopup(sText);
-        gRequestedSpectrumState = Spectrum_state;
-        gSpectrumChangeRequested = true;
-        isInitialized = false;
-        spectrumElapsedCount = 0;
-        WaitSpectrum = 0;
-        gIsPeak = false;
-        SPECTRUM_PAUSED = false;
-        SpectrumPauseCount = 0;
-        newScanStart = true;
-        ToggleRX(false);
+        NextAppMode();
         break;
   
     case KEY_SIDE1:
