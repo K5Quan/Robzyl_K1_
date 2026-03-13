@@ -449,17 +449,15 @@ static void RestoreRegisters() {
   BK4819_WriteRegister(BK4819_REG_75, R75);
 }
 
-static void ToggleAFBit(bool on)
-{
-    uint16_t reg = BK4819_ReadRegister(BK4819_REG_47);
+static void ToggleAFBit(bool on) {
+    uint32_t reg = BK4819_ReadRegister(BK4819_REG_47);
     reg &= ~(1 << 8);
     if (on)
         reg |= on << 8;
     BK4819_WriteRegister(BK4819_REG_47, reg);
 }
 
-static void ToggleAFDAC(bool on)
-{
+static void ToggleAFDAC(bool on) {
     uint32_t Reg = BK4819_ReadRegister(BK4819_REG_30);
     Reg &= ~(1 << 9);
     if (on)
@@ -645,8 +643,6 @@ void ReadHistory(void) {
         indexFs = position + 1;
       }
     }
-    
-    //ShowOSDPopup("HISTORY LOADED");
 }
 
 
@@ -704,12 +700,9 @@ static void ExitAndCopyToVfo() {
                     gRequestSaveChannel       = 1;
                 }
             }
-
-            // PTT Mode 2: Last Received Frequency
             if (PttEmission == 2) {
                 SpectrumDelay = 0;
                 uint16_t ExitCh = BOARD_gMR_fetchChannel(lastReceivingFreq);
-
                 if (ExitCh == 0xFFFF) { 
                     gCurrentVfo->freq_config_TX.Frequency = lastReceivingFreq;
                     gCurrentVfo->freq_config_RX.Frequency = lastReceivingFreq;
@@ -942,17 +935,12 @@ static void UpdateGlitch() {
     else {gIsPeak = true;}// if glitch is too high, receiving stopped
 }
 
-//static uint8_t my_abs(signed v) { return v > 0 ? v : -v; }
-
 static void Measure() {
     uint16_t j;    
     static int16_t previousRssi = 0;
     static bool isFirst = true;
-    
     uint16_t rssi = scanInfo.rssi = GetRssi();
     UpdateScanInfo();
-    
-    // Filter harmonics or blacklisted frequencies
     if (scanInfo.f % 1300000 == 0 || IsBlacklisted(scanInfo.f)) rssi = scanInfo.rssi = 0;
 
     if (isFirst) {
@@ -960,8 +948,6 @@ static void Measure() {
         gIsPeak      = false;
         isFirst      = false;
     }
-
-    // Peak detection logic
     if (settings.rssiTriggerLevelUp == 50 && rssi > previousRssi + UOO_trigger) {
         peak.f = scanInfo.f;
         peak.i = scanInfo.i;
@@ -1009,7 +995,6 @@ static void Measure() {
         if (zeroEnd > 128) zeroEnd = 128;
         for (j = endIndex; j < zeroEnd; ++j) { rssiHistory[j] = 0; }
    }
-   //char str[64] = "";sprintf(str, "Count %d i %d scanInfo.f %d \r\n",scanChannelsCount, i, scanInfo.f );LogUart(str);
 }
 
 int Rssi2DBm(const uint16_t rssi)
@@ -1038,10 +1023,6 @@ static void UpdateDBMaxAuto() { //Zoom
         settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
     }
 }
-
-
-
-
 
 static void AutoAdjustFreqChangeStep() {
   settings.frequencyChangeStep = gScanRangeStop - gScanRangeStart;
@@ -1384,11 +1365,7 @@ static void DrawF(uint32_t f) {
             snprintf(line2, sizeof(line2), "%s%s", prefix, BParams[bl].BandName);
         }
     } else if (appMode == CHANNEL_MODE) {
-/*         if (ScanListNumber[scanInfo.i] && ScanListNumber[scanInfo.i] < 16) {
-            snprintf(prefix, sizeof(prefix), "S%d ", ScanListNumber[scanInfo.i]);
-            } else {
-            snprintf(prefix, sizeof(prefix), "ALL ");
-              } */
+
         if (channelName[0] != '\0') {
             snprintf(line2, sizeof(line2), "%s%s ", prefix, channelName);
         } else {
@@ -1527,7 +1504,6 @@ static void NextScanStep() {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         }
         f_linear = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
-//char str[64] = "";sprintf(str, "%d %d\r\n", f_linear,scanInfo.f );LogUart(str);
         scanInfo.i++;
     }
 ScanIndex++;
@@ -1976,9 +1952,8 @@ static void OnKeyDown(uint8_t key) {
           RelaunchScan();
           ResetModifiers();
           if(Key_1_pressed) {
-            //Key_1_pressed = 0;
-          Spectrum_state = 3;
-          APP_RunSpectrum();
+            Spectrum_state = 3;
+            APP_RunSpectrum();
           }
           break;
 
@@ -2049,7 +2024,7 @@ static void OnKeyDown(uint8_t key) {
         }
       break;
 
-    case KEY_8://СМЕНА РЕЖИМА
+    case KEY_8:
       if (historyListActive) {
           memset(HFreqs,0,sizeof(HFreqs));
           memset(HCount,0,sizeof(HCount));
@@ -2200,7 +2175,6 @@ static void OnKeyDown(uint8_t key) {
         if (SpectrumMonitor > 2) SpectrumMonitor = 0; // 0 normal, 1 Freq lock, 2 Monitor
 
     if (SpectrumMonitor == 1) {
-        // jeśli nie ma ostatniego RX, użyj aktualnego skanowania
         if (lastReceivingFreq < 1400000 || lastReceivingFreq > 130000000) {
             lastReceivingFreq = (scanInfo.f >= 1400000) ? scanInfo.f : gScanRangeStart;
         }
@@ -2379,12 +2353,8 @@ static void OnKeyDownStill(KEY_Code_t key) {
             UpdateScanStep(0);
       break;
       case KEY_5:
-        //FreqInput();
-      break;
       case KEY_0:
-      break;
       case KEY_6:
-      break;
       case KEY_7:
       break;
           
@@ -2588,7 +2558,6 @@ MyDrawFrameLines();
     }
     else {
       if (SpectrumMonitor) DrawF(lastReceivingFreq);
-      //else DrawF(f_linear);
       else DrawF(scanInfo.f);
     }
 }
@@ -3156,8 +3125,7 @@ static void LoadActiveScanFrequencies(void)
                     scanChannelsCount++;
                 }
             }
-            else {ScanFrequencies[ch] = 0;} //Not valid
-        //char str[64] = "";sprintf(str, "EN %d CH %d SL %d SF %d\r\n",settings.scanListEnabled[cache.scanlist-1], ch, cache.scanlist-1,ScanFrequencies[ch]);LogUart(str);
+            else {ScanFrequencies[ch] = 0;}
     }
 }
 
@@ -3224,9 +3192,6 @@ typedef struct {
 void LoadSettings()
 {
   if(SettingsLoaded) return;
-  #ifdef ENABLE_FLASH_BAND
-  LoadBandsFromEEPROM();
-  #endif
   SettingsEEPROM  eepromData  = {0};
   PY25Q16_ReadBuffer(ADRESS_PARAMS, &eepromData, sizeof(eepromData));
   
@@ -3255,7 +3220,7 @@ void LoadSettings()
     PttEmission = eepromData.PttEmission;
   validScanListCount = 0;
   ShowLines = eepromData.ShowLines;
-  if (ShowLines < 1 || ShowLines > 3) ShowLines = 1;
+  if (ShowLines < 1 || ShowLines > 2) ShowLines = 1;
   SpectrumDelay = eepromData.SpectrumDelay;
   
   IndexMaxLT = eepromData.IndexMaxLT;
@@ -3309,7 +3274,6 @@ static void SaveSettings()
   eepromData.osdPopupSetting = osdPopupSetting;
   eepromData.GlitchMax = 10;
   eepromData.Spectrum_state = Spectrum_state; 
-  //if (GlitchMax < 30) eepromData.GlitchMax  = GlitchMax;    
   eepromData.GlitchMax  = GlitchMax;    
   eepromData.SoundBoost = SoundBoost;
   
@@ -3442,7 +3406,7 @@ static void BuildValidScanListIndices() {
             validScanListIndices[ScanListCount++] = i;
         }
     }
-    validScanListCount = ScanListCount; // <-- KLUCZOWE!
+    validScanListCount = ScanListCount;
 }
 
 
@@ -3639,8 +3603,6 @@ static void GetHistoryItemText(uint16_t index, char* buffer) {
              dcountStr);
 }
 
-
-//*******************************СПИСКИ*****************************// */
 static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIndex, uint16_t scrollOffset,
                       void (*getItemText)(uint16_t index, char* buffer)) {
     //memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
@@ -3679,11 +3641,6 @@ static void RenderList(const char* title, uint16_t numItems, uint16_t selectedIn
     ST7565_BlitFullScreen();
 }
 
-
-
-// Wrapper functions for original calls
-
-// Fonction pour afficher le menu ScanList
 static void RenderScanListSelect() {
     if (refreshScanListName) {
         BuildValidScanListIndices(); 
