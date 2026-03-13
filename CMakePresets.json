@@ -87,7 +87,6 @@
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
                 "ENABLE_FEAT_F4HWN_SCREENSHOT": true,
-                "ENABLE_FMRADIO": false,
                 "EDITION_STRING": "Dev",
                 "TARGET": "ROBZYL.K1.Dev"
             }
@@ -98,7 +97,6 @@
             "cacheVariables": {
                 "ENABLE_USB": true,
                 "ENABLE_UART": false,
-                "ENABLE_FMRADIO": true,
                 "EDITION_STRING": "USB",
                 "TARGET": "ROBZYL.K1.USB"
             }
@@ -107,6 +105,7 @@
             "name": "RS232",
             "inherits": "default",
             "cacheVariables": {
+                "ENABLE_USB": false,
                 "ENABLE_UART": true,
                 "EDITION_STRING": "RS232",
                 "TARGET": "ROBZYL.K1.RS232"
@@ -116,6 +115,8 @@
             "name": "NO_COM",
             "inherits": "default",
             "cacheVariables": {
+                "ENABLE_USB": false,
+                "ENABLE_UART": false,
                 "EDITION_STRING": "NO_COM",
                 "TARGET": "ROBZYL.K1.NO_COM"
             }
