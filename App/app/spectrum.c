@@ -733,9 +733,9 @@ static void ExitAndCopyToVfo() {
 
 static uint16_t GetRssi(void) {
     uint16_t rssi;
-    //BK4819_ReadRegister(0x63);
-    if (isListening) SYSTICK_DelayUs(12000); 
-    else SYSTICK_DelayUs(DelayRssi * 1000);
+    //if (isListening) SYSTICK_DelayUs(12000); 
+    //else 
+    SYSTICK_DelayUs(DelayRssi * 1000);
     rssi = BK4819_GetRSSI();
     if (FREQUENCY_GetBand(scanInfo.f) > BAND4_174MHz) {rssi += UHF_NOISE_FLOOR;}
     BK4819_ReadRegister(0x63);
@@ -947,7 +947,7 @@ static void Measure() {
     }
     if (settings.rssiTriggerLevelUp == 50 && rssi > previousRssi + UOO_trigger) {
         peak.f = scanInfo.f;
-        peak.i = scanInfo.i-1;
+        peak.i = scanInfo.i;
         FillfreqHistory();
     }
 
@@ -983,7 +983,7 @@ static void Measure() {
         if (end > 128) end = 128;
         for (j = start; j < end; ++j) {
             rssiHistory[j] = rssi;
-            char str[64] = "";sprintf(str, "M %d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
+            //char str[64] = "";sprintf(str, "M %d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
         }
     }
 }
@@ -994,8 +994,25 @@ int Rssi2DBm(const uint16_t rssi)
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-        settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
+  static uint8_t z = 5;
+  int newDbMax;
+    if (scanInfo.rssiMax > 0) {
+        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
+        newDbMax = Rssi2DBm(scanInfo.rssiMax);
+
+        if (newDbMax > settings.dbMax + z) {
+            settings.dbMax = settings.dbMax + z;   // montée limitée
+        } else if (newDbMax < settings.dbMax - z) {
+            settings.dbMax = settings.dbMax - z;   // descente limitée
+        } else {
+            settings.dbMax = newDbMax;              // suivi normal
+        }
+    }
+
+    if (scanInfo.rssiMin > 0) {
+        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
         settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+    }
 }
 
 static void AutoAdjustFreqChangeStep() {
@@ -2849,29 +2866,6 @@ static void UpdateListening(void) { // called every 10ms
         }
         SoundBoostsave = SoundBoost;
     }
-    uint16_t rssi = GetRssi();
-    scanInfo.rssi = rssi;
-
-    uint16_t count = GetStepsCount();
-    uint16_t i = peak.i;
-    
-    if (count > 128) {
-        uint16_t pixel = (uint32_t)i * 128 / count;
-        if (pixel < 128) rssiHistory[pixel] = rssi;
-    } else {
-        uint16_t j;
-        uint16_t base = 128 / count;
-        uint16_t rem  = 128 % count;
-        uint16_t start = i * base + (i < rem ? i : rem);
-        uint16_t end   = (i + 1) * base + ((i + 1) < rem ? (i + 1) : rem);
-        if (end > 128) end = 128;
-        for (j = start; j < end; ++j) {
-            rssiHistory[j] = rssi;
-            char str[64] = "";sprintf(str, "UL %d %d %d\r\n", peak.i,j, peak.f);LogUart(str);
-        }
-    }
-
-    // Détection de fréquence stable
     if (peak.f == stableFreq) {
         if (++stableCount >= 2) {  // ~600ms
             if (!SpectrumMonitor) FillfreqHistory();
@@ -3088,10 +3082,11 @@ static void LoadActiveScanFrequencies(void)
         uint32_t freq = FetchChannelFrequency(ch);
         if (freq) {
             if (settings.scanListEnabled[cache.scanlist-1])
-                {   ScanFrequencies[ch] = freq;
+                {   ScanFrequencies[scanChannelsCount] = freq;
                     scanChannelsCount++;
                 }
             }
+
     }
 }
 
