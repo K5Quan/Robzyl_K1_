@@ -11,3 +11,6 @@ LoadActiveScanFrequencies();
 boot
 UI_DisplayReleaseKeys()
 UI_DisplayMain();
+
+SETTINGS_FetchChannelName();
+BOARD_gMR_fetchChannel();

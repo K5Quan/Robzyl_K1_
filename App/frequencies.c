@@ -19,8 +19,8 @@
 #include "settings.h"
 #include <assert.h>
 
-const freq_band_table_t BX4819_band1 = { 1400000,  63000000}; //Robby69
-const freq_band_table_t BX4819_band2 = {76000000, 130000000};
+const freq_band_table_t BX4819_band1 = { 1400000,  5800000};  //Robby69
+const freq_band_table_t BX4819_band2 = {76000000, 116000000}; //BK4829 datasheet
 
 const freq_band_table_t frequencyBandTable[7] =
 {
@@ -31,7 +31,7 @@ const freq_band_table_t frequencyBandTable[7] =
 		{.lower = 17400000, .upper =  35000000},
 		{.lower = 35000000, .upper =  40000000},
 		{.lower = 40000000, .upper =  47000000},
-		{.lower = 47000000, .upper = 130000000}
+		{.lower = 47000000, .upper = 116000000}
 };
 
 #ifdef ENABLE_NOAA
