@@ -818,6 +818,7 @@ static void ToggleRX(bool on) {
           }
     
     if (on) { 
+        Fmax = peak.f;
         BK4819_RX_TurnOn();
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
@@ -968,7 +969,7 @@ static void Measure() {
     if (!gIsPeak || !isListening) previousRssi = rssi;
     else if (rssi < previousRssi) previousRssi = rssi;
 
-    uint16_t count = GetStepsCount()+1;
+    uint16_t count = GetStepsCount();
     uint16_t i = scanInfo.i-1;
 
     if (count > 128) {
@@ -1382,6 +1383,11 @@ static void DrawF(uint32_t f) {
           FormatFrequency(Fmax, freqStr, sizeof(freqStr));
           GUI_DisplaySmallest(freqStr,  50, Bottom_print, false,true);
       }
+/*      if ((appMode == CHANNEL_MODE)) 
+      {   char String[10];
+          sprintf(String,"CH:%d", scanChannelsCount);
+          GUI_DisplaySmallest(String,  5, Bottom_print, false,true);
+      } */
 
     } else { //Not Classic
 
@@ -2044,7 +2050,7 @@ static void OnKeyDown(uint8_t key) {
       } else {
           if (classic){
               ShowLines++;
-              if (ShowLines > 2 || ShowLines < 1) ShowLines = 1;
+              if (ShowLines > 2 ) ShowLines = 1;
               char viewText[15];
               const char *viewName = "CLASSIC";
               if (ShowLines == 2) viewName = "BIG";
@@ -2838,7 +2844,7 @@ static void UpdateScan() {
   }
   
   newScanStart = true; 
-  Fmax = peak.f;
+  //Fmax = peak.f;
   
   if (SpectrumSleepMs) {
       BK4819_Sleep();

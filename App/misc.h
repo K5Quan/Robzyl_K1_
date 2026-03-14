@@ -39,7 +39,7 @@
 #define FM_CHANNELS_MAX 48
 
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
-    #define MR_CHANNELS_MAX 500
+    #define MR_CHANNELS_MAX 200
 #else
     #define MR_CHANNELS_MAX 999
 #endif
