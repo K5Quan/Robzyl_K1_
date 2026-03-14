@@ -67,7 +67,6 @@ static bool SettingsLoaded = false;
 uint8_t  gKeylockCountdown = 0;
 bool     gIsKeylocked = false;
 static uint16_t osdPopupTimer = 0;
-static uint16_t ScanIndex = 0;
 static uint32_t Fmax = 0;
 static uint32_t spectrumElapsedCount = 0;
 static uint32_t SpectrumPauseCount = 0;
@@ -491,7 +490,7 @@ static uint16_t GetStepsCount()
 { 
   if (appMode==CHANNEL_MODE)
   {
-    return (scanChannelsCount > 0) ? (scanChannelsCount - 1) : 0;
+    return scanChannelsCount;
 }
   if(appMode==SCAN_RANGE_MODE) {
     return ((gScanRangeStop - gScanRangeStart) / GetScanStep()); //Robby69
@@ -846,8 +845,7 @@ static void ResetScanStats() {
 
 static bool InitScan() {
     ResetScanStats();
-    scanInfo.i = 0; //0 to MR_CHANNEL_LAST
-    ScanIndex = 0;  //0 to scanChannelsCount
+    scanInfo.i = 0;
     peak.i = 0; // To check
     peak.f = 0; // To check
     
@@ -936,7 +934,6 @@ static void UpdateGlitch() {
 }
 
 static void Measure() {
-    uint16_t j;    
     static int16_t previousRssi = 0;
     static bool isFirst = true;
     uint16_t rssi = scanInfo.rssi = GetRssi();
@@ -950,16 +947,17 @@ static void Measure() {
     }
     if (settings.rssiTriggerLevelUp == 50 && rssi > previousRssi + UOO_trigger) {
         peak.f = scanInfo.f;
-        peak.i = scanInfo.i;
+        peak.i = scanInfo.i-1;
         FillfreqHistory();
     }
 
     if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
         SYSTEM_DelayMs(10);
-        uint16_t rssi2 = GetRssi();
-        if (rssi2 > rssi + 10) {
+        
+        uint16_t rssi2 = scanInfo.rssi = GetRssi();
+        if (rssi2 > rssi+10) {
             peak.f = scanInfo.f;
-            peak.i = scanInfo.i;
+            peak.i = scanInfo.i-1;
         }
         if (settings.rssiTriggerLevelUp < 50) {
             gIsPeak = true;
@@ -967,34 +965,27 @@ static void Measure() {
             UpdateGlitch();
         }
     } 
-
     if (!gIsPeak || !isListening) previousRssi = rssi;
     else if (rssi < previousRssi) previousRssi = rssi;
-    uint16_t count = GetStepsCount() + 1;
-    if (count == 0) return;
-    uint16_t i = scanInfo.i;
-    if (i >= MR_CHANNEL_LAST) i = MR_CHANNEL_LAST - 1;
+
+    uint16_t count = GetStepsCount();
+    uint16_t i = scanInfo.i-1;
+
     if (count > 128) {
-        uint16_t pixel = (uint32_t)ScanIndex * 128 / count;
-        if (pixel >= 128) pixel = 127;
-        rssiHistory[pixel] = rssi;
-        if(++pixel < 128) rssiHistory[pixel] = 0; //2 blank pixels
-        if(++pixel < 128) rssiHistory[pixel] = 0;
+        uint16_t pixel = (uint32_t)i * 128 / count;
+        if (pixel < 128) { rssiHistory[pixel] = rssi;}
     } else {
+        uint16_t j;
         uint16_t base = 128 / count;
         uint16_t rem  = 128 % count;
-        uint16_t startIndex = ScanIndex * base + (ScanIndex < rem ? ScanIndex : rem);
-        uint16_t width      = base + (ScanIndex < rem ? 1 : 0);
-        uint16_t endIndex   = startIndex + width;
-
-          uint16_t maxEnd = endIndex;
-          if (maxEnd > 128) maxEnd = 128;
-          for (j = startIndex; j < maxEnd; ++j) { rssiHistory[j] = rssi; }
-
-          uint16_t zeroEnd = endIndex + width;
-        if (zeroEnd > 128) zeroEnd = 128;
-        for (j = endIndex; j < zeroEnd; ++j) { rssiHistory[j] = 0; }
-   }
+        uint16_t start = i * base + (i < rem ? i : rem);
+        uint16_t end   = (i + 1) * base + ((i + 1) < rem ? (i + 1) : rem);
+        if (end > 128) end = 128;
+        for (j = start; j < end; ++j) {
+            rssiHistory[j] = rssi;
+            char str[64] = "";sprintf(str, "%d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
+        }
+    }
 }
 
 int Rssi2DBm(const uint16_t rssi)
@@ -1215,7 +1206,7 @@ static int16_t Rssi2Y(uint16_t rssi) {
 
 static void DrawSpectrum(void) {
     int16_t y_baseline = Rssi2Y(0); 
-    for (uint8_t i = 0; i < 127; i++) {
+    for (uint8_t i = 0; i < 128; i++) {
         int16_t y_curr = Rssi2Y(rssiHistory[i]);
         for (int16_t y = y_curr; y <= y_baseline; y++) {
                 gFrameBuffer[y >> 3][i] |= (1 << (y & 7));
@@ -1487,26 +1478,22 @@ uint32_t f_linear;
 
 static void NextScanStep() {
     spectrumElapsedCount = 0;
-
-    if (appMode == CHANNEL_MODE) { 
-        if (scanChannelsCount == 0) return;
-        while (1) {
-            if (++scanInfo.i > MR_CHANNEL_LAST) return;
-            scanInfo.f = ScanFrequencies[scanInfo.i];
-            if (scanInfo.f ) break;
-        }
+    uint16_t count = GetStepsCount();
+    if (scanInfo.i >= count) {scanInfo.i = 0;}
+    if (appMode == CHANNEL_MODE) {
+        if (scanChannelsCount == 0) {return;}
+        scanInfo.f = ScanFrequencies[scanInfo.i];
         f_linear = scanInfo.f;
-    }
-    else {
+        //char str[64] = "";sprintf(str, "%d %d \r\n", scanInfo.i, scanInfo.f);LogUart(str);
+    } else {
         if (scanInfo.scanStep < 2500 || scanInfo.scanStep == 1000) {
             nextFrequencyinterlaced();
         } else {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         }
         f_linear = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
-        scanInfo.i++;
     }
-ScanIndex++;
+    scanInfo.i++;
 }
 
 static void CompactHistory(void) {
@@ -2845,7 +2832,7 @@ static void UpdateScan() {
       NextHistoryScanStep();
       return;
   }
-  if (ScanIndex < GetStepsCount()) {
+  if (scanInfo.i <= GetStepsCount()) {
     NextScanStep();
     return;
   }
@@ -2867,14 +2854,8 @@ static void UpdateListening(void) { // called every 10ms
     static uint16_t stableCount = 0;
     static bool SoundBoostsave = false; // Initialisation
     
-    uint16_t rssi = GetRssi();
-    scanInfo.rssi = rssi;
-    uint16_t count = GetStepsCount() + 1;
 
-    if (count == 0) return;
 
-    uint16_t i = peak.i;
-    if (i >= count) i = count - 1;
 
     if (SoundBoost != SoundBoostsave) {
         if (SoundBoost) {
@@ -2889,23 +2870,25 @@ static void UpdateListening(void) { // called every 10ms
         }
         SoundBoostsave = SoundBoost;
     }
-    // --- Mise à jour du buffer RSSI ---
+    uint16_t rssi = GetRssi();
+    scanInfo.rssi = rssi;
+
+    uint16_t count = GetStepsCount();
+    uint16_t i = peak.i;
+    
     if (count > 128) {
         uint16_t pixel = (uint32_t)i * 128 / count;
-        if (pixel >= 128) pixel = 127;
-        rssiHistory[pixel] = rssi;
+        if (pixel < 128) rssiHistory[pixel] = rssi;
     } else {
         uint16_t j;
         uint16_t base = 128 / count;
         uint16_t rem  = 128 % count;
-        uint16_t startIndex = i * base + (i < rem ? i : rem);
-        uint16_t width      = base + (i < rem ? 1 : 0);
-        uint16_t endIndex   = startIndex + width;
-
-        uint16_t maxEnd = endIndex;
-        if (maxEnd > 128) maxEnd = 128;
-        for (j = startIndex; j < maxEnd; ++j) {
+        uint16_t start = i * base + (i < rem ? i : rem);
+        uint16_t end   = (i + 1) * base + ((i + 1) < rem ? (i + 1) : rem);
+        if (end > 128) end = 128;
+        for (j = start; j < end; ++j) {
             rssiHistory[j] = rssi;
+            //char str[64] = "";sprintf(str, "%d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
         }
     }
 
@@ -3117,7 +3100,6 @@ uint16_t RADIO_ValidMemoryChannelsCount(bool bCheckScanList, uint8_t CurrentScan
 
 static void LoadActiveScanFrequencies(void)
 {   if(appMode!=CHANNEL_MODE)return;
-    //memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
     memset(ScanFrequencies,0,sizeof(ScanFrequencies));
     scanChannelsCount = 0;
     ChannelAttributes_t cache;
@@ -3131,7 +3113,6 @@ static void LoadActiveScanFrequencies(void)
                     scanChannelsCount++;
                 }
             }
-            else {ScanFrequencies[ch] = 0;}
     }
 }
 
