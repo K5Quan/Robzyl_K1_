@@ -2997,9 +2997,9 @@ uint32_t FetchChannelFrequency(const uint16_t Channel)
 uint16_t BOARD_gMR_fetchChannel(const uint32_t freq)
 	{
 		for (uint16_t i = MR_CHANNEL_FIRST; i <= MR_CHANNEL_LAST; i++) {
-			if (ScanFrequencies[i] == freq) return i;
+            uint32_t freqcmp = FetchChannelFrequency(i);
+            if (freqcmp == freq) return i;
 		}
-		// Return if no Chanel found
 		return 0xFFFF;
 	}
 
