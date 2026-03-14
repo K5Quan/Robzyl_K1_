@@ -968,7 +968,7 @@ static void Measure() {
     if (!gIsPeak || !isListening) previousRssi = rssi;
     else if (rssi < previousRssi) previousRssi = rssi;
 
-    uint16_t count = GetStepsCount();
+    uint16_t count = GetStepsCount()+1;
     uint16_t i = scanInfo.i-1;
 
     if (count > 128) {
@@ -983,7 +983,7 @@ static void Measure() {
         if (end > 128) end = 128;
         for (j = start; j < end; ++j) {
             rssiHistory[j] = rssi;
-            char str[64] = "";sprintf(str, "%d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
+            char str[64] = "";sprintf(str, "M %d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
         }
     }
 }
@@ -994,25 +994,8 @@ int Rssi2DBm(const uint16_t rssi)
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-  static uint8_t z = 10;
-  int newDbMax;
-    if (scanInfo.rssiMax > 0) {
-        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
-        newDbMax = Rssi2DBm(scanInfo.rssiMax);
-
-        if (newDbMax > settings.dbMax + z) {
-            settings.dbMax = settings.dbMax + z;   // montée limitée
-        } else if (newDbMax < settings.dbMax - z) {
-            settings.dbMax = settings.dbMax - z;   // descente limitée
-        } else {
-            settings.dbMax = newDbMax;              // suivi normal
-        }
-    }
-
-    if (scanInfo.rssiMin > 0) {
-        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
+        settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
         settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
-    }
 }
 
 static void AutoAdjustFreqChangeStep() {
@@ -2853,10 +2836,6 @@ static void UpdateListening(void) { // called every 10ms
     static uint32_t stableFreq = 1;
     static uint16_t stableCount = 0;
     static bool SoundBoostsave = false; // Initialisation
-    
-
-
-
     if (SoundBoost != SoundBoostsave) {
         if (SoundBoost) {
             BK4819_WriteRegister(0x54, 0x90D1);    // default is 0x9009
@@ -2888,7 +2867,7 @@ static void UpdateListening(void) { // called every 10ms
         if (end > 128) end = 128;
         for (j = start; j < end; ++j) {
             rssiHistory[j] = rssi;
-            //char str[64] = "";sprintf(str, "%d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
+            char str[64] = "";sprintf(str, "UL %d %d %d\r\n", peak.i,j, peak.f);LogUart(str);
         }
     }
 
