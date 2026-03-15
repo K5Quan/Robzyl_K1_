@@ -31,7 +31,7 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 bool gComeBack = 0;
-static uint8_t Spectrum_state = 1; 
+static uint8_t Spectrum_state = 2; 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
@@ -63,6 +63,7 @@ static uint8_t PttEmission = 0;              // case 16
 #define PARAMETER_COUNT 19
 ////////////////////////////////////////////////////////////////////
 
+bool Cleared = 0;
 static bool SettingsLoaded = false;
 uint8_t  gKeylockCountdown = 0;
 bool     gIsKeylocked = false;
@@ -1565,6 +1566,7 @@ static void Skip() {
 void NextAppMode(void) {
         // 0 = FR, 1 = SL, 2 = BD, 3 = RG
         if (++Spectrum_state > 3) {Spectrum_state = 0;}
+        if(Spectrum_state == 1)LoadActiveScanFrequencies();
         if (!scanChannelsCount && Spectrum_state ==1) Spectrum_state++; //No SL skip SL mode
         char sText[32];
         const char* s[] = {"FREQ", "S LIST", "BAND", "RANGE"};
@@ -3007,6 +3009,7 @@ void APP_RunSpectrum(void)
 {
     for (;;) {
         Mode mode;
+        appMode = CHANNEL_MODE; LoadActiveScanFrequencies();
         if (!Key_1_pressed || gComeBack) LoadSettings(); 
         gComeBack = 0;
         switch (Spectrum_state) {
@@ -3260,7 +3263,9 @@ static void SaveSettings()
   eepromData.R43 = BK4819_ReadRegister(BK4819_REG_43);
   eepromData.R2B = BK4819_ReadRegister(BK4819_REG_2B);
   PY25Q16_WriteBuffer(ADRESS_PARAMS, ((uint8_t*)&eepromData),sizeof(eepromData),0);
-  ShowOSDPopup("PARAMS SAVED");
+  if (Cleared)   ShowOSDPopup("DEFAULT SETTINGS");
+  else ShowOSDPopup("PARAMS SAVED");
+  Cleared = 0;
 }
 
 static void ClearHistory() 
@@ -3298,7 +3303,7 @@ void ClearSettings()
   UOO_trigger = 15;
   osdPopupSetting = 500;
   GlitchMax = 20;  
-  Spectrum_state = 1; 
+  Spectrum_state = 2; 
   SoundBoost = 1;  
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
@@ -3313,8 +3318,7 @@ void ClearSettings()
   BK4819_WriteRegister(BK4819_REG_3C, 20360);
   BK4819_WriteRegister(BK4819_REG_43, 13896);
   BK4819_WriteRegister(BK4819_REG_2B, 49152);
-  
-  ShowOSDPopup("DEFAULT SETTINGS");
+  Cleared = 1;
   SaveSettings();
 }
 

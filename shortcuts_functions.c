@@ -5,7 +5,7 @@ Measure();
 UpdateNoiseOff();
 UpdateGlitch();
 UpdateListening();
-
+APP_RunSpectrum();
 LoadActiveScanFrequencies();
 
 boot
