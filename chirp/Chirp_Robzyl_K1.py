@@ -67,14 +67,14 @@ struct {
   u8 step;
   u8 __UNUSED03;
 
-} channel[999];
+} channel[1024];
 
 // --------------------
 
 #seekto 0x004000;
 struct {
 char name[16];
-} channelname[999];
+} channelname[1024];
 
 
 // --------------------
@@ -85,7 +85,7 @@ struct {
      compander:2,
      band:3;
   u8 scanlist;
-} ch_attr[1006];
+} ch_attr[1031];
 
 // --------------------
 
@@ -412,7 +412,7 @@ struct {
 """
 # ROBZYL parameter
 FM_CHANNELS_MAX = 48
-MR_CHANNELS_MAX = 999
+MR_CHANNELS_MAX = 1024
 MR_CHANNELS_LIST = 20
 
 # flags1
@@ -2252,7 +2252,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         freq0_setting = RadioSetting("VFO_A_chn",
                                      "VFO A Current Channel/Band", val)
         freq0_setting.set_doc('VFO A current channel/band: To select what is displayed on the VFO A\n' + \
-                              '* CHANNEL number M1-M999\n' + \
+                              '* CHANNEL number M1-M1024\n' + \
                               '* BAND F1-F7\n' + \
                               'look at the correspondence between memory and frequency in the memory tab')
 
@@ -2261,7 +2261,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         freq1_setting = RadioSetting("VFO_B_chn",
                                       "VFO B Current Channel/Band", val)
         freq1_setting.set_doc('VFO B current channel/band: To select what is displayed in the VFO B\n' + \
-                              '* CHANNEL number M1-M999\n' + \
+                              '* CHANNEL number M1-M1024\n' + \
                               '* BAND F1-F7\n' + \
                               'look at the correspondence between memory and frequency in the memory tab')
 
