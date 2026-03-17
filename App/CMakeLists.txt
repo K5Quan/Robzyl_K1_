@@ -168,7 +168,6 @@ enable_feature(ENABLE_BLMIN_TMP_OFF)
 enable_feature(ENABLE_SCAN_RANGES)
 enable_feature(ENABLE_FLASH_BAND)
 enable_feature(ENABLE_DEV)
-enable_feature(ENABLE_FULL_BAND)
 enable_feature(ENABLE_SPECTRUM_LINES)
 enable_feature(ENABLE_SCANLIST_SHOW_DETAIL)
 

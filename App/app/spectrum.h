@@ -42,7 +42,7 @@
 #define ADRESS_VERSION 0xC010
 #define ADRESS_PARAMS  0xC020
 #define ADRESS_HISTORY 0xC200
-#define ADRESS_BANDS   0xD100
+
 
 typedef enum {
     AUTOLOCK_OFF,
@@ -56,8 +56,8 @@ static const uint8_t U8RssiMap[] = {
     121, 115, 109, 103, 97, 91, 85, 79, 73, 63,
 };
 
-static const uint16_t scanStepValues[] = {1, 10, 50, 100, 250, 500, 625, 833, 1000, 1250, 2500, 10000, 50000};
-static const uint16_t jumpSizes[]       = {2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 3000, 2500, 2500, 10000, 50000};
+static const uint16_t scanStepValues[] =  {250,  500,   625, 1000, 1250, 2500,  833,    1,    5,   10,   25,   50, 100,   125,  900, 1500, 2000,3000,5000,10000,12500,20000,25000,50000};
+static const uint16_t jumpSizes[]       = {2500, 2500, 2500, 3000, 2500, 2500, 2500, 2500, 2500, 3000, 2500, 2500, 2500, 2500, 3000, 3000, 4000,3000,5000,10000,12500,20000,25000,50000};
 static const uint16_t interlacedLoops[] = {2500, 250, 50, 25, 10, 5, 4, 3, 3, 2, 1, 1, 1};
 
 static const uint16_t scanStepBWRegValues[] = {
@@ -123,22 +123,6 @@ typedef enum StepsCount {
   STEPS_16,
 } StepsCount;
 
-typedef enum ScanStep : uint8_t {
-  S_STEP_0_01kHz,
-  S_STEP_0_1kHz,
-  S_STEP_0_5kHz,
-  S_STEP_1_0kHz,
-  S_STEP_2_5kHz,
-  S_STEP_5_0kHz,
-  S_STEP_6_25kHz,
-  S_STEP_8_33kHz,
-  S_STEP_10_0kHz,
-  S_STEP_12_5kHz,
-  S_STEP_25_0kHz,
-  S_STEP_100kHz,
-  S_STEP_500kHz,
-} ScanStep;
-
 typedef enum ScanList {
   S_SCAN_LIST_1,
   S_SCAN_LIST_2,
@@ -162,14 +146,16 @@ typedef struct bandparameters {
   char BandName[12];
   uint32_t Startfrequency; // Start frequency in MHz /100
   uint32_t Stopfrequency; // Stop frequency in MHz /100
-  ScanStep scanStep;
+  STEP_Setting_t scanStep;
   ModulationMode_t modulationType;
 } bandparameters;
+
+#define MAX_BANDS 24
 
 typedef struct SpectrumSettings {
   uint32_t frequencyChangeStep;  
   StepsCount stepsCount;
-  ScanStep scanStepIndex;
+  STEP_Setting_t scanStepIndex;
   uint16_t scanDelay;
   uint16_t rssiTriggerLevelUp;
   BK4819_FilterBandwidth_t bw;
@@ -179,7 +165,7 @@ typedef struct SpectrumSettings {
   ModulationMode_t modulationType;
   int scanList;
   bool scanListEnabled[MR_CHANNELS_LIST];
-  bool bandEnabled[64];
+  bool bandEnabled[MAX_BANDS];
 } SpectrumSettings;
 
 typedef struct KeyboardState{
@@ -201,6 +187,11 @@ typedef struct PeakInfo {
   uint32_t f;
   uint16_t i;
 } PeakInfo;
+
+typedef struct ChannelInfo_t {
+    uint32_t frequency;
+    uint32_t offset;
+} __attribute__((packed)) ChannelInfo_t;
 
 extern bool gComeBack;
 void APP_RunSpectrum(void);

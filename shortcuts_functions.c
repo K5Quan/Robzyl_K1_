@@ -14,3 +14,6 @@ UI_DisplayMain();
 
 SETTINGS_FetchChannelName();
 BOARD_gMR_fetchChannel();
+NextAppMode();
+NextScanStep();
+DrawF();

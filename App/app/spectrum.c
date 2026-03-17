@@ -8,12 +8,13 @@
 #include "ui/helper.h"
 #include "common.h"
 #include "action.h"
-#include "bands.h"
 #include "ui/main.h"
 #include "driver/py25q16.h"
 #include "version.h"
+#ifdef ENABLE_DEV
 #include "debugging.h"
-
+#endif
+#include <stdlib.h>
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     #include "screenshot.h"
 #endif
@@ -31,7 +32,7 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 bool gComeBack = 0;
-static uint8_t Spectrum_state = 2; 
+static uint8_t Spectrum_state = 0; 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
@@ -81,7 +82,7 @@ static const char *labelsPS[] = {"OFF","100ms","500ms", "1s", "2s", "5s"};
 static const uint16_t PS_Steps[] = {0, 10, 50, 100, 200, 500}; //in 10 ms
 #define PS_STEP_COUNT 5
 
-
+static uint32_t f_linear;
 static uint32_t lastReceivingFreq = 0;
 static bool gIsPeak = false;
 static bool historyListActive = false;
@@ -128,6 +129,7 @@ static Mode appMode;
 #define UHF_NOISE_FLOOR 5
 
 static uint16_t scanChannelsCount;
+static uint16_t bandCount;
 static void ToggleScanList();
 static void SaveSettings();
 static const uint16_t RSSI_MAX_VALUE = 255;
@@ -138,6 +140,7 @@ static bool isKnownChannel = false;
 static uint16_t  gChannel;
 static char channelName[12];
 ModulationMode_t  channelModulation;
+STEP_Setting_t channelStep;
 static BK4819_FilterBandwidth_t channelBandwidth;
 static bool isInitialized = false;
 static bool isListening = true;
@@ -153,15 +156,16 @@ static bool IsBlacklisted(uint32_t f);
 
 /***************************BIG RAM******************************************/
 
-static	uint32_t ScanFrequencies[MR_CHANNEL_LAST +1];
+static uint32_t *ScanFrequencies = NULL;
 static uint32_t    HFreqs[HISTORY_SIZE];
 static uint8_t     HCount[HISTORY_SIZE];
 static bool  HBlacklisted[HISTORY_SIZE];
+static bandparameters *BParams = NULL;
 
 /****************************************************************************/
 
 SpectrumSettings settings = {stepsCount: STEPS_128,
-                             scanStepIndex: S_STEP_500kHz,
+                             scanStepIndex: STEP_500kHz,
                              frequencyChangeStep: 80000,
                              rssiTriggerLevelUp: 20,
                              bw: BK4819_FILTER_BW_WIDE,
@@ -181,14 +185,35 @@ static uint8_t freqInputIndex = 0;
 static uint8_t freqInputDotIndex = 0;
 static KEY_Code_t freqInputArr[10];
 char freqInputString[11];
-static uint8_t nextBandToScanIndex = 0;
+uint8_t nextBandToScanIndex = 0;
 static void LookupChannelModulation();
 uint16_t BOARD_gMR_fetchChannel(const uint32_t freq);
 static uint8_t validScanListIndices[MR_CHANNELS_LIST]; // stocke les index valides
+static void LoadActiveBands(void);
 #ifdef ENABLE_SPECTRUM_LINES
 static void MyDrawShortHLine(uint8_t y, uint8_t x_start, uint8_t x_end, uint8_t step, bool white); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 static void MyDrawVLine(uint8_t x, uint8_t y_start, uint8_t y_end, uint8_t step); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 #endif
+
+#include <errno.h>
+#include <sys/types.h>
+
+extern int _end; // Défini par le linker script (.ld)
+
+caddr_t _sbrk(int incr) {
+    static unsigned char *heap_ptr = NULL;
+    unsigned char *prev_heap_ptr;
+
+    if (heap_ptr == NULL) {
+        heap_ptr = (unsigned char *)&_end;
+    }
+
+    prev_heap_ptr = heap_ptr;
+    // Optionnel : vérifier ici le dépassement de la RAM (Stack collision)
+    
+    heap_ptr += incr;
+    return (caddr_t)prev_heap_ptr;
+}
 
 const RegisterSpec allRegisterSpecs[] = {
  //   {"10_LNAs",  0x10, 8, 0b11,  1},
@@ -776,10 +801,9 @@ static bool InitScan() {
     peak.f = 0; // To check
     
     bool scanInitializedSuccessfully = false;
-
     if (appMode == SCAN_BAND_MODE) {
         uint8_t checkedBandCount = 0;
-        while (checkedBandCount < MAX_BANDS) { 
+        while (checkedBandCount < bandCount) { 
             if (settings.bandEnabled[nextBandToScanIndex]) {
                 bl = nextBandToScanIndex; 
                 scanInfo.f = BParams[bl].Startfrequency;
@@ -788,11 +812,11 @@ static bool InitScan() {
                 if(BParams[bl].Startfrequency>0) gScanRangeStart = BParams[bl].Startfrequency;
                 if(BParams[bl].Stopfrequency>0)  gScanRangeStop = BParams[bl].Stopfrequency;
                 if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
-                nextBandToScanIndex = (nextBandToScanIndex + 1) % MAX_BANDS;
+                nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
                 scanInitializedSuccessfully = true;
                 break;
             }
-            nextBandToScanIndex = (nextBandToScanIndex + 1) % MAX_BANDS;
+            nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
             checkedBandCount++;
         }
     } else {
@@ -947,12 +971,12 @@ static void AutoAdjustFreqChangeStep() {
 
 static void UpdateScanStep(bool inc) {
 if (inc) {
-    settings.scanStepIndex = (settings.scanStepIndex >= S_STEP_500kHz) 
-                          ? S_STEP_0_01kHz 
+    settings.scanStepIndex = (settings.scanStepIndex >= STEP_500kHz) 
+                          ? STEP_0_01kHz 
                           : settings.scanStepIndex + 1;
 } else {
-    settings.scanStepIndex = (settings.scanStepIndex <= S_STEP_0_01kHz) 
-                          ? S_STEP_500kHz 
+    settings.scanStepIndex = (settings.scanStepIndex <= STEP_0_01kHz) 
+                          ? STEP_500kHz 
                           : settings.scanStepIndex - 1;
 }
   AutoAdjustFreqChangeStep();
@@ -1163,7 +1187,8 @@ int16_t BK4819_GetAFCValue() { //from Hawk5
 
 //******************************СТАТУСБАР************** */
 static void DrawStatus() {
-static const char* const scanStepNames[] = {"10", "100", "500", "1k", "2k5", "5k", "6k25", "8k33", "10k", "12k5", "25k", "100k", "500k"};
+static const char* const scanStepNames[] = {"2.5kHz", "5kHz", "6.25kHz", "10kHz", "12.5kHz", "25kHz", "833Hz", "10Hz", "50Hz", "100Hz", "250Hz", "500Hz", "1kHz", "1.25kHz", "9kHz", "15kHz", "20kHz", "30kHz", "50kHz", "100kHz", "125kHz", "200kHz", "250kHz", "500kHz"};
+
   int len=0;
   int pos=0;
    
@@ -1258,7 +1283,7 @@ static void DrawF(uint32_t f) {
     if(isListening) {
             snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     } else {
-        snprintf(freqStr, sizeof(freqStr), "%u.%01u", f / 100000, (f % 100000) / 10000);
+        snprintf(freqStr, sizeof(freqStr), "%u.%05u", f_linear / 100000, f_linear % 100000);
     }
     UpdateCssDetection(); // субтон новый
     uint16_t channelFd = BOARD_gMR_fetchChannel(f);
@@ -1343,27 +1368,25 @@ static void LookupChannelInfo() {
   }
 
 static void LookupChannelModulation() {
-	  uint8_t tmp;
-		uint8_t data[8];
-
-		PY25Q16_ReadBuffer(0x0000 + gChannel * 16 + 8, data, sizeof(data));
-
-		tmp = data[3] >> 4;
-		if (tmp >= MODULATION_UKNOWN)
-			tmp = MODULATION_FM;
-		channelModulation = tmp;
-
-		if (data[4] == 0xFF)
-		{
-			channelBandwidth = BK4819_FILTER_BW_WIDE;
-		}
-		else
-		{
-			const uint8_t d4 = data[4];
-			channelBandwidth = !!((d4 >> 1) & 1u);
-			if(channelBandwidth != BK4819_FILTER_BW_WIDE)
-				channelBandwidth = ((d4 >> 5) & 3u) + 1;
-		}	
+	uint8_t tmp;
+	uint8_t data[8];
+	PY25Q16_ReadBuffer(gChannel * 16 + 8, data, sizeof(data));
+	tmp = data[3] >> 4;
+	if (tmp >= MODULATION_UKNOWN)
+		tmp = MODULATION_FM;
+	channelModulation = tmp;
+	if (data[4] == 0xFF) {channelBandwidth = BK4819_FILTER_BW_WIDE;}
+	else
+	{
+		const uint8_t d4 = data[4];
+		channelBandwidth = !!((d4 >> 1) & 1u);
+		if(channelBandwidth != BK4819_FILTER_BW_WIDE)
+			channelBandwidth = ((d4 >> 5) & 3u) + 1;
+	}	
+    tmp = data[6];
+    if (tmp >= STEP_N_ELEM)
+        tmp = STEP_12_5kHz;
+    channelStep = tmp;
 
 }
 
@@ -1405,12 +1428,9 @@ static void nextFrequencyinterlaced() {
     uint32_t currentPass   = scanInfo.i / columns;
     scanInfo.f = gScanRangeStart + (currentColumn * jumpSize) + (currentPass * lastStep);
 }
-uint32_t f_linear;
 
 static void NextScanStep() {
     spectrumElapsedCount = 0;
-    uint16_t count = GetStepsCount();
-    if (scanInfo.i >= count) {scanInfo.i = 0;}
     if (appMode == CHANNEL_MODE) {
         if (scanChannelsCount == 0) {return;}
         scanInfo.f = ScanFrequencies[scanInfo.i];
@@ -1425,6 +1445,7 @@ static void NextScanStep() {
         f_linear = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
     }
     scanInfo.i++;
+//char str[64] = "";sprintf(str, "%d %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
 }
 
 static void CompactHistory(void) {
@@ -1472,12 +1493,12 @@ static void Skip() {
       ToggleRX(false);
 
       if (appMode == CHANNEL_MODE) {
-          if (scanChannelsCount == 0) return;
-      NextScanStep();
-      peak.f = scanInfo.f;
-      peak.i = scanInfo.i;
-      SetF(scanInfo.f);
-          return;
+            if (scanChannelsCount == 0) return;
+            NextScanStep();
+            peak.f = scanInfo.f;
+            peak.i = scanInfo.i;
+            SetF(scanInfo.f);
+            return;
       }
 
       NextScanStep();
@@ -1493,7 +1514,7 @@ void NextAppMode(void) {
         if(Spectrum_state == 1)LoadActiveScanFrequencies();
         if (!scanChannelsCount && Spectrum_state ==1) Spectrum_state++; //No SL skip SL mode
         char sText[32];
-        const char* s[] = {"FREQ", "S LIST", "BAND", "RANGE"};
+        const char* s[] = {"FREQ", "S LIST", "RANGE", "BAND"};
         sprintf(sText, "MODE: %s", s[Spectrum_state]);
         ShowOSDPopup(sText);
         gRequestedSpectrumState = Spectrum_state;
@@ -1588,12 +1609,12 @@ static void OnKeyDown(uint8_t key) {
                         bandListScrollOffset = bandListSelectedIndex;
                     }
                 }
-                else bandListSelectedIndex =  ARRAY_SIZE(BParams) - 1;
+                else bandListSelectedIndex =  bandCount - 1;
                 
                 break;
             case KEY_DOWN:
                 // ARRAY_SIZE(BParams) gives the number of defined bands
-                if (bandListSelectedIndex < ARRAY_SIZE(BParams) - 1) {
+                if (bandListSelectedIndex < bandCount - 1) {
                     bandListSelectedIndex++;
                     if (bandListSelectedIndex >= bandListScrollOffset + MAX_VISIBLE_LINES) {
                         bandListScrollOffset = bandListSelectedIndex - MAX_VISIBLE_LINES + 1;
@@ -1603,28 +1624,21 @@ static void OnKeyDown(uint8_t key) {
                 
                 break;
             case KEY_4: // Band selection
-                if (bandListSelectedIndex < ARRAY_SIZE(BParams)) {
-                    // Set the selected band as the only active one for scanning
+                if (bandListSelectedIndex < bandCount) {
                     settings.bandEnabled[bandListSelectedIndex] = !settings.bandEnabled[bandListSelectedIndex]; 
-                    // Reset nextBandToScanIndex so InitScan starts from the selected one
                     nextBandToScanIndex = bandListSelectedIndex; 
                     bandListSelectedIndex++;
                 }
                 break;
             case KEY_5: // Band selection
-                if (bandListSelectedIndex < ARRAY_SIZE(BParams)) {
-                    // Set the selected band as the only active one for scanning
+                if (bandListSelectedIndex < bandCount) {
                     memset(settings.bandEnabled, 0, sizeof(settings.bandEnabled)); // Clear all flags
                     settings.bandEnabled[bandListSelectedIndex] = true; // Enable selected band
-                    
-                    // Reset nextBandToScanIndex so InitScan starts from the selected one
                     nextBandToScanIndex = bandListSelectedIndex; 
                 }
                 break;
-				
-				        // NOWA FUNKCJA: Przejście do wybranego zakresu po wciśnięciu MENU
             case KEY_MENU:
-            if (bandListSelectedIndex < ARRAY_SIZE(BParams)) {
+            if (bandListSelectedIndex < bandCount) {
                 memset(settings.bandEnabled, 0, sizeof(settings.bandEnabled));
                 settings.bandEnabled[bandListSelectedIndex] = true;
                 nextBandToScanIndex = bandListSelectedIndex;
@@ -2900,43 +2914,46 @@ static void Tick() {
   } 
 }
 
-uint32_t FetchChannelFrequency(const uint16_t Channel)
-{
-	struct
-	{
-		uint32_t frequency;
-		uint32_t offset;
-	} __attribute__((packed)) info;
-
-	PY25Q16_ReadBuffer(0x0000 + Channel * 16, &info, sizeof(info));
-	if (info.frequency == 0xFFFFFFFF) return 0;
-	else return info.frequency;
+ChannelInfo_t FetchChannelFrequency(const uint16_t Channel) {
+    ChannelInfo_t info;
+    PY25Q16_ReadBuffer(0x0000 + (uint32_t)Channel * 16, &info, sizeof(info));
+    if (info.frequency == 0xFFFFFFFF) {
+        ChannelInfo_t empty = {0, 0};
+        return empty;
+    }
+    return info;
 }
 
-uint16_t BOARD_gMR_fetchChannel(const uint32_t freq)
-	{
+uint16_t BOARD_gMR_fetchChannel(const uint32_t freq) {
 		for (uint16_t i = MR_CHANNEL_FIRST; i <= MR_CHANNEL_LAST; i++) {
-            uint32_t freqcmp = FetchChannelFrequency(i);
-            if (freqcmp == freq) return i;
+            ChannelInfo_t freqcmp = FetchChannelFrequency(i);
+            if (freqcmp.frequency == freq) return i;
 		}
 		return 0xFFFF;
-	}
+}
 
-void APP_RunSpectrum(void)
-{
+void APP_RunSpectrum(void) {    
     for (;;) {
         Mode mode;
-        appMode = CHANNEL_MODE; LoadActiveScanFrequencies();
         if (!Key_1_pressed || gComeBack) LoadSettings(); 
         gComeBack = 0;
         switch (Spectrum_state) {
-            case 4:  mode = FREQUENCY_MODE;  break;
-            case 3:  mode = SCAN_RANGE_MODE; break;
-            case 2:  mode = SCAN_BAND_MODE;  break;
+            case 0:  mode = FREQUENCY_MODE;  break;
             case 1:  mode = CHANNEL_MODE;    break;
+            case 2:  mode = SCAN_RANGE_MODE; break;
+            case 3:  mode = SCAN_BAND_MODE;  break;
             default: mode = FREQUENCY_MODE;  break;
         }
-
+        if(mode == CHANNEL_MODE) {
+            if (ScanFrequencies == NULL) {
+                ScanFrequencies = (uint32_t *)malloc((MR_CHANNEL_LAST + 1) * sizeof(uint32_t));}
+            if (ScanFrequencies) LoadActiveScanFrequencies();
+        }
+        if(mode == SCAN_BAND_MODE){
+            if (BParams == NULL) {
+                BParams = (bandparameters *)malloc((MAX_BANDS) * sizeof(bandparameters));}
+            if(BParams) LoadActiveBands();
+        }
 #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
         gEeprom.CURRENT_STATE = 4;
         SETTINGS_WriteCurrentState();
@@ -2983,7 +3000,8 @@ void APP_RunSpectrum(void)
             RestoreRegisters();
             break;
         }
-
+        free(ScanFrequencies);
+        free(BParams);
         break;
     } 
 }
@@ -2997,18 +3015,40 @@ uint16_t RADIO_ValidMemoryChannelsCount(bool bCheckScanList, uint8_t CurrentScan
 	return count;
 }
 
+static void LoadActiveBands(void) {
+    memset(BParams, 0, (MAX_BANDS) * sizeof(bandparameters));
+    bandCount = 0;
+    for (uint16_t bd = 0; bd < MAX_BANDS; bd++)
+    {
+        gChannel = bd + 999;
+        LookupChannelModulation(); //Fill BParams modulation and step
+        BParams[bd].modulationType = channelModulation;
+        BParams[bd].scanStep =  channelStep;
+//char str[64] = "";
+//sprintf(str, "%d %d %d\r\n", bd, channelModulation, channelStep);LogUart(str);
+        ChannelInfo_t freqs = FetchChannelFrequency(gChannel);
+        if(!freqs.frequency) return;
+        BParams[bd].Startfrequency = freqs.frequency;
+        BParams[bd].Stopfrequency  = freqs.offset;
+        PY25Q16_ReadBuffer(0x004000 + (gChannel * 16), BParams[bd].BandName, 10);
+        bandCount++;
+//char str[64] = "";
+//sprintf(str, "%d %d %d %d %s\r\n", bd, gChannel, BParams[bd].Startfrequency, BParams[bd].Stopfrequency, BParams[bd].BandName);LogUart(str);
+    }
+}
+
 static void LoadActiveScanFrequencies(void)
-{   if(appMode!=CHANNEL_MODE)return;
-    memset(ScanFrequencies,0,sizeof(ScanFrequencies));
+{   if(appMode!=CHANNEL_MODE) return;
+    memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
     scanChannelsCount = 0;
     ChannelAttributes_t cache;
     for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
     {
         MR_LoadChannelAttributesFromFlash(ch, &cache);
-        uint32_t freq = FetchChannelFrequency(ch);
-        if (freq) {
+        ChannelInfo_t freqs  = FetchChannelFrequency(ch);
+        if (freqs.frequency) {
             if (settings.scanListEnabled[cache.scanlist-1])
-                {   ScanFrequencies[scanChannelsCount] = freq;
+                {   ScanFrequencies[scanChannelsCount] = freqs.frequency;
                     scanChannelsCount++;
                 }
             }
@@ -3049,7 +3089,7 @@ typedef struct {
     int16_t Trigger;
     uint32_t RangeStart;
     uint32_t RangeStop;
-    ScanStep scanStepIndex;
+    STEP_Setting_t scanStepIndex;
     uint16_t R40;                      // RF TX Deviation
     uint16_t R29;                      // AF TX noise compressor, AF TX 0dB compressor, AF TX compression ratio
     uint16_t R19;                      // Disable MIC AGC
@@ -3204,7 +3244,7 @@ void ClearSettings()
   gScanRangeStart = 43000000;
   gScanRangeStop  = 44000000;
   DelayRssi = 2;
-  settings.scanStepIndex = S_STEP_10_0kHz;
+  settings.scanStepIndex = STEP_10kHz;
   ShowLines = 1;
   SpectrumDelay = 0;
   MaxListenTime = 0;
@@ -3216,7 +3256,7 @@ void ClearSettings()
   UOO_trigger = 15;
   osdPopupSetting = 500;
   GlitchMax = 20;  
-  Spectrum_state = 2; 
+  Spectrum_state = 0; 
   SoundBoost = 1;  
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
@@ -3537,9 +3577,8 @@ static void RenderParametersSelect() {
 }
 
 
-#ifdef ENABLE_FULL_BAND
-      void RenderBandSelect() {RenderList("BANDS:", ARRAY_SIZE(BParams),bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
-#endif
+void RenderBandSelect() {RenderList("BANDS:", bandCount,bandListSelectedIndex, bandListScrollOffset, GetBandItemText);}
+
 
 static void RenderHistoryList() {
     char headerString[24];

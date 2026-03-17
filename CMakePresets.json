@@ -25,7 +25,6 @@
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
-                "ENABLE_FULL_BAND": true,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_SMALL_BOLD": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
@@ -65,7 +64,7 @@
                 "ENABLE_FEAT_F4HWN_VOL": true,
                 "ENABLE_FEAT_F4HWN_AUDIO": true,
                 "ENABLE_FEAT_F4HWN_RESET_VFO": true,
-                "ENABLE_FEAT_F4HWN_PMR": false,
+                "ENABLE_FEAT_F4HWN_PMR": true,
                 "ENABLE_FEAT_F4HWN_GMRS_FRS_MURS": false,
                 "ENABLE_FEAT_F4HWN_CA": true,
                 "ENABLE_FEAT_F4HWN_DEBUG": false,
@@ -75,7 +74,7 @@
                 "ENABLE_SWD": false,
                 "ENABLE_SCANLIST_SHOW_DETAIL":false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "V6.11b" 
+                "VERSION_STRING_2": "V6.11b2" 
             }
         },
        
@@ -86,7 +85,6 @@
                 "ENABLE_DEV": true,
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
-                "ENABLE_FEAT_F4HWN_SCREENSHOT": true,
                 "EDITION_STRING": "Dev",
                 "TARGET": "ROBZYL.K1.Dev"
             }

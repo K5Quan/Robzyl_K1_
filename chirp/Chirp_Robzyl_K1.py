@@ -647,7 +647,7 @@ BANDS_WIDE = {
         3: [174.0, 349.9999],
         4: [350.0, 399.9999],
         5: [400.0, 469.9999],
-        6: [470.0, 1300.0]
+        6: [470.0, 2600.0]
         }
 
 SCANLIST_LIST = ["OFF"] + [f"{i}" for i in range(1, MR_CHANNELS_LIST)] + ["ALL"]
@@ -1091,11 +1091,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         # This radio supports memories 1-250, 251-264 are the VFO memories
         rf.memory_bounds = (1, MR_CHANNELS_MAX)
 
-        # This is what the BK4819 chip supports
-        # Will leave it in a comment, might be useful someday
-        # rf.valid_bands = [(18000000,  620000000),
-        #                  (840000000, 1300000000)
-        #                  ]
         rf.valid_bands = []
         bands = self._get_bands()
         for _, rng in bands.items():
