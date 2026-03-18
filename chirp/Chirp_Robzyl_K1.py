@@ -542,9 +542,8 @@ BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 # Backlight _TX_RX_LIST
 BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
 
-# steps TODO: change order
-STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25,
-         9, 15, 20, 30, 50, 100, 125, 200, 250, 500]
+
+STEPS = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25, 2.5, 5, 6.25, 8.33, 9, 10, 12.5, 15, 20, 25, 30, 50, 100, 125, 200, 250, 500]
 
 # ctcss/dcs codes
 TMODES = ["", "Tone", "DTCS", "DTCS"]
@@ -1862,7 +1861,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
 # add menu firmware with version and option display if version 3.0 and up
         ValFirm = "Firmware : " + self.FIRMWARE_VERSION 
-        Compair1 = "ROBZYL v6.11"  
+        Compair1 = "ROBZYL v6.11b4"  
 
         if self.FIRMWARE_VERSION == "":
             ValFirm = "Firmware : Only when read from the radio "

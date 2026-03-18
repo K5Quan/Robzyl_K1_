@@ -125,8 +125,8 @@ fi
 
 # Définition du nom du binaire selon le preset
 case "$PRESET" in
-  "Dev")
-    BIN_NAME="ROBZYL.K1.Dev.bin"
+  "STD")
+    BIN_NAME="ROBZYL.K1.STD.bin"
     ;;
   "All")
     # Pour 'All', on peut flasher un binaire par défaut ou ignorer
@@ -134,8 +134,6 @@ case "$PRESET" in
     exit 0
     ;;
   *)
-    # Valeur par défaut si les noms suivent une logique standard
-    BIN_NAME="ROBZYL.K1.${PRESET}.bin"
     ;;
 esac
 

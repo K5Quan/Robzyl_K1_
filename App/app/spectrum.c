@@ -982,10 +982,10 @@ static void AutoAdjustFreqChangeStep() {
 static void UpdateScanStep(bool inc) {
 if (inc) {
     settings.scanStepIndex = (settings.scanStepIndex >= STEP_500kHz) 
-                          ? STEP_0_01kHz 
+                          ? STEP_2_5kHz 
                           : settings.scanStepIndex + 1;
 } else {
-    settings.scanStepIndex = (settings.scanStepIndex <= STEP_0_01kHz) 
+    settings.scanStepIndex = (settings.scanStepIndex <= STEP_2_5kHz) 
                           ? STEP_500kHz 
                           : settings.scanStepIndex - 1;
 }
@@ -1195,9 +1195,8 @@ int16_t BK4819_GetAFCValue() { //from Hawk5
   return (signedAfc * 10) / 3;
 }
 
-//******************************СТАТУСБАР************** */
 static void DrawStatus() {
-static const char* const scanStepNames[] = {"2.5kHz", "5kHz", "6.25kHz", "10kHz", "12.5kHz", "25kHz", "833Hz", "10Hz", "50Hz", "100Hz", "250Hz", "500Hz", "1kHz", "1.25kHz", "9kHz", "15kHz", "20kHz", "30kHz", "50kHz", "100kHz", "125kHz", "200kHz", "250kHz", "500kHz"};
+
 
   int len=0;
   int pos=0;
@@ -1572,6 +1571,7 @@ static void SetTrigger50(){
   char triggerText[32];
   if (settings.rssiTriggerLevelUp == 50) {
       sprintf(triggerText, "DYN SQUELCH: OFF");
+      Skip();
   }
   else {
       sprintf(triggerText, "DYN SQUELCH: %d", settings.rssiTriggerLevelUp);
@@ -1939,7 +1939,7 @@ static void OnKeyDown(uint8_t key) {
           RelaunchScan();
           ResetModifiers();
           if(Key_1_pressed) {
-            Spectrum_state = 3;
+            Spectrum_state = 2;
             APP_RunSpectrum();
           }
           break;
@@ -3887,9 +3887,8 @@ static void GetParametersText(uint16_t index, char *buffer) {
         }
       
         case 5: {
-            uint32_t step = GetScanStep();
-            sprintf(buffer, step % 100 ? "Step: %uk%02u" : "Step: %uk", 
-                   step / 100, step % 100);
+            
+            sprintf(buffer, "Step:%s", scanStepNames[settings.scanStepIndex]);
             break;
         }
             

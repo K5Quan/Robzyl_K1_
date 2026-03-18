@@ -64,15 +64,7 @@ const freq_band_table_t frequencyBandTable[] =
 
 // this order of steps has to be preserved for backwards compatibility with other/stock firmwares
 const uint16_t gStepFrequencyTable[] = {
-// standard steps
-    [STEP_2_5kHz]   = 250,
-    [STEP_5kHz]     = 500,
-    [STEP_6_25kHz]  = 625,
-    [STEP_10kHz]    = 1000,
-    [STEP_12_5kHz]  = 1250,
-    [STEP_25kHz]    = 2500,
-    [STEP_8_33kHz]  = 833,
-// custom steps
+
     [STEP_0_01kHz]  = 1,
     [STEP_0_05kHz]  = 5,
     [STEP_0_1kHz]   = 10,
@@ -80,9 +72,16 @@ const uint16_t gStepFrequencyTable[] = {
     [STEP_0_5kHz]   = 50,
     [STEP_1kHz]     = 100,
     [STEP_1_25kHz]  = 125,
+    [STEP_2_5kHz]   = 250,
+    [STEP_5kHz]     = 500,
+    [STEP_6_25kHz]  = 625,
+    [STEP_8_33kHz]  = 833,
     [STEP_9kHz]     = 900,
+    [STEP_10kHz]    = 1000,
+    [STEP_12_5kHz]  = 1250,
     [STEP_15kHz]    = 1500,
     [STEP_20kHz]    = 2000,
+    [STEP_25kHz]    = 2500,
     [STEP_30kHz]    = 3000,
     [STEP_50kHz]    = 5000,
     [STEP_100kHz]   = 10000,
