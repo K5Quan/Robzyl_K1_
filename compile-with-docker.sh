@@ -135,7 +135,7 @@ case "$PRESET" in
     ;;
   *)
     # Valeur par défaut si les noms suivent une logique standard
-    BIN_NAME="ROBZYL_K1.${PRESET}.bin"
+    BIN_NAME="ROBZYL.K1.${PRESET}.bin"
     ;;
 esac
 
