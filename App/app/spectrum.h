@@ -55,8 +55,8 @@ static const uint8_t DrawingEndY = 50;
 static const uint8_t U8RssiMap[] = {
     121, 115, 109, 103, 97, 91, 85, 79, 73, 63,
 };
-static const char* const scanStepNames[] = {"10Hz","50Hz","100Hz","250Hz","500Hz","1kHz","1.25kHz","2.5kHz","5kHz","6.25kHz","833Hz",
-"9kHz","10kHz","12.5kHz","15kHz","20kHz","25kHz","30kHz","50kHz","100kHz","125kHz","200kHz","250kHz","500kHz"};
+static const char* const scanStepNames[] = {"10Hz","50Hz","100Hz","250Hz","500Hz","1kHz","1k25Hz","2k5Hz","5kHz","6k25Hz","8k33Hz",
+"9kHz","10kHz","12k5Hz","15kHz","20kHz","25kHz","30kHz","50kHz","100kHz","125kHz","200kHz","250kHz","500kHz"};
 static const uint16_t scanStepValues[] = {
     1, 5, 10, 25, 50, 100, 125, 250, 500, 625, 833, 900, 
     1000, 1250, 1500, 2000, 2500, 3000, 5000, 10000, 12500, 20000, 25000, 50000

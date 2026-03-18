@@ -982,10 +982,10 @@ static void AutoAdjustFreqChangeStep() {
 static void UpdateScanStep(bool inc) {
 if (inc) {
     settings.scanStepIndex = (settings.scanStepIndex >= STEP_500kHz) 
-                          ? STEP_2_5kHz 
+                          ? STEP_0_01kHz 
                           : settings.scanStepIndex + 1;
 } else {
-    settings.scanStepIndex = (settings.scanStepIndex <= STEP_2_5kHz) 
+    settings.scanStepIndex = (settings.scanStepIndex <= STEP_0_01kHz) 
                           ? STEP_500kHz 
                           : settings.scanStepIndex - 1;
 }
