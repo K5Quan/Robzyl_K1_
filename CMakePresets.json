@@ -94,13 +94,13 @@
             }
         },
         {
-            "name": "USB",
+            "name": "STD",
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
-                "EDITION_STRING": "USB",
-                "TARGET": "ROBZYL.K1.USB"
+                "EDITION_STRING": "STD",
+                "TARGET": "ROBZYL.K1.STD"
             }
         },
         {
@@ -130,8 +130,8 @@
             "configurePreset": "Dev"
         },
         {
-            "name": "USB",
-            "configurePreset": "USB"
+            "name": "STD",
+            "configurePreset": "STD"
         },
         {
             "name": "Kenwood",

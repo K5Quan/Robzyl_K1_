@@ -13,7 +13,7 @@ set -euo pipefail
 # ---------------------------------------------
 
 IMAGE=uvk1-uvk5v3
-PRESET=${1:-USB}
+PRESET=${1:-STD}
 
 shift || true  # remove preset from arguments if present
 
@@ -45,9 +45,9 @@ fi
 # ---------------------------------------------
 # Validate preset name
 # ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(Dev|USB|Kenwood|NO_COM|All)$ ]]; then
+if [[ ! "$PRESET" =~ ^(Dev|STD|Kenwood|NO_COM|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: Dev USB Kenwood NO_COM All"
+  echo "Valid presets are: Dev STD Kenwood NO_COM All"
   exit 1
 fi
 
@@ -109,7 +109,7 @@ build_preset() {
 # Handle 'All' preset
 # ---------------------------------------------
 if [[ "$PRESET" == "All" ]]; then
-  PRESETS=(Dev USB Kenwood NO_COM)
+  PRESETS=(Dev STD Kenwood NO_COM)
   for p in "${PRESETS[@]}"; do
     build_preset "$p"
   done
@@ -135,7 +135,7 @@ case "$PRESET" in
     ;;
   *)
     # Valeur par défaut si les noms suivent une logique standard
-    BIN_NAME="ROBZYL.K1.${PRESET}.bin"
+    BIN_NAME="ROBZYL_K1.${PRESET}.bin"
     ;;
 esac
 
