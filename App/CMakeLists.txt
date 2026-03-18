@@ -8,6 +8,7 @@ target_sources(App INTERFACE
     # Drivers
     driver/backlight.c
     driver/bk4829.c
+    driver/cpu_temp.c
     driver/py25q16.c
     driver/gpio.c
     driver/i2c.c
@@ -144,6 +145,7 @@ enable_feature(ENABLE_FLASHLIGHT
 
 enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
+    app/mem_stats.c
 )
 enable_feature(ENABLE_BIG_FREQ)
 enable_feature(ENABLE_SMALL_BOLD)
@@ -168,6 +170,7 @@ enable_feature(ENABLE_BLMIN_TMP_OFF)
 enable_feature(ENABLE_SCAN_RANGES)
 enable_feature(ENABLE_FLASH_BAND)
 enable_feature(ENABLE_DEV)
+enable_feature(ENABLE_CPU_STATS)
 enable_feature(ENABLE_SPECTRUM_LINES)
 enable_feature(ENABLE_SCANLIST_SHOW_DETAIL)
 

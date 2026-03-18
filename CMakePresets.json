@@ -25,6 +25,7 @@
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
+                "ENABLE_CPU_STATS": false,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_SMALL_BOLD": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
@@ -85,6 +86,8 @@
                 "ENABLE_DEV": true,
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
+                "ENABLE_CPU_STATS": true,
+                "ENABLE_FEAT_F4HWN_SCREENSHOT": true,
                 "EDITION_STRING": "Dev",
                 "TARGET": "ROBZYL.K1.Dev"
             }
