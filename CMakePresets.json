@@ -26,6 +26,7 @@
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
                 "ENABLE_CPU_STATS": false,
+                "ENABLE_CPU_TEMP": true,
                 "ENABLE_BIG_FREQ": true,
                 "ENABLE_SMALL_BOLD": true,
                 "ENABLE_CUSTOM_MENU_LAYOUT": true,
@@ -75,7 +76,7 @@
                 "ENABLE_SWD": false,
                 "ENABLE_SCANLIST_SHOW_DETAIL":false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "V6.11b3" 
+                "VERSION_STRING_2": "V6.11b4" 
             }
         },
        
@@ -103,13 +104,13 @@
             }
         },
         {
-            "name": "RS232",
+            "name": "Kenwood",
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": false,
                 "ENABLE_UART": true,
-                "EDITION_STRING": "RS232",
-                "TARGET": "ROBZYL.K1.RS232"
+                "EDITION_STRING": "Kenwood",
+                "TARGET": "ROBZYL.K1.Kenwood"
             }
         },
         {
@@ -133,8 +134,8 @@
             "configurePreset": "USB"
         },
         {
-            "name": "RS232",
-            "configurePreset": "RS232"
+            "name": "Kenwood",
+            "configurePreset": "Kenwood"
         },
         {
             "name": "NO_COM",

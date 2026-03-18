@@ -177,10 +177,10 @@ void Main(void)
         gMenuListCount++;
     }
     // wait for user to release all butts before moving on
-    if (GPIO_IsPttPressed() ||
+/*if (GPIO_IsPttPressed() ||
          KEYBOARD_Poll() != KEY_INVALID ||
          BootMode != BOOT_MODE_NORMAL)
-    {   // keys are pressed
+        {   // keys are pressed
         UI_DisplayReleaseKeys();
         BACKLIGHT_TurnOn();
         // 500ms
@@ -192,7 +192,7 @@ void Main(void)
         gKeyReading0 = KEY_INVALID;
         gKeyReading1 = KEY_INVALID;
         gDebounceCounter = 0;
-    }
+    } */
 
     if (!gChargingWithTypeC && gBatteryDisplayLevel == 0)
     {

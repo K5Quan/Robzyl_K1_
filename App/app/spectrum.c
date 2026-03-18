@@ -2,8 +2,12 @@
 #include "app/spectrum.h"
 #ifdef ENABLE_CPU_STATS
     #include "app/mem_stats.h"
+#endif
+
+#ifdef ENABLE_CPU_TEMP
     #include "driver/cpu_temp.h"
 #endif
+
 #include "audio.h"
 #include "scanner.h"
 #include "driver/backlight.h"
@@ -109,8 +113,6 @@ static void RenderParametersSelect();
 #ifdef ENABLE_CPU_STATS
     static void RenderRAMView();
     static void OnKeyDownRAMView(uint8_t key);
-    static void RenderCPUView();
-    static void OnKeyDownCPUView(uint8_t key);
     static void RenderMemBuffers();
     static void OnKeyDownMemBuffers(uint8_t key);
     static void RenderMemViewer();
@@ -127,6 +129,7 @@ static void RenderParametersSelect();
     } MemViewMode_t;
     
     static MemViewMode_t memViewMode = MEM_VIEW_HEX_ASCII;
+    static void OnKeyDownCPUView(uint8_t key);
 #endif
 
 static void UpdateScan();
@@ -951,7 +954,7 @@ int Rssi2DBm(const uint16_t rssi)
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-  static uint8_t z = 5;
+  static uint8_t z = 15;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
         newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
@@ -1284,8 +1287,26 @@ static void UpdateCssDetection(void) {
     StringCode[0] = '\0';
 }
 
+#ifdef ENABLE_CPU_TEMP
+static void RenderCPUTemp(void)
+{
+    char buf[32];
+    /* ambient_est = cpu_temp - CPU_AMBIENT_OFFSET (default 8.0 degC) */
+#define CPU_AMBIENT_OFFSET_DC  80   /* 8.0 degC in deci-Celsius */
+    int16_t temp_dc = CpuTemp_ReadDeciCelsius();
+    int16_t amb_dc = temp_dc - CPU_AMBIENT_OFFSET_DC;
+    int16_t a_int  = amb_dc / 10;
+    int16_t a_frac = (int16_t)abs(amb_dc % 10);
+    snprintf(buf, sizeof(buf), "%d.%d C", (int)a_int, (int)a_frac);
+    UI_PrintStringSmallbackground(buf, 1, 1, 0, 0);
+}
+#endif
+
 static void DrawF(uint32_t f) {
-    if ((f == 0) || f < 1400000 || f > 130000000) return;
+    static uint32_t fprev;
+    if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
+    else fprev = f;
+
     char freqStr[18];
     if(isListening) {
             snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
@@ -1348,6 +1369,9 @@ static void DrawF(uint32_t f) {
 
     } else { //Not Classic
 
+#ifdef ENABLE_CPU_TEMP
+    RenderCPUTemp();
+#endif
     DrawMeter(4);
 #ifdef ENABLE_SPECTRUM_LINES
     MyDrawShortHLine(10, 0, 127, 2, false);
@@ -1359,7 +1383,7 @@ static void DrawF(uint32_t f) {
     UI_DisplayFrequency(line1, 10, 2, 0);
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
     char rssiText[16];
-    sprintf(rssiText, "R:%3d", scanInfo.rssi);
+    sprintf(rssiText, "S:%3d", scanInfo.rssi);
     UI_PrintStringSmallbackground(rssiText, 96, 1, 0, 0);  // x=96, y=0, BSmall
 
     if (StringCode[0]) {

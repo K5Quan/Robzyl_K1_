@@ -90,7 +90,7 @@ static inline uint16_t pct_x100(uint32_t used, uint32_t total)
 }
 #endif
 
-void UI_DisplayReleaseKeys(void)
+/* void UI_DisplayReleaseKeys(void)
 {
     memset(gStatusLine,  0, sizeof(gStatusLine));
 #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
@@ -103,7 +103,7 @@ void UI_DisplayReleaseKeys(void)
 
     ST7565_BlitStatusLine();  // blank status line
     ST7565_BlitFullScreen();
-}
+} */
 
 void UI_DisplayWelcome(void)
 {

@@ -171,6 +171,7 @@ enable_feature(ENABLE_SCAN_RANGES)
 enable_feature(ENABLE_FLASH_BAND)
 enable_feature(ENABLE_DEV)
 enable_feature(ENABLE_CPU_STATS)
+enable_feature(ENABLE_CPU_TEMP)
 enable_feature(ENABLE_SPECTRUM_LINES)
 enable_feature(ENABLE_SCANLIST_SHOW_DETAIL)
 

@@ -7,13 +7,11 @@ UpdateGlitch();
 UpdateListening();
 APP_RunSpectrum();
 LoadActiveScanFrequencies();
-
-boot
 UI_DisplayReleaseKeys()
 UI_DisplayMain();
-
 SETTINGS_FetchChannelName();
 BOARD_gMR_fetchChannel();
 NextAppMode();
 NextScanStep();
 DrawF();
+ST7565_BlitFullScreen();
