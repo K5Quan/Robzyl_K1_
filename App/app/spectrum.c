@@ -1217,7 +1217,7 @@ switch(SpectrumMonitor) {
       pos += len;
     break;
   } 
-  if (settings.rssiTriggerLevelUp == 50) len = sprintf(&String[pos],"");
+  if (settings.rssiTriggerLevelUp == 50 || !SpectrumMonitor) len = sprintf(&String[pos],"");
   else len = sprintf(&String[pos],"DS%d ", settings.rssiTriggerLevelUp);
   pos += len;
   
@@ -1247,7 +1247,7 @@ switch(SpectrumMonitor) {
 // ------------------ Frequency string ------------------
 static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
     snprintf(buf, buflen, "%u.%05u", f / 100000, f % 100000);
-    RemoveTrailZeros(buf);
+    //RemoveTrailZeros(buf);
 }
 
 // ------------------ CSS detection ------------------
@@ -2280,27 +2280,27 @@ static void OnKeyDownStill(KEY_Code_t key) {
       case KEY_9:
         ToggleModulation();
       break;
-      case KEY_UP:
+      case KEY_DOWN: //Still
           if (stillEditRegs) {
             SetRegMenuValue(stillRegSelected, true);
           } else if (SpectrumMonitor > 0) {
-                    uint32_t step = GetScanStep();
-        stillFreq += step;
-        scanInfo.f = stillFreq;
-        peak.f = stillFreq;
-        SetF(stillFreq);
-          }
+                uint32_t step = GetScanStep();
+                stillFreq += step;
+                scanInfo.f = stillFreq;
+                peak.f = stillFreq;
+                SetF(stillFreq);
+            }
         break;
-      case KEY_DOWN:
+      case KEY_UP: //Still
           if (stillEditRegs) {
             SetRegMenuValue(stillRegSelected, false);
           } else if (SpectrumMonitor > 0) {
-                    uint32_t step = GetScanStep();
-        if (stillFreq > step) stillFreq -= step;
-        scanInfo.f = stillFreq;
-        peak.f = stillFreq;
-        SetF(stillFreq);
-          }
+                uint32_t step = GetScanStep();
+                if (stillFreq > step) stillFreq -= step;
+                scanInfo.f = stillFreq;
+                peak.f = stillFreq;
+                SetF(stillFreq);
+            }
           break;
       case KEY_2: // przewijanie w górę po liście rejestrów
           if (stillEditRegs && stillRegSelected > 0) {
@@ -2634,7 +2634,7 @@ static void RenderStill() {
   //if (SpectrumMonitor) FormatFrequency(HFreqs[historyListIndex], freqStr, sizeof(freqStr));
   //else
   FormatFrequency(stillFreq, freqStr, sizeof(freqStr));
-  UI_DisplayFrequency(freqStr, 0, 0, 0);
+  UI_DisplayFrequency(stillFreq, 0, 0, 0);
   DrawMeter(2);
   sLevelAttributes sLevelAtt;
   sLevelAtt = GetSLevelAttributes(scanInfo.rssi, stillFreq);

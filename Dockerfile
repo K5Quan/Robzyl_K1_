@@ -33,7 +33,5 @@ RUN set -e; \
     DIR="$(ls -d arm-gnu-toolchain-${ARM_GCC_VERSION}-*-arm-none-eabi)"; \
     mv "${DIR}" /opt/toolchain
 
-# Toolchain in PATH
 ENV PATH="/opt/toolchain/bin:${PATH}"
-
 WORKDIR /src

@@ -86,17 +86,16 @@ export MSYS_NO_PATHCONV=1
 # ---------------------------------------------
 build_preset() {
   local preset="$1"
-  echo ""
-  echo "=== 🚀 Building preset: ${preset} ==="
-  echo "---------------------------------------------"
-  docker run --rm \
-    -u $(id -u):$(id -g) \
-    -it -v "$PWD":/src -w /src "$IMAGE" \
-    bash -c "which arm-none-eabi-gcc && arm-none-eabi-gcc --version && \
-             cmake --preset ${preset} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} && \
-             cmake --build --preset ${preset} -j"
+  echo -e "\n=== 🚀 Building: ${preset} ===\n---------------------------------------------"
+
+  docker run --rm -u $(id -u):$(id -g) -v "$PWD":/src -w /src "$IMAGE" \
+  bash -c "cmake --preset ${preset} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} && \
+           cmake --build --preset ${preset} -j" \
+  2>&1 | sed "s|/src/|C:/Perso/Robzyl_K1/|g"
+
   docker run --rm -v "$PWD":/src -w /src "$IMAGE" \
-         arm-none-eabi-size ./build/${preset}/ROBZYL.K1.${preset}.elf
+    arm-none-eabi-size ./build/${preset}/ROBZYL.K1.${preset}.elf
+
   echo "✅ Done: ${preset}"
 }
 
