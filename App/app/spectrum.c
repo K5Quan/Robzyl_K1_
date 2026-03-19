@@ -1205,6 +1205,9 @@ switch(SpectrumMonitor) {
     case 0:
       len = sprintf(&String[pos],"");
       pos += len;
+      if (settings.rssiTriggerLevelUp == 50) len = sprintf(&String[pos],"");
+      else len = sprintf(&String[pos],"DS%d ", settings.rssiTriggerLevelUp);
+      pos += len;
     break;
 
     case 1:
@@ -1217,9 +1220,7 @@ switch(SpectrumMonitor) {
       pos += len;
     break;
   } 
-  if (settings.rssiTriggerLevelUp == 50 || !SpectrumMonitor) len = sprintf(&String[pos],"");
-  else len = sprintf(&String[pos],"DS%d ", settings.rssiTriggerLevelUp);
-  pos += len;
+  
   
   len = sprintf(&String[pos],"%dms %s BW%s ", DelayRssi, gModulationStr[settings.modulationType],bwNames[settings.listenBw]);
   pos += len;
@@ -1714,7 +1715,7 @@ static void OnKeyDown(uint8_t key) {
                 
                 break;
 #ifdef ENABLE_SCANLIST_SHOW_DETAIL
-            case KEY_STAR: // NOWA OBSŁUGA - Show channels in selected scanlist
+            case KEY_STAR: // Show channels in selected scanlist
                 selectedScanListIndex = scanListSelectedIndex;
                 BuildScanListChannels(validScanListIndices[selectedScanListIndex]);
                 scanListChannelsSelectedIndex = 0;
@@ -2312,7 +2313,7 @@ static void OnKeyDownStill(KEY_Code_t key) {
             stillRegSelected++;
           }
       break;
-      case KEY_STAR:
+      case KEY_STAR: //Still
             if (storedScanStepIndex == -1) {
                 storedScanStepIndex = settings.scanStepIndex;
             }
@@ -2634,7 +2635,7 @@ static void RenderStill() {
   //if (SpectrumMonitor) FormatFrequency(HFreqs[historyListIndex], freqStr, sizeof(freqStr));
   //else
   FormatFrequency(stillFreq, freqStr, sizeof(freqStr));
-  UI_DisplayFrequency(stillFreq, 0, 0, 0);
+  UI_DisplayFrequency(freqStr, 0, 0, 0);
   DrawMeter(2);
   sLevelAttributes sLevelAtt;
   sLevelAtt = GetSLevelAttributes(scanInfo.rssi, stillFreq);
