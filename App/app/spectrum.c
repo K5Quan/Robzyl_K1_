@@ -89,8 +89,6 @@ static uint8_t IndexPS = 0;
 static const char *labelsPS[] = {"OFF","100ms","500ms", "1s", "2s", "5s"};
 static const uint16_t PS_Steps[] = {0, 10, 50, 100, 200, 500}; //in 10 ms
 #define PS_STEP_COUNT 5
-
-static uint32_t f_linear;
 static uint32_t lastReceivingFreq = 0;
 static bool gIsPeak = false;
 static bool historyListActive = false;
@@ -909,21 +907,21 @@ static void Measure() {
         peak.f = scanInfo.f;
         peak.i = scanInfo.i;
         FillfreqHistory();
-    }
-
-    if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
-        SYSTEM_DelayMs(10);
-        
-        uint16_t rssi2 = scanInfo.rssi = GetRssi();
-        if (rssi2 > rssi+10) {
-            peak.f = scanInfo.f;
-            peak.i = scanInfo.i-1;
-        }
-        if (settings.rssiTriggerLevelUp < 50) {
-            gIsPeak = true;
-            UpdateNoiseOff();
-            UpdateGlitch();
-        }
+    } else {
+            if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
+                SYSTEM_DelayMs(10);
+                
+                uint16_t rssi2 = scanInfo.rssi = GetRssi();
+                if (rssi2 > rssi+10) {
+                    peak.f = scanInfo.f;
+                    peak.i = scanInfo.i-1;
+                }
+                if (settings.rssiTriggerLevelUp < 50) {
+                    gIsPeak = true;
+                    UpdateNoiseOff();
+                    UpdateGlitch();
+                }
+            }
     } 
     if (!gIsPeak || !isListening) previousRssi = rssi;
     else if (rssi < previousRssi) previousRssi = rssi;
@@ -943,9 +941,11 @@ static void Measure() {
         if (end > 128) end = 128;
         for (j = start; j < end; ++j) {
             rssiHistory[j] = rssi;
-            //char str[64] = "";sprintf(str, "M %d %d %d\r\n", scanInfo.i,j, scanInfo.f);LogUart(str);
         }
     }
+#ifdef ENABLE_DEV
+    char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
+#endif
 }
 
 int Rssi2DBm(const uint16_t rssi)
@@ -1307,11 +1307,7 @@ static void DrawF(uint32_t f) {
     else fprev = f;
 
     char freqStr[18];
-    if(isListening) {
-            snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
-    } else {
-        snprintf(freqStr, sizeof(freqStr), "%u.%05u", f_linear / 100000, f_linear % 100000);
-    }
+    snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     UpdateCssDetection(); // субтон новый
     uint16_t channelFd = BOARD_gMR_fetchChannel(f);
     isKnownChannel = (channelFd != 0xFFFF);
@@ -1464,7 +1460,6 @@ static void NextScanStep() {
     if (appMode == CHANNEL_MODE) {
         if (scanChannelsCount == 0) {return;}
         scanInfo.f = ScanFrequencies[scanInfo.i];
-        f_linear = scanInfo.f;
         //char str[64] = "";sprintf(str, "%d %d \r\n", scanInfo.i, scanInfo.f);LogUart(str);
     } else {
         if (scanInfo.scanStep < 2500 || scanInfo.scanStep == 1000) {
@@ -1472,7 +1467,6 @@ static void NextScanStep() {
         } else {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         }
-        f_linear = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
     }
     scanInfo.i++;
 //char str[64] = "";sprintf(str, "%d %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
@@ -1571,7 +1565,6 @@ static void SetTrigger50(){
   char triggerText[32];
   if (settings.rssiTriggerLevelUp == 50) {
       sprintf(triggerText, "DYN SQUELCH: OFF");
-      Skip();
   }
   else {
       sprintf(triggerText, "DYN SQUELCH: %d", settings.rssiTriggerLevelUp);
@@ -1582,7 +1575,7 @@ static const uint8_t durations[] = {0, 20, 40, 60};
 
 static void OnKeyDown(uint8_t key) {
 
-    if (!gBacklightCountdown_500ms) {BACKLIGHT_TurnOn(); return;}
+    //if (!gBacklightCountdown_500ms) {BACKLIGHT_TurnOn(); return;}
     BACKLIGHT_TurnOn();
     if (gIsKeylocked) {
         // Seule la touche F (Function) permet de déverrouiller
@@ -1960,8 +1953,8 @@ static void OnKeyDown(uint8_t key) {
           int step = (settings.rssiTriggerLevelUp >= 20) ? 5 : 1;
           settings.rssiTriggerLevelUp = (settings.rssiTriggerLevelUp >= 50? 0 : settings.rssiTriggerLevelUp + step);
           SPECTRUM_PAUSED = true;
-          Skip();
           SetTrigger50();
+          Skip();
           break;
       }
 
@@ -1969,8 +1962,8 @@ static void OnKeyDown(uint8_t key) {
           int step = (settings.rssiTriggerLevelUp <= 20) ? 1 : 5;
           settings.rssiTriggerLevelUp = (settings.rssiTriggerLevelUp <= 0? 50 : settings.rssiTriggerLevelUp - step);
           SPECTRUM_PAUSED = true;
-          Skip();
           SetTrigger50();
+          Skip();
           break;
       }
 

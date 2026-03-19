@@ -128,6 +128,9 @@ case "$PRESET" in
   "STD")
     BIN_NAME="ROBZYL.K1.STD.bin"
     ;;
+  "Dev")
+    BIN_NAME="ROBZYL.K1.Dev.bin"
+    ;;
   "All")
     # Pour 'All', on peut flasher un binaire par défaut ou ignorer
     echo "⏭️  Preset 'All' détecté, flash automatique ignoré."
