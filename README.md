@@ -1,3 +1,10 @@
+># [**Translate 🌐**](https://translate.google.com/translate?sl=auto&tl=en&u=https://github.com/Robby69400/Robzyl_K5/)
+
+### 🙏 Many thanks to Zylka, Kolyan, Iggy, Toni, Yves and Francois
+
+<h2><a href="[https://www.youtube.com/@robby_69400](https://www.youtube.com/@robby_69400)" rel="nofollow">🗲 Youtube</a></h2>
+<h2><a href="[https://t.me/k5robby69](https://t.me/k5robby69)">🗲 Telegram </a></h2>
+
 # Documentation Firmware Robzyl K1 V6.12
 ## Pour Quansheng UV-K1 et UV-K5 (v3)
 
