@@ -921,17 +921,28 @@ static void Measure() {
                     UpdateNoiseOff();
                     UpdateGlitch();
                 }
+            SYSTEM_DelayMs(50);
+            scanInfo.rssi = GetRssi();
             }
     } 
     if (!gIsPeak || !isListening) previousRssi = rssi;
     else if (rssi < previousRssi) previousRssi = rssi;
 
+
     uint16_t count = GetStepsCount();
     uint16_t i = scanInfo.i-1;
 
     if (count > 128) {
-        uint16_t pixel = (uint32_t)i * 128 / count;
-        if (pixel < 128) { rssiHistory[pixel] = rssi;}
+            uint32_t totalRange = (uint32_t)GetStepsCount() * scanInfo.scanStep;
+            if (totalRange > 0) {
+                uint16_t pos = (uint32_t)(scanInfo.f - gScanRangeStart) * 127 / totalRange;
+                if (pos < 128) {
+                    rssiHistory[pos] = rssi;
+                    // Remplissage des pixels vides si le pas est large (évite les trous blancs)
+                    uint16_t stepWidth = 128 / GetStepsCount();
+                    for (uint16_t w = 1; w < stepWidth && (pos + w) < 128; w++) rssiHistory[pos + w] = rssi;
+                }
+            }
     } else {
         uint16_t j;
         uint16_t base = 128 / count;
@@ -943,6 +954,7 @@ static void Measure() {
             rssiHistory[j] = rssi;
         }
     }
+
 #ifdef ENABLE_DEV
     char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
 #endif
@@ -957,7 +969,7 @@ static void UpdateDBMaxAuto() { //Zoom
   static uint8_t z = 15;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
-        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -100, 0);
+        newDbMax = Rssi2DBm(scanInfo.rssiMax);
         
         if (newDbMax > settings.dbMax + z) {
             settings.dbMax = settings.dbMax + z;   // montée limitée
@@ -969,7 +981,7 @@ static void UpdateDBMaxAuto() { //Zoom
     }
 
     if (scanInfo.rssiMin > 0) {
-        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -130);
+        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
         
     }
 }
@@ -1348,6 +1360,8 @@ static void DrawF(uint32_t f) {
 
             if (ShowLines == 1) {
                 UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
+                //line2[0] = '\0'; //Test
+                //sprintf(line2,"%d   %d",Rssi2DBm(scanInfo.rssiMin),Rssi2DBm(scanInfo.rssiMax));
                 UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
                 ArrowLine = 2;
             }
@@ -2520,7 +2534,6 @@ MyDrawFrameLines();
 }
 
 
-// ВЫВОД БАРА В ПРОСТОМ РЕЖИМЕ — теперь высота 6 пикселей (убрали по 1 сверху и снизу)
 static void DrawMeter(int line) {
     const uint8_t METER_PAD_LEFT = 7;
     const uint8_t NUM_SQUARES    = 23;          // чуть короче, чтобы точно влез
@@ -3294,6 +3307,9 @@ static void UpdateListening(void) { // called every 10ms
     static uint32_t stableFreq = 1;
     static uint16_t stableCount = 0;
     static bool SoundBoostsave = false; // Initialisation
+    
+    scanInfo.rssi = GetRssi();
+    
     if (SoundBoost != SoundBoostsave) {
         if (SoundBoost) {
             BK4819_WriteRegister(0x54, 0x90D1);    // default is 0x9009
