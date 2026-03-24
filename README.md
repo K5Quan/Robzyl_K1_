@@ -1,95 +1,14 @@
 # Télécharger sur Telegram :
 <h2><a href="[https://t.me/k5robby69](https://t.me/k5robby69)">🗲 Telegram </a></h2>
 
-# Documentation Firmware Robzyl K1 V6.12
-## Pour Quansheng UV-K1 et UV-K5 (v3)
-
-## 1. Introduction et avertissements
-
-**Robzyl K1** est une évolution du firmware Robzyl pour UV-K5 v1 basée sur **F4HWN Fusion v5.2** permettant la portabilité  vers l'UV-K1. Robzyl apporte des modifications significatives notamment son analyseur de spectre ultra rapide, sous plusieurs modes et avec des fonctionnalités exclusives.
-
-**Compatibilité** : 
-- Quansheng UV-K1
-- Quansheng UV-K5 (v3 uniquement, avec quelques limitation à préciser)
-
-### ⚠️ Avertissements importants
-- **Risque de bricking** : veuillez respecter la compatibilité matérielle
-- **Sauvegarde calibration** : impérative avant tout 1er flash de la radio
-- **Législation** : Le domaine de la radio est réglementé, chacun est responsable de l’utilisation qu’il fait de sa radio.
-
-## 2. Principaux apports
-
-**Connectivité et Stockage en mémoires**
-*   **Support USB et RS232 (Cable Kenwood)**.
--   **Capacité de mémoire** : le firmware propose la gestion de
-    + **999 canaux** en mémoire,
-    + **20 scanlists**
-    + **24 bandes de fréquence**
-    + **48 mémoires** en radio FM.
-
-**Analyseur de Spectre et Réception**
-*   **Balayage entrelacé** : Utilise des pas (steps) de minimum 25 kHz pour améliorer la détection des signaux lors du scan du spectre.
- - exemple pour 118-136M à 8k33Hz
-   - on fait 118.000M + 0 +25k + 50k... 136M
-   - puis 118 .00833M + 0 +25k + 50k... 136M
-   - puis 118.01666, +0 + 25k + 50k ... 136M
-*   **Vitesse de scan** : Capable d'analyser environ **250 canaux par seconde**.
-*   **Filtre "Glitch"** : Un nouveau paramètre dans le menu permet d'améliorer la sélectivité en rejetant les parasites.
-*   **Squelch Dynamique** : Basé sur la détection de crête, il ignore les variations du bruit de fond pour plus de précision.
-*   **Historique défilant** : Une liste d'historique enregistre les fréquences balayées, le nombre de détections et les noms des canaux.
-*   **Gestion des modulations** : Sélection automatique de la modulation (FM/AM/SSB) en fonction des informations du canal ou de la bande lors du balayage.
-*   **Fréquences à ignorer** : Possibilité de mettre en "blacklist" des fréquences bruyantes pour les sauter lors des prochains scans.
-
-**Modes Spécifiques et Ergonomie**
-*   **Affichage simplfié du spectre** : L'affichage par défaut est en histogrammes, mais il est également proposé un écran simplfié [2]
-*   **Personnalisation sonore** : Ajout d'une option **Soundboost** et de bips de fin de transmission variés (Mario, Pac-Man, R2D2).
-
-**Retraits** : Pour libérer de l'espace et optimiser les performances, les fonctionnalités **Aircopy** et les **jeux** ont été retirés de cette version.
-
+# Documentation Firmware Robzyl K1
 
 **Driver CHIRP inclus** : `Chirp_Robzyl_K1.py`
-
-  - Pour bénéficier des 999 canaux, il faut d'abord installer une version USB ou RS232, uploader les mémoires avec Chrip puis revenir en version NO_COM.
  Ce driver permet aussi la personnalisation des 24 bandes sur les canaux de 1000 à 1024.
-
-## 4. Installation et configuration initiale
-
-### 4.1 Prérequis
-1. Identifier votre radio : UV-K5 v3 ou UV-K1
-2. Télécharger le fichier ROBZYL.K1.STD.bin
-3. Accéder à un flasher web type [Multi-UVTools](https://spm81.github.io/Multi-UVTools/) ou [UVTools2](https://armel.github.io/uvtools2/)
-
-
-### 4.2 Sauvegarde initiale obligatoire !!
-Avant toute installation d'un nouveau firmware sur une radio, il est **important** de sauvegarder les données de calibration (Dump calibration sur [Multi-UVTools](https://spm81.github.io/Multi-UVTools/) ou [UVTools2](https://armel.github.io/uvtools2/))
-
-
-### 4.2 Procédure de flashage
-1. Brancher la radio au PC, idéalement en USB pour plus de rapidité.
-2. Accéder au flasher web
-3. Démarrer en pressant PTT, la radio passe en mode DFU (led blanche allumée fixe)
-4. Flasher la radio qui redemarrera en fin de mise à jour.
-
-### 4.3 Configuration CHIRP
-1. Télécharger le driver Chirp_Robzyl_K1.py
-2. Brancher la radio au PC
-3. Exécuter Chrip en mode développeur et à l'aide d'un raccourci du type : "C:\Program Files\CHIRP\chirp.exe" --module C:\CHIRPpy\Chirp_Robzyl_K1.py
-4. Télécharger depuis la radio → Modifier les mémoires → Uploader vers la radio
-
-## 5. Guide de référence et menu général
-
-**Guide de base** : Pour les focntionanlités de base du firmware, veuillez vous reporter au [Guide F4HWN Fusion v5.2.0 disponible en PDF](https://www.dropbox.com/scl/fi/tuv1j8r4ct0503lw9qhtb/MENU-ARMEL-F4HWN-K1-Fusion-v5.2.0.pdf?e=3&fbclid=IwY2xjawQav_pleHRuA2FlbQIxMQBicmlkETFSc0VnSTB4OVpOYzlqQWRPc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHqWft_sOj1NWqHCrYDFH7kIVyxdctXuEwqtkX4SFV2P76sXNUKluA8hkVy20_aem_yY7q7BrxxU69xQ7l3bGSrw&rlkey=ua3qqsvqarnozp5be0ul9i2f3&dl=0)
 
 **Menu principal**  accessible en mode MR/VFO :
 
-| Pas de menu | Fonction | 
-|-------------|----------|
-| **1-18** | Paramètres par canal |
-| **19-74** | Paramètres système | 
-
-Se référer au guide pour les détaisl concernant chaque pas de menu.
-
-## 6. Raccourcis clavier
+## Raccourcis clavier
 
 | Touche | Court | Long | F+ |
 |--------|-------|------|----|
@@ -107,16 +26,8 @@ Se référer au guide pour les détaisl concernant chaque pas de menu.
 | **9** | -  | Canal favori | Rétroéclairage BLMax / BLMin |
 | **\*** | - | Scan VFO/MR * |  Scan CTCSS/DCS  |
 | **F** | Fonction | Verrou clavier | - |
-
- \* Bien que le scan ici soit conservéi, il est **beaucoup plus interessant** de scanner avec l'analyseur de spectre Robzyl (Fn+5) qui est ultra performant.
  
-## 7. Spectre / Bandscope Robzyl
-
-### 7.1 Avantages vs F4HWN
-✅ Remplacement COMPLET du spectre F4HWN
-✅ Multiples modes avancés : BANDE, SCAN-LISTE, RANGE, FREQUENCE 
-✅ 24 Bandes personnalisables. Une bande définit un fréquence de start, stop, une modulation et un step.
-✅ Précis, rapide et fluide
+## Spectre Robzyl
 
 | Mode | Description |
 |---------|-------------|
@@ -125,7 +36,7 @@ Se référer au guide pour les détaisl concernant chaque pas de menu.
 | **RANGE** | Spectre sur bornes de fréquence début / fin |
 | **FREQUENCE** | Spectre centrée sur la fréquence en VFO |
 
-### 7.2 Utilisation pratique
+### Utilisation pratique
 
 **Lancement du spectre** : Fn+5 depuis le VFO.
 
@@ -260,8 +171,6 @@ Les canaux mémoires 1000 à 1024 accueillent la personnalisation des bandes uti
 * Un step de fréquence
 
 <img width="1410" height="578" alt="image" src="https://github.com/user-attachments/assets/dbc68936-3d7a-478b-a290-6e30d5f67f77" />
-
-Veuillez repecter ce modèle.
 
 <h2><a href="[https://www.youtube.com/@robby_69400](https://www.youtube.com/@robby_69400)" rel="nofollow">🗲 Youtube</a></h2>
 
