@@ -1,13 +1,15 @@
 //K1 Spectrum
+
+// ============================================================
+// SECTION: Includes
+// ============================================================
 #include "app/spectrum.h"
 #ifdef ENABLE_CPU_STATS
     #include "app/mem_stats.h"
 #endif
-
 #ifdef ENABLE_CPU_TEMP
     #include "driver/cpu_temp.h"
 #endif
-
 #include "audio.h"
 #include "scanner.h"
 #include "driver/backlight.h"
@@ -40,7 +42,6 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 bool gComeBack = 0;
-static uint8_t Spectrum_state = 0; 
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
@@ -86,9 +87,11 @@ static const uint16_t listenSteps[] = {0, 3, 6, 10, 20, 60, 300, 600, 1200, 1800
 #define LISTEN_STEP_COUNT 9
 
 static uint8_t IndexPS = 0;
-static const char *labelsPS[] = {"OFF","100ms","500ms", "1s", "2s", "5s"};
-static const uint16_t PS_Steps[] = {0, 10, 50, 100, 200, 500}; //in 10 ms
+static const char *labelsPS[] = {"OFF","200ms","500ms", "1s", "2s", "5s"};
+static const uint16_t PS_Steps[] = {0, 20, 50, 100, 200, 500}; //in 10 ms
 #define PS_STEP_COUNT 5
+
+
 static uint32_t lastReceivingFreq = 0;
 static bool gIsPeak = false;
 static bool historyListActive = false;
@@ -129,7 +132,8 @@ static void RenderParametersSelect();
     static MemViewMode_t memViewMode = MEM_VIEW_HEX_ASCII;
     static void OnKeyDownCPUView(uint8_t key);
 #endif
-
+static uint16_t bandCount;
+STEP_Setting_t channelStep;
 static void UpdateScan();
 static uint8_t bandListSelectedIndex = 0;
 static int bandListScrollOffset = 0;
@@ -157,7 +161,6 @@ static Mode appMode;
 #define UHF_NOISE_FLOOR 5
 
 static uint16_t scanChannelsCount;
-static uint16_t bandCount;
 static void ToggleScanList();
 static void SaveSettings();
 static const uint16_t RSSI_MAX_VALUE = 255;
@@ -168,7 +171,6 @@ static bool isKnownChannel = false;
 static uint16_t  gChannel;
 static char channelName[12];
 ModulationMode_t  channelModulation;
-STEP_Setting_t channelStep;
 static BK4819_FilterBandwidth_t channelBandwidth;
 static bool isInitialized = false;
 static bool isListening = true;
@@ -176,6 +178,7 @@ static bool newScanStart = true;
 static bool audioState = true;
 static uint8_t bl;
 static State currentState = SPECTRUM, previousState = SPECTRUM;
+static uint8_t Spectrum_state = 0; 
 static PeakInfo peak;
 static ScanInfo scanInfo;
 static char latestScanListName[12];
@@ -185,10 +188,10 @@ static bool IsBlacklisted(uint32_t f);
 /***************************BIG RAM******************************************/
 
 static uint32_t *ScanFrequencies = NULL;
-static uint32_t    HFreqs[HISTORY_SIZE];
-static uint8_t     HCount[HISTORY_SIZE];
-static bool  HBlacklisted[HISTORY_SIZE];
 static bandparameters *BParams = NULL;
+static uint32_t     HFreqs[HISTORY_SIZE];
+static uint8_t      HCount[HISTORY_SIZE];
+static bool         HBlacklisted[HISTORY_SIZE];
 
 /****************************************************************************/
 
@@ -213,17 +216,21 @@ static uint8_t freqInputIndex = 0;
 static uint8_t freqInputDotIndex = 0;
 static KEY_Code_t freqInputArr[10];
 char freqInputString[11];
-uint8_t nextBandToScanIndex = 0;
+static uint8_t nextBandToScanIndex = 0;
 static void LookupChannelModulation();
-uint16_t BOARD_gMR_fetchChannel(const uint32_t freq);
 static uint8_t validScanListIndices[MR_CHANNELS_LIST]; // stocke les index valides
 static void LoadActiveBands(void);
+uint16_t BOARD_gMR_fetchChannel(const uint32_t freq);
 #ifdef ENABLE_SPECTRUM_LINES
 static void MyDrawShortHLine(uint8_t y, uint8_t x_start, uint8_t x_end, uint8_t step, bool white); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 static void MyDrawVLine(uint8_t x, uint8_t y_start, uint8_t y_end, uint8_t step); //ПРОСТОЙ РЕЖИМ ЛИНИИ
 #endif
 
 const RegisterSpec allRegisterSpecs[] = {
+   // {"REG 57", 0x37U, 12, 0x0FFF, 1},
+  //  {"REG 57-2", 0x37U, 9, 0xF0FF, 1},
+
+
  //   {"10_LNAs",  0x10, 8, 0b11,  1},
  //   {"10_LNA",   0x10, 5, 0b111, 1},
  //   {"10_PGA",   0x10, 0, 0b111, 1},
@@ -247,11 +254,13 @@ const RegisterSpec allRegisterSpecs[] = {
     {"XTAL F Mode Select", 0x3C, 6, 0b11, 1},
 //    {"OFF AF Rx de-emp", 0x2B, 8, 1, 1},
 //    {"Gain after FM Demod", 0x43, 2, 1, 1},
+   // {"--DEV & MIC--",},
     {"RF Tx Deviation", 0x40, 0, 0xFFF, 10},
     {"Compress AF Tx Ratio", 0x29, 14, 0b11, 1},
     {"Compress AF Tx 0 dB", 0x29, 7, 0x7F, 1},
     {"Compress AF Tx noise", 0x29, 0, 0x7F, 1},
     {"MIC AGC Disable", 0x19, 15, 1, 1},
+    // {"----AFC----",},
     {"AFC Range Select", 0x73, 11, 0b111, 1},
     {"AFC Disable", 0x73, 4, 1, 1},
     {"AFC Speed", 0x73, 5, 0b111111, 1},
@@ -307,6 +316,7 @@ const RegisterSpec allRegisterSpecs[] = {
 //   {"audio_tx_limit reserved7", 0x50, 11, 0b1111, 1},
 //   {"audio_tx_path_sel", 0x2D, 2, 0b11, 1},
 //   {"AFTx Filt Bypass All", 0x47, 0, 1, 1},
+   //  {"--TX FILT--",},
    {"3kHz AF Resp K Tx", 0x74, 0, 0xFFFF, 100},
 //   {"MIC Sensit Tuning", 0x7D, 0, 0b11111, 1},
 //   {"DCFiltBWTxMICIn15-480hz", 0x7E, 3, 0b111, 1},
@@ -353,6 +363,7 @@ const RegisterSpec allRegisterSpecs[] = {
 //   {"PA Gain2 Tuning", 0x36, 0, 0b111, 1},
 //   {"RF TxDeviation ON", 0x40, 12, 1, 1},
 //   {"AFTxLPF2fltBW1.7-4.5khz", 0x43, 6, 0b111, 1}, 
+    //  {"--RX FILT--",},
      {"300Hz AF Resp K Rx", 0x54, 0, 0xFFFF, 100},
      {"300Hz AF Resp K Rx", 0x55, 0, 0xFFFF, 100},
      {"3kHz AF Resp K Rx", 0x75, 0, 0xFFFF, 100},
@@ -441,7 +452,9 @@ static void SetState(State state) {
   
 }
 
-// Radio functions
+// ============================================================
+// SECTION: Radio / hardware functions
+// ============================================================
 
 static void BackupRegisters() {
   R30 = BK4819_ReadRegister(BK4819_REG_30);
@@ -482,7 +495,7 @@ static void RestoreRegisters() {
 }
 
 static void ToggleAFBit(bool on) {
-    uint32_t reg = BK4819_ReadRegister(BK4819_REG_47);
+  uint32_t reg = regs_cache[BK4819_REG_47]; //KARINA mod
     reg &= ~(1 << 8);
     if (on)
         reg |= on << 8;
@@ -490,7 +503,7 @@ static void ToggleAFBit(bool on) {
 }
 
 static void ToggleAFDAC(bool on) {
-    uint32_t Reg = BK4819_ReadRegister(BK4819_REG_30);
+  uint32_t Reg = regs_cache[BK4819_REG_30]; //KARINA mod
     Reg &= ~(1 << 9);
     if (on)
         Reg |= (1 << 9);
@@ -549,45 +562,29 @@ static void DeInitSpectrum() {
   SYSTEM_DelayMs(50);
 }
 
-// *****************************************************************************
-// Fonction : Supprime la fréquence sélectionnée de la liste d'historique en RAM
-// *****************************************************************************
 static void DeleteHistoryItem(void) {
-    // Vérification de base
     if (!historyListActive || indexFs == 0) return;
     if (historyListIndex >= indexFs) {
-        // L'index est hors limite, on le corrige (au dernier élément valide)
         historyListIndex = (indexFs > 0) ? indexFs - 1 : 0;
         if (indexFs == 0) return;
     }
-
     uint16_t indexToDelete = historyListIndex;
-
-    // Décaler tous les éléments suivants d'une position vers le haut
     for (uint16_t i = indexToDelete; i < indexFs - 1; i++) {
         HFreqs[i]       = HFreqs[i + 1];
         HCount[i]       = HCount[i + 1];
         HBlacklisted[i] = HBlacklisted[i + 1];
     }
-    
-    // Réduire le compteur d'éléments dans la liste
     indexFs--;
     
-    // Nettoyer la nouvelle dernière entrée et rétablir le marqueur de fin logique
     HFreqs[indexFs]       = 0;
     HCount[indexFs]       = 0;
-    HBlacklisted[indexFs] = 0xFF; // Rétablit le marqueur 0xFF pour la cohérence
+    HBlacklisted[indexFs] = 0xFF;
 
-    // Ajuster l'index de sélection
-    // Si nous avons supprimé le dernier élément, la sélection passe au nouvel élément final.
     if (historyListIndex >= indexFs && indexFs > 0) {
         historyListIndex = indexFs - 1;
     } else if (indexFs == 0) {
         historyListIndex = 0;
     }
-    
-    // Mettre à jour l'affichage
-    
     ShowOSDPopup("Deleted");
     
 }
@@ -691,8 +688,6 @@ void WriteHistory(void) {
 
 static uint16_t GetRssi(void) {
     uint16_t rssi;
-    //if (isListening) SYSTICK_DelayUs(12000); 
-    //else 
     SYSTICK_DelayUs(DelayRssi * 1000);
     rssi = BK4819_GetRSSI();
     if (FREQUENCY_GetBand(scanInfo.f) > BAND4_174MHz) {rssi += UHF_NOISE_FLOOR;}
@@ -777,6 +772,7 @@ static void ToggleRX(bool on) {
     
     if (on) { 
         Fmax = peak.f;
+        //BK4819_WriteRegister(BK4819_REG_37, 0x1D0F); // 0x1D0F defoult. 0x1D0F is ok for me
         BK4819_RX_TurnOn();
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
@@ -784,9 +780,9 @@ static void ToggleRX(bool on) {
         BK4819_WriteRegister(BK4819_REG_3F, BK4819_REG_02_CxCSS_TAIL);
 
     } else { 
-        RADIO_SetModulation(MODULATION_FM); //Test for Kolyan
+        //BK4819_WriteRegister(BK4819_REG_37, 0x000F);
+        RADIO_SetModulation(MODULATION_FM);
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, false); //Scan in 25K bandwidth
-        //if(appMode!=CHANNEL_MODE) BK4819_WriteRegister(0x43, GetBWRegValueForScan());
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 0);
     }
     if (on != audioState) {
@@ -809,6 +805,7 @@ static bool InitScan() {
     peak.f = 0; // To check
     
     bool scanInitializedSuccessfully = false;
+
     if (appMode == SCAN_BAND_MODE) {
         uint8_t checkedBandCount = 0;
         while (checkedBandCount < bandCount) { 
@@ -935,14 +932,12 @@ static void Measure() {
     if (count > 128) {
             uint32_t totalRange = (uint32_t)GetStepsCount() * scanInfo.scanStep;
             if (totalRange > 0) {
-                uint16_t pos = (uint32_t)(scanInfo.f - gScanRangeStart) * 127 / totalRange;
+                uint16_t pos = (uint32_t)(scanInfo.f - gScanRangeStart) * 128 / totalRange;
                 if (pos < 128) {
-                    rssiHistory[pos] = rssi;
-                    // Remplissage des pixels vides si le pas est large (évite les trous blancs)
-                    uint16_t stepWidth = 128 / GetStepsCount();
-                    for (uint16_t w = 1; w < stepWidth && (pos + w) < 128; w++) rssiHistory[pos + w] = rssi;
+                    if(rssi >rssiHistory[pos]) rssiHistory[pos] = rssi;
                 }
             }
+
     } else {
         uint16_t j;
         uint16_t base = 128 / count;
@@ -956,7 +951,7 @@ static void Measure() {
     }
 
 #ifdef ENABLE_DEV
-    char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
+    //char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
 #endif
 }
 
@@ -966,17 +961,17 @@ int Rssi2DBm(const uint16_t rssi)
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-  static uint8_t z = 15;
+  static uint8_t z = 5;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
         newDbMax = Rssi2DBm(scanInfo.rssiMax);
         
         if (newDbMax > settings.dbMax + z) {
-            settings.dbMax = settings.dbMax + z;   // montée limitée
+            settings.dbMax = settings.dbMax + z;
         } else if (newDbMax < settings.dbMax - z) {
-            settings.dbMax = settings.dbMax - z;   // descente limitée
+            settings.dbMax = settings.dbMax - z;
         } else {
-            settings.dbMax = newDbMax;              // suivi normal
+            settings.dbMax = newDbMax;
         }
     }
 
@@ -1158,8 +1153,9 @@ static void Blacklist() {
 }
 
 
-// Draw things
-
+// ============================================================
+// SECTION: Display / rendering helpers
+// ============================================================
 // applied x2 to prevent initial rounding
 static uint16_t Rssi2PX(uint16_t rssi, uint16_t pxMin, uint16_t pxMax) {
   const int16_t DB_MIN = settings.dbMin << 1;
@@ -1453,7 +1449,7 @@ static void nextFrequencyinterlaced() {
         lastStep = scanInfo.scanStep;
         
         uint8_t idx = 0;
-        for (uint8_t i = 0; i < sizeof(scanStepValues)/sizeof(scanStepValues[0]); i++) {
+        for (uint8_t i = 0; i < 23; i++) {
             if (scanStepValues[i] == lastStep) {
                 idx = i;
                 break;
@@ -1467,6 +1463,9 @@ static void nextFrequencyinterlaced() {
     uint32_t currentColumn = scanInfo.i % columns;
     uint32_t currentPass   = scanInfo.i / columns;
     scanInfo.f = gScanRangeStart + (currentColumn * jumpSize) + (currentPass * lastStep);
+#ifdef ENABLE_DEV
+    //char str[64] = "";sprintf(str, "j %d l %d f %d \r\n", jumpSize,loops,scanInfo.f);LogUart(str);
+#endif
 }
 
 static void NextScanStep() {
@@ -1476,7 +1475,7 @@ static void NextScanStep() {
         scanInfo.f = ScanFrequencies[scanInfo.i];
         //char str[64] = "";sprintf(str, "%d %d \r\n", scanInfo.i, scanInfo.f);LogUart(str);
     } else {
-        if (scanInfo.scanStep < 2500 || scanInfo.scanStep == 1000) {
+        if (scanInfo.scanStep < 2500 ) {
             nextFrequencyinterlaced();
         } else {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
@@ -1566,10 +1565,10 @@ void NextAppMode(void) {
 static void SetTrigger50(){
   char triggerText[32];
   if (settings.rssiTriggerLevelUp == 50) {
-      sprintf(triggerText, "DYN SQUELCH: OFF");
+      sprintf(triggerText, "DYN SQL: OFF");
   }
   else {
-      sprintf(triggerText, "DYN SQUELCH: %d", settings.rssiTriggerLevelUp);
+      sprintf(triggerText, "DYN SQL: %d", settings.rssiTriggerLevelUp);
   }
   ShowOSDPopup(triggerText);
 }
@@ -2541,8 +2540,8 @@ static void DrawMeter(int line) {
     const uint8_t SQUARE_GAP     = 1;
     const uint8_t Y_START_BIT    = 2;
 
-    settings.dbMax = 30; 
-    settings.dbMin = -100;
+    settings.dbMax = 75; // CALIBRATION LEVEL
+    settings.dbMin = -130;
 
     uint8_t max_width_px = NUM_SQUARES * (SQUARE_SIZE + SQUARE_GAP) - SQUARE_GAP;
     uint8_t fill_px      = Rssi2PX(scanInfo.rssi, 0, max_width_px);
