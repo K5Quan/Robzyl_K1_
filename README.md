@@ -1,8 +1,4 @@
-># [**Translate 🌐**](https://translate.google.com/translate?sl=auto&tl=en&u=https://github.com/Robby69400/Robzyl_K1)
-
-### 🙏 Many thanks to Zylka, Kolyan, Iggy, Toni, Yves and Francois
-
-<h2><a href="[https://www.youtube.com/@robby_69400](https://www.youtube.com/@robby_69400)" rel="nofollow">🗲 Youtube</a></h2>
+# Télécharger sur Telegram :
 <h2><a href="[https://t.me/k5robby69](https://t.me/k5robby69)">🗲 Telegram </a></h2>
 
 # Documentation Firmware Robzyl K1 V6.12
@@ -267,7 +263,6 @@ Les canaux mémoires 1000 à 1024 accueillent la personnalisation des bandes uti
 
 Veuillez repecter ce modèle.
 
-## 10. 📱 Code et discussions
+<h2><a href="[https://www.youtube.com/@robby_69400](https://www.youtube.com/@robby_69400)" rel="nofollow">🗲 Youtube</a></h2>
 
-- **GitHub** : https://github.com/Robby69400/Robzyl_K1
-- **Telegram** : [Telegram Robzyl](https://t.me/k5robby69)
+### 🙏 Many thanks to Zylka, Kolyan, Iggy, Toni, Yves and Francois
