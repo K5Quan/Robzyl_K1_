@@ -957,9 +957,8 @@ static void UpdateDBMaxAuto() { //Zoom
   static uint8_t z = 15;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
-        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
-        newDbMax = Rssi2DBm(scanInfo.rssiMax);
-
+        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -100, 0);
+        
         if (newDbMax > settings.dbMax + z) {
             settings.dbMax = settings.dbMax + z;   // montée limitée
         } else if (newDbMax < settings.dbMax - z) {
@@ -970,8 +969,8 @@ static void UpdateDBMaxAuto() { //Zoom
     }
 
     if (scanInfo.rssiMin > 0) {
-        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
-        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -130);
+        
     }
 }
 
@@ -1511,26 +1510,14 @@ static uint16_t CountValidHistoryItems() {
 }
 
 static void Skip() {
-  if (!SpectrumMonitor) {  
       WaitSpectrum = 0;
       spectrumElapsedCount = 0;
       gIsPeak = false;
       ToggleRX(false);
-
-      if (appMode == CHANNEL_MODE) {
-            if (scanChannelsCount == 0) return;
-            NextScanStep();
-            peak.f = scanInfo.f;
-            peak.i = scanInfo.i;
-            SetF(scanInfo.f);
-            return;
-      }
-
       NextScanStep();
       peak.f = scanInfo.f;
       peak.i = scanInfo.i;
       SetF(scanInfo.f);
-  }
 }
 
 void NextAppMode(void) {
