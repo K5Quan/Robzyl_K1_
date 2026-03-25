@@ -842,8 +842,19 @@ static void LoadActiveScanFrequencies(void)
                     scanChannelsCount++;
                 }
             }
-
     }
+    if (!scanChannelsCount) { //No active scanlist
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
+    {
+        ChannelInfo_t freqs  = FetchChannelFrequency(ch);
+        if (freqs.frequency) {
+                {   ScanFrequencies[scanChannelsCount] = freqs.frequency;
+                    scanChannelsCount++;
+                }
+            }
+    }
+    }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3247,7 +3258,7 @@ static void HandleUserInput(void) {
           kbd.counter = 0;
       }
 
-if (kbd.counter == 2 || (kbd.counter > 22 && (kbd.counter % 20 == 0))) {
+if (kbd.counter == 2 || (kbd.counter > 17 && (kbd.counter % 15 == 0))) {
        
         switch (currentState) {
             case SPECTRUM:
