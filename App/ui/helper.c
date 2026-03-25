@@ -131,61 +131,123 @@ void UI_PrintStringSmallNormalInverse(const char *pString, uint8_t Start, uint8_
 
 void UI_PrintStringSmallbackground(const char *pString, uint8_t Start, uint8_t End, uint8_t Line, uint8_t background)
 {
+    if (pString == NULL)
+        return;
+
     const size_t Length = strlen(pString);
     const unsigned int char_width  = ARRAY_SIZE(gFontSmall[0]);
     const unsigned int spacing     = 1;
     const unsigned int space_width = 4;
 
+    if (Line >= ARRAY_SIZE(gFrameBuffer))
+        return;
+
     size_t start_pos = (size_t)Start;
-    //size_t end_pos   = (size_t)End;
+    size_t end_pos   = (size_t)End;
 
-    //if (end_pos > start_pos) start_pos += (((end_pos - start_pos) - (Length * (char_width + spacing))) + 1) / 2;
+    // Legacy compatibility:
+    // old UI code (main/VFO) uses Start = LCD_WIDTH + x, End = 0
+    // meaning "draw starting at x without centering"
+    const bool legacy_absolute_mode = (End == 0 && Start >= LCD_WIDTH);
+    if (legacy_absolute_mode)
+        start_pos -= LCD_WIDTH;
 
-    uint8_t *pFb = gFrameBuffer[Line];
-    
-if (background) {
-    // 1. On limite le remplissage à la largeur restante de la ligne UNIQUEMENT
-    memset(pFb, 0xFF, 128);
+    // Calculate actual visible text width
+    size_t text_width = 0;
+    for (size_t i = 0; i < Length; i++) {
+        const char c = pString[i];
 
-    // 2. On trace la ligne noire juste au dessus (Dernier pixel de la ligne précédente)
-    if (Line > 0) {
-        for (uint8_t x = 0; x < 128; x++) {
-            PutPixel(x, (Line * 8) - 1, 1);
+        if (c > ' ') {
+            const unsigned int index = (unsigned int)c - ' ' - 1;
+            if (index < ARRAY_SIZE(gFontSmall)) {
+                unsigned int char_width_used = char_width;
+                while (char_width_used > 0 && gFontSmall[index][char_width_used - 1] == 0)
+                    char_width_used--;
+
+                text_width += char_width_used;
+                if (i + 1 < Length)
+                    text_width += spacing;
+            }
+        } else {
+            text_width += space_width;
         }
     }
-}
-    
-    uint8_t *cursor = gFrameBuffer[Line] + start_pos;;
+
+    // Center only when a real [Start..End] range is provided,
+    // not in legacy absolute mode
+    if (!legacy_absolute_mode && end_pos > start_pos) {
+        const size_t available = end_pos - start_pos;
+        if (available > text_width)
+            start_pos += (available - text_width + 1) / 2;
+    }
+
+    if (start_pos >= LCD_WIDTH)
+        return;
+
+    size_t draw_limit = LCD_WIDTH;
+    if (!legacy_absolute_mode && end_pos > start_pos && end_pos < draw_limit)
+        draw_limit = end_pos;
+
+    uint8_t *line_buf = gFrameBuffer[Line];
+
+    // Fill background only under the text area
+    if (background) {
+        size_t fill_width = text_width;
+        if (start_pos + fill_width > draw_limit)
+            fill_width = draw_limit - start_pos;
+
+        memset(line_buf + start_pos, 0xFF, fill_width);
+    }
+
+    size_t cursor_pos = start_pos;
 
     for (size_t i = 0; i < Length; i++)
     {
-        if (pString[i] > ' ')
+        const char c = pString[i];
+
+        if (c > ' ')
         {
-            const unsigned int index = (unsigned int)pString[i] - ' ' - 1;
+            const unsigned int index = (unsigned int)c - ' ' - 1;
             if (index < ARRAY_SIZE(gFontSmall))
             {
                 unsigned int char_width_used = char_width;
                 while (char_width_used > 0 && gFontSmall[index][char_width_used - 1] == 0)
                     char_width_used--;
 
-                uint8_t *dst = cursor;
-                switch (background) {
-                    case 0:
-                        memmove(dst, gFontSmall[index], char_width_used);
-                        break;
-                    case 1:
-                        for (unsigned int c = 0; c < char_width_used; c++)
-                            dst[c] = ~gFontSmall[index][c];
-                        break;
+                if (cursor_pos < draw_limit) {
+                    size_t writable = char_width_used;
+                    if (cursor_pos + writable > draw_limit)
+                        writable = draw_limit - cursor_pos;
+
+                    switch (background) {
+                        case 0:
+                            memmove(line_buf + cursor_pos, gFontSmall[index], writable);
+                            break;
+
+                        case 1:
+                            for (size_t j = 0; j < writable; j++)
+                                line_buf[cursor_pos + j] = (uint8_t)~gFontSmall[index][j];
+                            break;
+
+                        default:
+                            memmove(line_buf + cursor_pos, gFontSmall[index], writable);
+                            break;
+                    }
                 }
 
-                cursor += char_width_used + spacing;
+                cursor_pos += char_width_used;
+
+                if (i + 1 < Length)
+                    cursor_pos += spacing;
             }
         }
         else
         {
-            cursor += space_width;
+            cursor_pos += space_width;
         }
+
+        if (cursor_pos >= draw_limit)
+            break;
     }
 }
 
