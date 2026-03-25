@@ -281,12 +281,16 @@ int16_t BK4819_GetAFCValue() { //from Hawk5
 }
 
 #ifdef ENABLE_CPU_TEMP
-static void RenderCPUTemp(void)
-{
+int16_t temp_dc;
+
+static void RenderCPUTemp(void) {
     char buf[32];
     /* ambient_est = cpu_temp - CPU_AMBIENT_OFFSET (default 8.0 degC) */
 #define CPU_AMBIENT_OFFSET_DC  80   /* 8.0 degC in deci-Celsius */
-    int16_t temp_dc = CpuTemp_ReadDeciCelsius();
+    if (gNextTimeslice_60s) {
+        gNextTimeslice_60s = 0;
+        temp_dc = CpuTemp_ReadDeciCelsius();
+    }
     int16_t amb_dc = temp_dc - CPU_AMBIENT_OFFSET_DC;
     int16_t a_int  = amb_dc / 10;
     int16_t a_frac = (int16_t)abs(amb_dc % 10);
@@ -1869,29 +1873,30 @@ static void DrawF(uint32_t f) {
     line3[0] = '\0';
     int pos = 0;
 
-    
-    if (MaxListenTime > 0) {
-        pos += sprintf(&line3[pos], "RX %d/% s ", spectrumElapsedCount / 1000, labels[IndexMaxLT]);
-        
-        if (WaitSpectrum > 0) {
-            if (WaitSpectrum < 61000) {
-                pos += sprintf(&line3[pos], "| Wait %ds", WaitSpectrum / 1000);
-            } else {
-                pos += sprintf(&line3[pos], "End OO");
+    if(isListening){
+        if (MaxListenTime > 0) {
+            pos += sprintf(&line3[pos], "RX %d/% s ", spectrumElapsedCount / 1000, labels[IndexMaxLT]);
+
+            if (WaitSpectrum > 0) {
+                if (WaitSpectrum < 61000) {
+                    pos += sprintf(&line3[pos], "| Wait %ds", WaitSpectrum / 1000);
+                } else {
+                    pos += sprintf(&line3[pos], "End OO");
+                }
             }
         }
-    }
-    else {
-        pos += sprintf(&line3[pos], "RX %ds  ", spectrumElapsedCount / 1000);
-        
-        if (WaitSpectrum > 0) {
-            if (WaitSpectrum < 61000) {
-                pos += sprintf(&line3[pos], "| Wait %ds", WaitSpectrum / 1000);
-            } else {
-                pos += sprintf(&line3[pos], "End OO");
+        else {
+            pos += sprintf(&line3[pos], "RX %ds  ", spectrumElapsedCount / 1000);
+
+            if (WaitSpectrum > 0) {
+                if (WaitSpectrum < 61000) {
+                    pos += sprintf(&line3[pos], "| Wait %ds", WaitSpectrum / 1000);
+                } else {
+                    pos += sprintf(&line3[pos], "End OO");
+                }
             }
         }
-    }
+    } else ArrowLine = 2;
     
    
     if (classic) {
@@ -1930,9 +1935,6 @@ static void DrawF(uint32_t f) {
 
     } else { //Not Classic
 
-#ifdef ENABLE_CPU_TEMP
-    RenderCPUTemp();
-#endif
     DrawMeter(4);
 #ifdef ENABLE_SPECTRUM_LINES
     MyDrawShortHLine(10, 0, 127, 2, false);
@@ -1944,12 +1946,17 @@ static void DrawF(uint32_t f) {
     UI_DisplayFrequency(line1, 10, 2, 0);
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
     char rssiText[16];
-    sprintf(rssiText, "RSSI:%3d", scanInfo.rssi);
-    UI_PrintStringSmallbackground(rssiText, 10, 1, 0, 0);
-    if (StringCode[0]) {
-        UI_PrintStringSmallbackground(StringCode, 75, 1, 0, 0);
+    if(isListening) {
+        sprintf(rssiText, "RSSI:%3d", scanInfo.rssi);
+        UI_PrintStringSmallbackground(rssiText, 64, 1, 0, 0);
     }
-}
+    if (StringCode[0]) {
+        UI_PrintStringSmallbackground(StringCode, 10, 1, 0, 0);
+    }
+#ifdef ENABLE_CPU_TEMP
+    else RenderCPUTemp();
+#endif
+    }
 }
 
 static void LookupChannelInfo() {
@@ -3547,6 +3554,9 @@ void APP_RunSpectrum(void) {
         for (int i = 0; i < 128; ++i) { rssiHistory[i] = 0; }
         isInitialized = true;
         historyListActive = false;
+#ifdef ENABLE_CPU_TEMP
+        temp_dc = CpuTemp_ReadDeciCelsius();
+#endif
         while (isInitialized) {Tick();}
 
         if (gSpectrumChangeRequested) {

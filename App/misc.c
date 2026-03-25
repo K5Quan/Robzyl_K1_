@@ -192,6 +192,7 @@ volatile uint8_t  gSerialConfigCountDown_500ms;
 
 volatile bool     gNextTimeslice_500ms;
 volatile bool     gNextTimeslice_10ms;
+volatile bool     gNextTimeslice_60s;
 volatile bool     gNextTimeslice_display;
 volatile bool     gNextTimeslice_1s;
 

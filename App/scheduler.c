@@ -61,8 +61,8 @@ void SysTick_Handler(void)
     if ((gGlobalSysTickCounter % 30) == 0) {
         gNextTimeslice_display = true;
     }
-    if ((gGlobalSysTickCounter % 50) == 0) {
-        gNextTimeslice_500ms = true;
+    if ((gGlobalSysTickCounter % 6000) == 0) {
+        gNextTimeslice_60s = true;
 
 #ifdef ENABLE_FEAT_F4HWN
         DECREMENT_AND_TRIGGER(gVfoSaveCountdown_10ms, gScheduleVfoSave);
