@@ -77,7 +77,14 @@ static uint8_t PttEmission = 0;              // case 16
 //ClearSettings                              // case 18
 #define PARAMETER_COUNT 19
 ////////////////////////////////////////////////////////////////////
-
+#ifdef ENABLE_BENCH
+    static uint32_t benchTickMs = 0;      
+    static uint16_t benchStepsThisSec = 0;
+    static uint16_t benchRatePerSec = 0;  
+    static uint32_t benchLapMs = 0;       
+    static uint32_t benchLastLapMs = 0;   
+    static bool benchLapDone = false;
+#endif
 bool Cleared = 0;
 static bool gCounthistory = 1;
 static bool SettingsLoaded = false;
@@ -1384,6 +1391,15 @@ static void ToggleRX(bool on) {
     }
 }
 
+#ifdef ENABLE_BENCH
+static void ResetBenchStats(void) {
+    benchTickMs = 0;
+    benchStepsThisSec = 0;
+    benchRatePerSec = 0;
+    benchLapMs = 0;
+    benchLastLapMs = 0;
+}
+#endif
 
 static void ResetScanStats() {
   scanInfo.rssiMax = scanInfo.rssiMin + 20 ; 
@@ -1449,6 +1465,9 @@ static void RelaunchScan() {
     ToggleRX(false);
     scanInfo.rssiMin = RSSI_MAX_VALUE;
     gIsPeak = false;
+#ifdef ENABLE_BENCH
+    	ResetBenchStats();
+#endif
 }
 
 uint8_t  BK4819_GetExNoiseIndicator(void)
@@ -1970,6 +1989,7 @@ static void DrawF(uint32_t f) {
               UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
               ArrowLine = 3;
             }
+			if (classic && ShowLines == 4) {return;} // BENCH renderujemy osobno
     if (Fmax) 
       {
           FormatFrequency(Fmax, freqStr, sizeof(freqStr));
@@ -2107,8 +2127,16 @@ static void nextFrequencyinterlaced() {
 
 static void NextScanStep() {
     spectrumElapsedCount = 0;
+#ifdef ENABLE_BENCH
+    benchLapDone = false;
+#endif
     if (appMode == CHANNEL_MODE) {
         if (scanChannelsCount == 0) return;
+        if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+#ifdef ENABLE_BENCH
+        uint16_t prevI = scanInfo.i;
+        if (scanInfo.i < prevI) { benchLapDone = true; }
+#endif
         scanInfo.f = ScanFrequencies[scanInfo.i];
     } else {
         if (scanInfo.scanStep < 2500 ) {
@@ -2116,8 +2144,16 @@ static void NextScanStep() {
         } else {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         }
-    }
     scanInfo.i++;
+#ifdef ENABLE_BENCH
+    uint16_t steps = GetStepsCount();
+    uint16_t prevI = scanInfo.i;
+    if (scanInfo.i > steps) {   // zawinięcie dla range/band/freq
+        scanInfo.i = 0;
+        benchLapDone = true;
+    } else if (scanInfo.i < prevI) {benchLapDone = true;}
+#endif
+    }
 }
 
 static void SortHistoryByFrequencyAscending(void) {
@@ -2616,11 +2652,18 @@ static void HandleKeySpectrum(uint8_t key) {
                 SpectrumMonitor     = 0;
             } else if (classic) {
                 ShowLines++;
+#ifdef ENABLE_BENCH
+                if (ShowLines > 4 || ShowLines < 1) ShowLines = 1;
+#else
                 if (ShowLines > 3 || ShowLines < 1) ShowLines = 1;
+#endif
                 char viewText[15];
                 const char *viewName = "CLASSIC";
 				if (ShowLines == 2) viewName = "BIG";
 				else if (ShowLines == 3) viewName = "LAST RX";
+#ifdef ENABLE_BENCH
+		        else if (ShowLines == 4) viewName = "BENCH";
+#endif
                 sprintf(viewText, "VIEW: %s", viewName);
                 ShowOSDPopup(viewText);
             }
@@ -3064,9 +3107,40 @@ static void MyDrawFrameLines(void)
 }
 #endif
 
+#ifdef ENABLE_BENCH
+static void RenderBenchmark(void) {
+    char line[32];
+    UI_PrintStringSmallbackground("BENCHMARK", 1, LCD_WIDTH - 1, 0, 1);
+    if (appMode == CHANNEL_MODE) {
+        snprintf(line, sizeof(line), "Mode: CH  Steps:%u", scanChannelsCount);
+    } else {
+        snprintf(line, sizeof(line), "Mode: FR  Steps:%u", GetStepsCount());
+    }
+    UI_PrintStringSmallbackground(line, 1, LCD_WIDTH - 1, 1, 0);
+    snprintf(line, sizeof(line), "Rate: %u /s", benchRatePerSec);
+    UI_PrintStringSmallbackground(line, 1, LCD_WIDTH - 1, 2, 0);
+    if (benchLastLapMs > 0) {
+        snprintf(line, sizeof(line), "Full scan: %lu.%01lus",
+                 benchLastLapMs / 1000, (benchLastLapMs % 1000) / 100);
+    } else {
+        snprintf(line, sizeof(line), "Full scan: ---");
+    }
+    UI_PrintStringSmallbackground(line, 1, LCD_WIDTH - 1, 3, 0);
+    snprintf(line, sizeof(line), "Cur lap: %lu.%01lus",
+             benchLapMs / 1000, (benchLapMs % 1000) / 100);
+    UI_PrintStringSmallbackground(line, 1, LCD_WIDTH - 1, 4, 0);
+    UI_PrintStringSmallbackground("8:VIEW 1:SKIP 5:PARAM", 1, LCD_WIDTH - 1, 6, 0);
+}
+#endif
 
 static void RenderSpectrum()
 {
+#ifdef ENABLE_BENCH
+	    if (ShowLines == 4) {
+        RenderBenchmark();
+        return;
+    }
+#endif
     if (classic) {
         DrawNums();
         UpdateDBMaxAuto();
@@ -3385,17 +3459,26 @@ static void UpdateScan() {
   SetF(scanInfo.f);
   Measure();
   if(gIsPeak || SpectrumMonitor || WaitSpectrum) return;
+#ifdef ENABLE_BENCH
+  benchStepsThisSec++;
+#endif
   if (gHistoryScan && historyListActive) {
       NextHistoryScanStep();
       return;
   }
   if (scanInfo.i <= GetStepsCount()) {
     NextScanStep();
+#ifndef ENABLE_BENCH
     return;
+#else
+  if (benchLapDone) {
+      benchLastLapMs = benchLapMs;
+      benchLapMs = 0;
+  }
+#endif
   }
   
   newScanStart = true; 
-  //Fmax = peak.f;
   
   if (SpectrumSleepMs) {
       BK4819_Sleep();
@@ -3486,6 +3569,17 @@ static void Tick() {
   if (gNextTimeslice_10ms) {
     HandleUserInput();
     gNextTimeslice_10ms = 0;
+#ifdef ENABLE_BENCH
+    if (!isListening && !SPECTRUM_PAUSED && !SpectrumMonitor && !WaitSpectrum) {
+        benchTickMs += 10;
+        benchLapMs  += 10;
+        if (benchTickMs >= 1000) {
+            benchTickMs -= 1000;
+            benchRatePerSec = benchStepsThisSec;
+            benchStepsThisSec = 0;
+        }
+    }
+#endif
     if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); 
     if(SpectrumPauseCount) SpectrumPauseCount--;
     if (osdPopupTimer > 0) {

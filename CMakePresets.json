@@ -25,6 +25,7 @@
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
+                "ENABLE_BENCH": false,
                 "ENABLE_CPU_STATS": false,
                 "ENABLE_CPU_TEMP": true,
                 "ENABLE_BIG_FREQ": true,
@@ -98,6 +99,7 @@
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": true,
+                "ENABLE_BENCH": false,
                 "ENABLE_UART": true,
                 "EDITION_STRING": "STD",
                 "TARGET": "ROBZYL.K1.STD"
