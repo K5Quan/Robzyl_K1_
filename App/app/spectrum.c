@@ -1451,23 +1451,23 @@ static void Measure() {
         peak.f = scanInfo.f;
         peak.i = scanInfo.i;
         FillfreqHistory(false);
-    }
-
-    if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
-        SYSTEM_DelayMs(10);
-        
-        uint16_t rssi2 = scanInfo.rssi = GetRssi();
-        if (rssi2 > rssi+10) {
-            peak.f = scanInfo.f;
-            peak.i = scanInfo.i-1;
-        }
-        if (settings.rssiTriggerLevelUp < 50) {
-            gIsPeak = true;
-            UpdateNoiseOff();
-            UpdateGlitch();
-        }
-    SYSTEM_DelayMs(50);
-    scanInfo.rssi = GetRssi();
+    } else {
+            if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
+                SYSTEM_DelayMs(10);
+                
+                uint16_t rssi2 = scanInfo.rssi = GetRssi();
+                if (rssi2 > rssi+10) {
+                    peak.f = scanInfo.f;
+                    peak.i = scanInfo.i-1;
+                }
+                if (settings.rssiTriggerLevelUp < 50) {
+                    gIsPeak = true;
+                    UpdateNoiseOff();
+                    UpdateGlitch();
+                }
+            SYSTEM_DelayMs(50);
+            scanInfo.rssi = GetRssi();
+            }
     } 
     if (!gIsPeak || !isListening) previousRssi = rssi;
     else if (rssi < previousRssi) previousRssi = rssi;
@@ -2143,14 +2143,14 @@ static void CompactHistory(void) {
 }
 
 static void Skip() {
-      WaitSpectrum = 0;
-      spectrumElapsedCount = 0;
-      gIsPeak = false;
-      ToggleRX(false);
-      NextScanStep();
-      peak.f = scanInfo.f;
-      peak.i = scanInfo.i;
-      SetF(scanInfo.f);
+    WaitSpectrum = 0;
+    spectrumElapsedCount = 0;
+    NextScanStep();
+    gIsPeak = false;
+    ToggleRX(false);
+    peak.f = scanInfo.f;
+    peak.i = scanInfo.i;
+    SetF(scanInfo.f);
 }
 
 void NextAppMode(void) {
@@ -2183,14 +2183,15 @@ void NextAppMode(void) {
 
 
 static void SetTrigger50(){
-  char triggerText[32];
-  if (settings.rssiTriggerLevelUp == 50) {
-      sprintf(triggerText, "DYN SQL: OFF");
-  }
-  else {
-      sprintf(triggerText, "DYN SQL: %d", settings.rssiTriggerLevelUp);
-  }
-  ShowOSDPopup(triggerText);
+    char triggerText[32];
+    if (settings.rssiTriggerLevelUp == 50) {
+        sprintf(triggerText, "DYN SQL: OFF");
+    }
+    else {
+        sprintf(triggerText, "DYN SQL: %d", settings.rssiTriggerLevelUp);
+    }
+    ShowOSDPopup(triggerText);
+    Skip();
 }
 static const uint8_t durations[] = {0, 20, 40, 60};
 
@@ -2516,7 +2517,6 @@ static void HandleKeySpectrum(uint8_t key) {
             settings.rssiTriggerLevelUp =
                 (settings.rssiTriggerLevelUp >= 50 ? 0 : settings.rssiTriggerLevelUp + step);
             SPECTRUM_PAUSED = true;
-            Skip();
             SetTrigger50();
             break;
         }
@@ -2525,7 +2525,6 @@ static void HandleKeySpectrum(uint8_t key) {
             settings.rssiTriggerLevelUp =
                 (settings.rssiTriggerLevelUp <= 0 ? 50 : settings.rssiTriggerLevelUp - step);
             SPECTRUM_PAUSED = true;
-            Skip();
             SetTrigger50();
             break;
         }
@@ -3411,8 +3410,6 @@ static void UpdateListening(void) { // called every 10ms
     uint32_t maxCount = (uint32_t)MaxListenTime * 1000;
 
     if (MaxListenTime && spectrumElapsedCount >= maxCount && !SpectrumMonitor) {
-        // délai max atteint → reset
-        ToggleRX(false);
         Skip();
         return;
     }
