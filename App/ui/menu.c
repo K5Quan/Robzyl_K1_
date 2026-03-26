@@ -60,9 +60,6 @@ const t_menu_item MenuList[] =
     {"BusyCL",      MENU_BCL           }, // was "BCL"
     {"Compnd",      MENU_COMPAND       },
     {"Mode",        MENU_AM            }, // was "AM"
-#ifdef ENABLE_FEAT_F4HWN
-    {"TXLock",      MENU_TX_LOCK       }, 
-#endif
     {"ChList",      MENU_LIST_CH       },
     {"ChSave",      MENU_MEM_CH        }, // was "MEM-CH"
     {"ChDele",      MENU_DEL_CH        }, // was "DEL-CH"
@@ -170,12 +167,6 @@ const t_menu_item MenuList[] =
     // hidden menu items from here on
     // enabled if pressing both the PTT and upper side button at power-on
     {"F Lock",      MENU_F_LOCK        },
-#ifndef ENABLE_FEAT_F4HWN
-    {"Tx 200",      MENU_200TX         }, // was "200TX"
-    {"Tx 350",      MENU_350TX         }, // was "350TX"
-    {"Tx 500",      MENU_500TX         }, // was "500TX"
-#endif
-    {"350 En",      MENU_350EN         }, // was "350EN"
 #ifndef ENABLE_FEAT_F4HWN
     {"ScraEn",      MENU_SCREN         }, // was "SCREN"
 #endif
@@ -314,23 +305,10 @@ const char gSubMenu_RESET[][4] =
 
 const char * const gSubMenu_F_LOCK[] =
 {
-    "DEFAULT+\n137-174\n400-470",
-    "FCC HAM\n144-148\n420-450",
-#ifdef ENABLE_FEAT_F4HWN_CA
-    "CA HAM\n144-148\n430-450",
-#endif
-    "CE HAM\n144-146\n430-440",
-    "GB HAM\n144-148\n430-440",
-    "137-174\n400-430",
-    "137-174\n400-438",
-#ifdef ENABLE_FEAT_F4HWN_PMR
-    "PMR 446",
-#endif
-#ifdef ENABLE_FEAT_F4HWN_GMRS_FRS_MURS
-    "GMRS\nFRS\nMURS",
-#endif
-    "DISABLE\nALL",
-    "UNLOCK\nALL",
+	"PMR446\nONLY",
+	"136 TO\n500MHz\nONLY",
+	"ENABLE\nALL",
+	"DISABLE\nALL"
 };
 
 const char gSubMenu_RX_TX[][6] =
@@ -826,12 +804,6 @@ void UI_DisplayMenu(void)
             case MENU_NOAA_S:
         #endif
 #ifndef ENABLE_FEAT_F4HWN
-        case MENU_350TX:
-        case MENU_200TX:
-        case MENU_500TX:
-#endif
-        case MENU_350EN:
-#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCREN:
 #endif
 #ifdef ENABLE_FEAT_F4HWN
@@ -1176,17 +1148,6 @@ void UI_DisplayMenu(void)
             #else
                 strcpy(String, gSubMenu_NA);
             #endif
-            break;
-
-        case MENU_TX_LOCK:
-            if(TX_freq_check(gEeprom.VfoInfo[gEeprom.TX_VFO].pTX->Frequency) == 0)
-            {
-                strcpy(String, "Inside\nF Lock\nPlan");
-            }
-            else
-            {
-                strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
-            }
             break;
 
         case MENU_SET_LCK:

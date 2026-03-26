@@ -15,3 +15,4 @@ NextAppMode();
 NextScanStep();
 DrawF();
 ST7565_BlitFullScreen();
+TX_freq_check();

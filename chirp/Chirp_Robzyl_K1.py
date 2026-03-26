@@ -578,17 +578,11 @@ DTCS_CODES = [  # TODO: add negative codes
 ]
 
 # flock list extended
-FLOCK_LIST = ["DEFAULT+ (137-174, 400-470)",
-              "FCC HAM (144-148, 420-450)",
-              "CA HAM (144-148, 430-450)",
-              "CE HAM (144-146, 430-440)",
-              "GB HAM (144-148, 430-440)",
-              "137-174, 400-430",
-              "137-174, 400-438",
-              "PMR 446",
-              "GMRS FRS MURS",
-              "DISABLE ALL",
-              "UNLOCK ALL"]
+FLOCK_LIST = ["PMR 446",
+              "136-500 Mhz",
+              "UNLOCK ALL",
+              "DISABLE ALL"
+              ]
 
 # Scan Resum List              
 SCANRESUME_LIST = ["STOP : Stop scan when a signal is received"]
@@ -1286,10 +1280,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
             mem.power = UVK5_POWER_LEVELS[2]
             mem.extra = RadioSettingGroup("Extra", "extra")
 
-            val = RadioSettingValueList(SET_OFF_ON_LIST)
-            rs = RadioSetting("txLock", "TXLock", val)
-            mem.extra.append(rs)
-
             val = RadioSettingValueBoolean(False)
             rs = RadioSetting("busyChLockout", "BusyCL", val)
             mem.extra.append(rs)
@@ -1403,13 +1393,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
             mem.empty = False
 
         mem.extra = RadioSettingGroup("Extra", "extra")
-
-        # TXLock
-        enc = list_def(_mem.txLock, SET_OFF_ON_LIST, 0)
-        val = RadioSettingValueList(SET_OFF_ON_LIST, None, enc)
-        rs = RadioSetting("txLock", "TX Lock  (TXLock)", val)
-        rs.set_doc('TXLock: If the TX is permit on this channel, allow TX')
-        mem.extra.append(rs)
 
         # BusyCL
         val = RadioSettingValueBoolean(_mem.busyChLockout)
@@ -1639,25 +1622,9 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
             elif elname == "int_flock":
                 _mem.int_flock = int(element.value)
 
-#            # 350TX
-#            elif elname == "int_350tx":
-#                _mem.int_350tx = int(element.value)
-
             # KILLED
             elif elname == "int_KILLED":
                 _mem.int_KILLED = int(element.value)
-
-#            # 200TX
-#            elif elname == "int_200tx":
-#                _mem.int_200tx = int(element.value)
-
-#            # 500TX
-#            elif elname == "int_500tx":
-#                _mem.int_500tx = int(element.value)
-
-            # 350EN
-            elif elname == "int_350en":
-                _mem.int_350en = int(element.value)
 
             # SCREN
             elif elname == "int_scren":
@@ -2668,7 +2635,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         # F-LOCK
         def validate_int_flock(value):
             mem_val = self._memobj.int_flock
-            if mem_val != 10 and value == FLOCK_LIST[10]:
+            if mem_val != 3 and value == FLOCK_LIST[3]:
                 msg = "\"" + value + "\" can only be enabled from radio menu"
                 raise InvalidValueError(msg)
             return value
@@ -2679,10 +2646,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         f_lock_setting = RadioSetting("int_flock", "TX Frequency Lock (F Lock)", val)
         f_lock_setting.set_doc('F Lock: Sets the TX frequency band plan')
         
-        val = RadioSettingValueBoolean(_mem.int_350en)
-        en350_setting = RadioSetting("int_350en", "Unlock 350-400 MHz RX (350 En)", val)
-        en350_setting.set_doc('Enables reception on 350 MHz')
-
         # ----------------- Driver Info
 
         if self.FIRMWARE_VERSION == "":
@@ -3226,7 +3189,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 #            dtmf.append(killed_setting)
 
         unlock.append(f_lock_setting)
-        unlock.append(en350_setting)      
 
         return top
 
@@ -3331,7 +3293,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
                 return int(memory.extra[name].value)
             return def_val
 
-        _mem_chan.txLock = get_setting("txLock", 0)
         _mem_chan.busyChLockout = get_setting("busyChLockout", False)
         _mem_chan.dtmf_pttid = get_setting("pttid", 0)
         _mem_chan.freq_reverse = get_setting("frev", False)

@@ -242,12 +242,6 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             case MENU_NOAA_S:
         #endif
 #ifndef ENABLE_FEAT_F4HWN
-        case MENU_350TX:
-        case MENU_200TX:
-        case MENU_500TX:
-#endif
-        case MENU_350EN:
-#ifndef ENABLE_FEAT_F4HWN
         case MENU_SCREN:
 #endif
 #ifdef ENABLE_FEAT_F4HWN
@@ -410,7 +404,6 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
             *pMax = 15;
             break;
         #endif
-        case MENU_TX_LOCK:
         #ifdef ENABLE_FEAT_F4HWN_INV
         case MENU_SET_INV:
             //*pMin = 0;
@@ -830,48 +823,11 @@ void MENU_AcceptSetting(void)
             SETTINGS_FactoryReset(gSubMenuSelection);
             return;
 
-#ifndef ENABLE_FEAT_F4HWN
-        case MENU_350TX:
-            gSetting_350TX = gSubMenuSelection;
-            break;
-#endif
-
         case MENU_F_LOCK: {
-            if(gSubMenuSelection == F_LOCK_NONE) { // select 10 times to enable
-                gUnlockAllTxConfCnt++;
-#ifdef ENABLE_FEAT_F4HWN
-                if(gUnlockAllTxConfCnt < 3)
-#else
-                if(gUnlockAllTxConfCnt < 10)
-#endif
-                    return;
-            }
-            else
-                gUnlockAllTxConfCnt = 0;
-
             gSetting_F_LOCK = gSubMenuSelection;
-
-            #ifdef ENABLE_FEAT_F4HWN
-            if(gSetting_F_LOCK == F_LOCK_ALL) {
-                SETTINGS_ResetTxLock();
-            }
-            #endif
             break;
         }
-#ifndef ENABLE_FEAT_F4HWN
-        case MENU_200TX:
-            gSetting_200TX = gSubMenuSelection;
-            break;
 
-        case MENU_500TX:
-            gSetting_500TX = gSubMenuSelection;
-            break;
-#endif
-        case MENU_350EN:
-            gSetting_350EN       = gSubMenuSelection;
-            gVfoConfigureMode    = VFO_CONFIGURE_RELOAD;
-            gFlagResetVfos       = true;
-            break;
 #ifndef ENABLE_FEAT_F4HWN
         case MENU_SCREN:
             gSetting_ScrambleEnable = gSubMenuSelection;
@@ -985,10 +941,6 @@ void MENU_AcceptSetting(void)
         case MENU_SET_TMR:
             gSetting_set_tmr = gSubMenuSelection;
             break;
-        case MENU_TX_LOCK:
-            gTxVfo->TX_LOCK = gSubMenuSelection;
-            gRequestSaveChannel       = 1;
-            return;
 #endif
     }
 
@@ -1306,28 +1258,8 @@ void MENU_ShowCurrentSetting(void)
             #endif
             break;
 
-#ifndef ENABLE_FEAT_F4HWN
-        case MENU_350TX:
-            gSubMenuSelection = gSetting_350TX;
-            break;
-#endif
-
         case MENU_F_LOCK:
             gSubMenuSelection = gSetting_F_LOCK;
-            break;
-
-#ifndef ENABLE_FEAT_F4HWN
-        case MENU_200TX:
-            gSubMenuSelection = gSetting_200TX;
-            break;
-
-        case MENU_500TX:
-            gSubMenuSelection = gSetting_500TX;
-            break;
-
-#endif
-        case MENU_350EN:
-            gSubMenuSelection = gSetting_350EN;
             break;
 
 #ifndef ENABLE_FEAT_F4HWN
@@ -1436,9 +1368,6 @@ void MENU_ShowCurrentSetting(void)
         #endif
         case MENU_SET_TMR:
             gSubMenuSelection = gSetting_set_tmr;
-            break;
-        case MENU_TX_LOCK:
-            gSubMenuSelection = gTxVfo->TX_LOCK;
             break;
 #endif
 

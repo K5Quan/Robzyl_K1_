@@ -350,7 +350,7 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
 
     // 0F40..0F47
     PY25Q16_ReadBuffer(0x00A150, Data, 8);
-    gSetting_F_LOCK            = (Data[0] < F_LOCK_LEN) ? Data[0] : F_LOCK_DEF;
+    gSetting_F_LOCK            = (Data[0] < F_LOCK_LEN) ? Data[0] : F_UNLOCK_PMR;
 #ifndef ENABLE_FEAT_F4HWN
     gSetting_350TX             = (Data[1] < 2) ? Data[1] : false;  // was true
 #endif
@@ -1045,7 +1045,6 @@ void SETTINGS_SaveChannel(uint16_t Channel, uint8_t VFO, const VFO_Info_t *pVFO,
         State -> _8[2] = (pVFO->freq_config_TX.CodeType << 4) | pVFO->freq_config_RX.CodeType;
         State -> _8[3] = (pVFO->Modulation << 4) | pVFO->TX_OFFSET_FREQUENCY_DIRECTION;
         State -> _8[4] = 0
-            | (pVFO->TX_LOCK << 6)
             | (pVFO->BUSY_CHANNEL_LOCK << 5)
             | (pVFO->OUTPUT_POWER      << 2)
             | (pVFO->CHANNEL_BANDWIDTH << 1)
@@ -1251,47 +1250,4 @@ State[1] = 0
         State[6] = gEeprom.VOLUME_GAIN;
         PY25Q16_WriteBuffer(0x010000 + 0x188, State, sizeof(State), false);
     }
-#endif
-
-#ifdef ENABLE_FEAT_F4HWN
-
-void SETTINGS_ResetTxLock(void)
-{
-    // This is an expensive operation: full scan of all MR channels
-
-    #define CHANNEL_SIZE               16
-    #define TXLOCK_BYTE_OFFSET         12
-    #define TXLOCK_BIT                 6
-    #define SETTINGS_ResetTxLock_BATCH 32
-
-    const uint32_t TotalBytes  = MR_CHANNELS_MAX * CHANNEL_SIZE;   // 1024 * 16 = 16 384
-    const uint32_t BatchSize   = TotalBytes / SETTINGS_ResetTxLock_BATCH; // 16 384 / 32 = 512
-    const uint32_t BatchChCnt  = BatchSize / CHANNEL_SIZE;         // 32 channels per batch
-
-    uint8_t Buf[BatchSize];
-
-    for (uint32_t batch = 0; batch < SETTINGS_ResetTxLock_BATCH; batch++)
-    {
-        uint32_t Offset = batch * BatchSize;
-
-        PY25Q16_ReadBuffer(Offset, Buf, BatchSize);
-
-        for (uint32_t ch = 0; ch < BatchChCnt; ch++)
-        {
-            uint32_t off = ch * CHANNEL_SIZE;
-            Buf[off + TXLOCK_BYTE_OFFSET] |= (1 << TXLOCK_BIT);
-        }
-
-        PY25Q16_WriteBuffer(Offset, Buf, BatchSize, false);
-    }
-
-    RADIO_ConfigureChannel(0, VFO_CONFIGURE_RELOAD);
-    RADIO_ConfigureChannel(1, VFO_CONFIGURE_RELOAD);
-
-    #undef SETTINGS_ResetTxLock_BATCH
-    #undef CHANNEL_SIZE
-    #undef TXLOCK_BYTE_OFFSET
-    #undef TXLOCK_BIT
-}
-
 #endif
