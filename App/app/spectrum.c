@@ -72,10 +72,10 @@ static uint16_t UOO_trigger = 15;            // case 12
 static uint8_t AUTO_KEYLOCK = AUTOLOCK_OFF;  // case 13
 static uint8_t GlitchMax = 20;               // case 14 
 static bool    SoundBoost = 0;               // case 15
-//static uint8_t PttEmission = 0;              // case 16
-//ClearHistory                               // case 16
-//ClearSettings                              // case 17
-#define PARAMETER_COUNT 18
+static uint8_t PttEmission = 0;              // case 16
+//ClearHistory                               // case 17
+//ClearSettings                              // case 18
+#define PARAMETER_COUNT 19
 ////////////////////////////////////////////////////////////////////
 
 bool Cleared = 0;
@@ -164,13 +164,13 @@ static bool newScanStart = true;
 static bool audioState = true;
 static uint8_t bl;
 static State currentState = SPECTRUM, previousState = SPECTRUM;
-static uint8_t Spectrum_state = 0; 
+static uint8_t Spectrum_state = 1; 
 static PeakInfo peak;
 static ScanInfo scanInfo;
 static char latestScanListName[12];
 static bool refreshScanListName = true;
 static bool IsBlacklisted(uint32_t f);
-
+static void SetState(State state);
 typedef struct {
     char left[17];
     char right[14];
@@ -474,23 +474,6 @@ static void OnKeyDownMemBuffers(uint8_t key)
 
 /* ---- MEM_VIEWER screen ------------------------------------------------- */
 
-/*
- * Three display modes, cycled with MENU:
- *
- *   HEX+ASCII  (default) — wide 6-byte rows:
- *     OOOO: HH HH HH HH HH HH  AAAAAA
- *     ASCII: printable 0x20..0x7E shown as-is, others as '.'
- *
- *   BIN detail — one byte at a time:
- *     ofs, hex, dec, ascii char, binary digits
- *
- *   INFO — buffer metadata:
- *     name, section, size, elem count×size, pointer address, alloc state
- *
- * KEY_UP/DOWN : scroll (6 bytes in HEX+ASCII, 1 byte in BIN)
- * KEY_MENU    : cycle HEX+ASCII → BIN → INFO → HEX+ASCII
- * KEY_EXIT    : return to MEM_BUFFERS
- */
 #define MEM_VIEW_COLS  6   /* bytes per hex+ascii row */
 #define MEM_VIEW_ROWS  6   /* visible rows in hex+ascii mode */
 
@@ -1074,14 +1057,13 @@ static uint16_t GetStepsCount()
 
 static uint32_t GetBW() { return GetStepsCount() * GetScanStep(); }
 
-/*
 static uint16_t GetRandomChannelFromRSSI(uint16_t maxChannels) {
   uint32_t rssi = rssiHistory[1]*rssiHistory[maxChannels/2];
   if (maxChannels == 0 || rssi == 0) { return 1; }
     // Scale RSSI to [1, maxChannels]
     return 1 + (rssi % maxChannels);
 }
-*/
+
 static void DeInitSpectrum() {
   RestoreRegisters();
   gVfoConfigureMode = VFO_CONFIGURE;
@@ -1217,6 +1199,67 @@ void WriteHistory(void) {
                        (uint8_t *)&History, sizeof(HistoryStruct), 0);
     
     ShowOSDPopup("HISTORY SAVED");
+}
+
+static void ExitAndCopyToVfo() {
+    RestoreRegisters();
+
+    if (historyListActive) {
+        SetF(HFreqs[historyListIndex]);
+        gCurrentVfo->Modulation = MODULATION_FM;
+        gRequestSaveChannel = 1;
+        DeInitSpectrum();
+    }
+
+    switch (currentState) {
+        case SPECTRUM:
+            // PTT Mode 1: NINJA MODE (Random channel with low RSSI)
+            if (PttEmission == 1 && scanChannelsCount > 0) {
+                uint16_t randomChannel = GetRandomChannelFromRSSI(scanChannelsCount);
+                uint32_t rndfreq = 0;
+                uint16_t attempts = 0;
+                SpectrumDelay = 0; //not compatible with ninja
+                while (attempts < scanChannelsCount) {
+                    rndfreq = ScanFrequencies[randomChannel];
+                    if (rssiHistory[randomChannel] <= 120 && rndfreq) {break;}
+                    attempts++;
+                    randomChannel = (randomChannel + 1) % scanChannelsCount;
+                }
+                if (rndfreq) {
+                    gCurrentVfo->freq_config_TX.Frequency = rndfreq;
+                    gCurrentVfo->freq_config_RX.Frequency = rndfreq;
+                    gEeprom.MrChannel[0]     = randomChannel;
+                    gEeprom.ScreenChannel[0] = randomChannel;
+                    gCurrentVfo->Modulation   = MODULATION_FM;
+                    gCurrentVfo->STEP_SETTING = STEP_0_01kHz;
+                    gRequestSaveChannel       = 1;
+                }
+            }
+            // PTT Mode 2: Last RX
+            if (PttEmission == 2) {
+                SpectrumDelay = 0;
+
+                gCurrentVfo->freq_config_TX.Frequency = lastReceivingFreq;
+                gCurrentVfo->freq_config_RX.Frequency = lastReceivingFreq;
+                gEeprom.MrChannel[0]     = 0;
+                gEeprom.ScreenChannel[0] = 0;
+                gCurrentVfo->STEP_SETTING = STEP_0_01kHz;
+                gCurrentVfo->Modulation   = MODULATION_FM;
+                gCurrentVfo->OUTPUT_POWER  = OUTPUT_POWER_HIGH;
+                gRequestSaveChannel        = 1;
+            }
+            // PTT Mode 0: VFO Freq
+            gComeBack = 1;
+            DeInitSpectrum();
+            break;
+
+        default:
+            DeInitSpectrum();
+            break;
+    }
+
+    SYSTEM_DelayMs(200);
+    isInitialized = false;
 }
 
 static uint16_t GetRssi(void) {
@@ -2156,7 +2199,7 @@ static void Skip() {
 void NextAppMode(void) {
         // 0 = FR, 1 = SL, 2 = BD, 3 = RG
         if (++Spectrum_state > 3) {Spectrum_state = 0;}
-                switch (Spectrum_state) {
+        switch (Spectrum_state) {
             case 0:  appMode = FREQUENCY_MODE;  break;
             case 1:  appMode = CHANNEL_MODE;    break;
             case 2:  appMode = SCAN_RANGE_MODE; break;
@@ -2449,15 +2492,15 @@ static void HandleKeyParameters(uint8_t key) {
                 case 15: /* Sound boost */
                       SoundBoost = !SoundBoost;
                       break;
-
-
-
-
-                      
-                case 16: /* Clear history */
+                case 16: // PttEmission
+                        PttEmission = isKey3 ?
+                            (PttEmission >= 2 ? 0 : PttEmission + 1) :
+                            (PttEmission <= 0 ? 2 : PttEmission - 1);
+                        break;  
+                case 17: /* Clear history */
                         if (isKey3) ClearHistory();
                       break;
-                case 17: /* Reset to defaults */
+                case 18: /* Reset to defaults */
                         if (isKey3) ClearSettings();
                       break;
               }
@@ -2580,13 +2623,13 @@ static void HandleKeySpectrum(uint8_t key) {
 				else if (ShowLines == 3) viewName = "LAST RX";
                 sprintf(viewText, "VIEW: %s", viewName);
                 ShowOSDPopup(viewText);
+            }
             #ifdef ENABLE_CPU_STATS
             else {
                 /* Alternative (non-classic) view: KEY_8 opens RAM diagnostics. */
                 SetState(RAM_VIEW);
             }
             #endif
-      }
     break;
         case KEY_UP:
             if (historyListActive) {
@@ -2723,9 +2766,7 @@ static void HandleKeySpectrum(uint8_t key) {
             }
         break;
     case KEY_PTT:
-        Skip();
-        ShowOSDPopup("SKIPPED");
-        //ExitAndCopyToVfo();
+        ExitAndCopyToVfo();
         break;
         case KEY_MENU:
             if (historyListActive) scanInfo.f = HFreqs[historyListIndex];
@@ -2737,17 +2778,17 @@ static void HandleKeySpectrum(uint8_t key) {
                 SetF(stillFreq);
             }
             break;
-        case KEY_EXIT:
-            if (historyListActive) {
-                gHistoryScan        = false;
-                SetState(SPECTRUM);
-                historyListActive   = false;
-                SpectrumMonitor     = prevSpectrumMonitor;
-                SetF(scanInfo.f);
-                break;
-            }
-            if (WaitSpectrum) WaitSpectrum = 0;
-            DeInitSpectrum(0);
+    case KEY_EXIT:
+        if (historyListActive) {
+            gHistoryScan        = false;
+            SetState(SPECTRUM);
+            historyListActive   = false;
+            SpectrumMonitor     = prevSpectrumMonitor;
+            SetF(scanInfo.f);
+            break;
+        }
+        if (WaitSpectrum) WaitSpectrum = 0;
+        DeInitSpectrum(0);
     break;
    default:
       break;
@@ -2913,9 +2954,7 @@ static void OnKeyDownStill(KEY_Code_t key) {
             WaitSpectrum = 0; //don't wait if this frequency not interesting
       break;
       case KEY_PTT:
-        Skip();
-        ShowOSDPopup("SKIPPED");
-        //ExitAndCopyToVfo();
+        ExitAndCopyToVfo();
         break;
       case KEY_MENU:
           stillEditRegs = !stillEditRegs;
@@ -3498,7 +3537,8 @@ static void Tick() {
 void APP_RunSpectrum(void) {    
     for (;;) {
         Mode mode;
-        if (!Key_1_pressed ) LoadSettings(); 
+        if (!Key_1_pressed ) LoadSettings();
+        gComeBack = 0; 
         switch (Spectrum_state) {
             case 0:  mode = FREQUENCY_MODE;  break;
             case 1:  mode = CHANNEL_MODE;    break;
@@ -3605,6 +3645,7 @@ bool IsVersionMatching(void) {
 typedef struct {
     int ShowLines;
     uint8_t DelayRssi;
+    uint8_t PttEmission; 
     uint8_t listenBw;
 	uint64_t bandListFlags;            // Bits 0-63: bandEnabled[0..63]
     uint32_t scanListFlags;            // Bits 0-31: scanListEnabled[0..31]
@@ -3665,7 +3706,7 @@ void LoadSettings()
     }
   DelayRssi = eepromData.DelayRssi;
   if (DelayRssi > 6) DelayRssi =6;
-  
+  PttEmission = eepromData.PttEmission;
   validScanListCount = 0;
   ShowLines = eepromData.ShowLines;
   if (ShowLines < 1 || ShowLines > 3) ShowLines = 1;
@@ -3710,6 +3751,7 @@ static void SaveSettings()
   eepromData.RangeStart = gScanRangeStart;
   eepromData.RangeStop = gScanRangeStop;
   eepromData.DelayRssi = DelayRssi;
+  eepromData.PttEmission = PttEmission;
   eepromData.scanStepIndex = settings.scanStepIndex;
   eepromData.ShowLines = ShowLines;
   eepromData.SpectrumDelay = SpectrumDelay;
@@ -3720,7 +3762,8 @@ static void SaveSettings()
   eepromData.UOO_trigger = UOO_trigger;
   eepromData.osdPopupSetting = osdPopupSetting;
   eepromData.GlitchMax = 20;
-  eepromData.GlitchMax  = GlitchMax;    
+  eepromData.GlitchMax  = GlitchMax;   
+  eepromData.Spectrum_state = Spectrum_state;    
   eepromData.SoundBoost = SoundBoost;
   
   for (int i = 0; i < MAX_BANDS; i++) { 
@@ -3768,6 +3811,7 @@ void ClearSettings()
   gScanRangeStart = 43000000;
   gScanRangeStop  = 44000000;
   DelayRssi = 2;
+  PttEmission = 2;
   settings.scanStepIndex = STEP_10kHz;
   ShowLines = 1;
   SpectrumDelay = 0;
@@ -3780,7 +3824,7 @@ void ClearSettings()
   UOO_trigger = 15;
   osdPopupSetting = 500;
   GlitchMax = 20;  
-  Spectrum_state = 2; 
+  Spectrum_state = 1; 
   SoundBoost = 0;  
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
@@ -4083,17 +4127,17 @@ static void GetParametersRow(uint16_t index, ListRow *row) {
             snprintf(row->left, sizeof(row->left), "SoundBoost:");
             strncpy(row->right, SoundBoost ? "ON" : "OFF", sizeof(row->right) - 1);
             break;
-/*         case 16:
-            snprintf(row->left, sizeof(row->left), "PTT:");
-            if      (PttEmission == 0) strncpy(row->right, "VFO Freq", sizeof(row->right) - 1);
-            else if (PttEmission == 1) strncpy(row->right, "NINJA",    sizeof(row->right) - 1);
-            else                       strncpy(row->right, "Last RX",  sizeof(row->right) - 1);
-            break; */
         case 16:
+            snprintf(row->left, sizeof(row->left), "PTT:");
+            if      (PttEmission == 0) strncpy(row->right, "VFO FREQ", sizeof(row->right) - 1);
+            else if (PttEmission == 1) strncpy(row->right, "NINJA",    sizeof(row->right) - 1);
+            else                       strncpy(row->right, "LAST RX",  sizeof(row->right) - 1);
+            break;
+        case 17:
             snprintf(row->left, sizeof(row->left), "Clear History");
             strncpy(row->right, ">", sizeof(row->right) - 1);
             break;
-        case 17:
+        case 18:
             snprintf(row->left, sizeof(row->left), "Reset Default");
             strncpy(row->right, ">", sizeof(row->right) - 1);
             break;
