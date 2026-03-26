@@ -2130,28 +2130,40 @@ static void NextScanStep() {
 #ifdef ENABLE_BENCH
     benchLapDone = false;
 #endif
+
     if (appMode == CHANNEL_MODE) {
         if (scanChannelsCount == 0) return;
-        if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+
 #ifdef ENABLE_BENCH
         uint16_t prevI = scanInfo.i;
-        if (scanInfo.i < prevI) { benchLapDone = true; }
+#endif
+        if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+
+#ifdef ENABLE_BENCH
+        if (scanInfo.i < prevI) benchLapDone = true;   // wrap listy kanałów
 #endif
         scanInfo.f = ScanFrequencies[scanInfo.i];
     } else {
-        if (scanInfo.scanStep < 2500 ) {
+#ifdef ENABLE_BENCH
+        uint16_t steps = GetStepsCount();
+        uint16_t prevI = scanInfo.i;
+#endif
+
+        if (scanInfo.scanStep < 2500) {
             nextFrequencyinterlaced();
         } else {
             scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
         }
-    scanInfo.i++;
+
+        scanInfo.i++;
+
 #ifdef ENABLE_BENCH
-    uint16_t steps = GetStepsCount();
-    uint16_t prevI = scanInfo.i;
-    if (scanInfo.i > steps) {   // zawinięcie dla range/band/freq
-        scanInfo.i = 0;
-        benchLapDone = true;
-    } else if (scanInfo.i < prevI) {benchLapDone = true;}
+        if (scanInfo.i > steps) {   // wrap zakresu/pasma/freq
+            scanInfo.i = 0;
+            benchLapDone = true;
+        } else if (scanInfo.i < prevI) {
+            benchLapDone = true;
+        }
 #endif
     }
 }
@@ -3110,6 +3122,13 @@ static void MyDrawFrameLines(void)
 #ifdef ENABLE_BENCH
 static void RenderBenchmark(void) {
     char line[32];
+    // pełna czarna belka nagłówka (linia 0, y: 0..7)
+    for (uint8_t x = 0; x < LCD_WIDTH; x++) {
+        for (uint8_t y = 0; y < 8; y++) {
+            PutPixel(x, y, true);
+        }
+    }
+    // biały napis na czarnej belce
     UI_PrintStringSmallbackground("BENCHMARK", 1, LCD_WIDTH - 1, 0, 1);
     if (appMode == CHANNEL_MODE) {
         snprintf(line, sizeof(line), "Mode: CH  Steps:%u", scanChannelsCount);
@@ -3454,38 +3473,36 @@ static void NextHistoryScanStep() {
 
 
 static void UpdateScan() {
-  if(SPECTRUM_PAUSED || gIsPeak || SpectrumMonitor || WaitSpectrum) return;
+    if (SPECTRUM_PAUSED || gIsPeak || SpectrumMonitor || WaitSpectrum) return;
 
-  SetF(scanInfo.f);
-  Measure();
-  if(gIsPeak || SpectrumMonitor || WaitSpectrum) return;
+    SetF(scanInfo.f);
+    Measure();
+    if (gIsPeak || SpectrumMonitor || WaitSpectrum) return;
+
 #ifdef ENABLE_BENCH
-  benchStepsThisSec++;
+    benchStepsThisSec++;
 #endif
-  if (gHistoryScan && historyListActive) {
-      NextHistoryScanStep();
-      return;
-  }
-  if (scanInfo.i <= GetStepsCount()) {
+
+    if (gHistoryScan && historyListActive) {
+        NextHistoryScanStep();
+        return;
+    }
+
     NextScanStep();
-#ifndef ENABLE_BENCH
-    return;
-#else
-  if (benchLapDone) {
-      benchLastLapMs = benchLapMs;
-      benchLapMs = 0;
-  }
+
+#ifdef ENABLE_BENCH
+    if (benchLapDone) {
+        benchLastLapMs = benchLapMs;
+        benchLapMs = 0;
+    }
 #endif
-  }
-  
-  newScanStart = true; 
-  
-  if (SpectrumSleepMs) {
-      BK4819_Sleep();
-      BK4819_ToggleGpioOut(BK4819_GPIO0_PIN28_RX_ENABLE, false);
-      SPECTRUM_PAUSED = true;
-      SpectrumPauseCount = SpectrumSleepMs;
-  }
+
+    if (SpectrumSleepMs) {
+        BK4819_Sleep();
+        BK4819_ToggleGpioOut(BK4819_GPIO0_PIN28_RX_ENABLE, false);
+        SPECTRUM_PAUSED = true;
+        SpectrumPauseCount = SpectrumSleepMs;
+    }
 }
 
 
@@ -3803,7 +3820,7 @@ void LoadSettings()
   PttEmission = eepromData.PttEmission;
   validScanListCount = 0;
   ShowLines = eepromData.ShowLines;
-  if (ShowLines < 1 || ShowLines > 3) ShowLines = 1;
+  if (ShowLines < 1 || ShowLines > 4) ShowLines = 1;
   SpectrumDelay = eepromData.SpectrumDelay;
   
   IndexMaxLT = eepromData.IndexMaxLT;

@@ -351,17 +351,10 @@ gEeprom.FreqChannel[1]   = IS_FREQ_CHANNEL(Data16[5]) ? Data16[5] : (FREQ_CHANNE
     // 0F40..0F47
     PY25Q16_ReadBuffer(0x00A150, Data, 8);
     gSetting_F_LOCK            = (Data[0] < F_LOCK_LEN) ? Data[0] : F_UNLOCK_PMR;
-#ifndef ENABLE_FEAT_F4HWN
-    gSetting_350TX             = (Data[1] < 2) ? Data[1] : false;  // was true
-#endif
 #ifdef ENABLE_DTMF_CALLING
     gSetting_KILLED            = (Data[2] < 2) ? Data[2] : false;
 #endif
-#ifndef ENABLE_FEAT_F4HWN
-    gSetting_200TX             = (Data[3] < 2) ? Data[3] : false;
-    gSetting_500TX             = (Data[4] < 2) ? Data[4] : false;
-#endif
-    gSetting_350EN             = (Data[5] < 2) ? Data[5] : true;
+
 #ifdef ENABLE_FEAT_F4HWN
     gSetting_ScrambleEnable    = false;
 #else
@@ -922,17 +915,10 @@ void SETTINGS_SaveSettings(void)
     // 0x0F40
     State = SecBuf;
     State[0]  = gSetting_F_LOCK;
-#ifndef ENABLE_FEAT_F4HWN
-    State[1]  = gSetting_350TX;
-#endif
 #ifdef ENABLE_DTMF_CALLING
     State[2]  = gSetting_KILLED;
 #endif
-#ifndef ENABLE_FEAT_F4HWN
-    State[3]  = gSetting_200TX;
-    State[4]  = gSetting_500TX;
-#endif
-    State[5]  = gSetting_350EN;
+
 #ifdef ENABLE_FEAT_F4HWN
     State[6]  = false;
 #else

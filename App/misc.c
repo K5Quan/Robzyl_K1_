@@ -89,19 +89,10 @@ const uint32_t    gDefaultAesKey[4]                = {0x4AA5CC60, 0x0312CC5F, 0x
 
 const uint8_t     gMicGain_dB2[9]                  = {3, 8, 16, 24, 32, 40, 48, 56, 63}; // BK4819 {3, 8, 16, 24, 31};
 
-#ifndef ENABLE_FEAT_F4HWN
-    bool              gSetting_350TX;
-#endif
-
 #ifdef ENABLE_DTMF_CALLING
 bool              gSetting_KILLED;
 #endif
 
-#ifndef ENABLE_FEAT_F4HWN
-bool              gSetting_200TX;
-bool              gSetting_500TX;
-#endif
-bool              gSetting_350EN;
 uint8_t           gSetting_F_LOCK;
 bool              gSetting_ScrambleEnable;
 
