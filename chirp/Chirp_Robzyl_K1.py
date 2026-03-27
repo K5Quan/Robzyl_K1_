@@ -643,11 +643,11 @@ BANDS_WIDE = {
         6: [470.0, 2600.0]
         }
 
-SCANLIST_LIST = ["OFF"] + [f"{i}" for i in range(1, MR_CHANNELS_LIST)] + ["ALL"]
+SCANLIST_LIST = ["OFF"] + [f"{i}" for i in range(1, MR_CHANNELS_LIST)] + ["Monitor"]
 
 SCANLIST_SELECT_LIST = (
     [f"{i}" for i in range(1, MR_CHANNELS_LIST)]
-    + ["ALL"]
+    + ["Monitor"]
 )
 
 DTMF_CHARS = "0123456789ABCD*# "
@@ -1828,7 +1828,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
 # add menu firmware with version and option display if version 3.0 and up
         ValFirm = "Firmware : " + self.FIRMWARE_VERSION 
-        Compair1 = "ROBZYL v6.12"  
+        Compair1 = "ROBZYL v6.13"  
 
         if self.FIRMWARE_VERSION == "":
             ValFirm = "Firmware : Only when read from the radio "

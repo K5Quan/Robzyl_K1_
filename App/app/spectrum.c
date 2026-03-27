@@ -43,14 +43,17 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 #define HISTORY_SIZE 100
+#define MONITOR_SIZE 20
 static uint8_t cachedValidScanListCount = 0;
 static uint8_t cachedEnabledScanListCount = 0;
 static bool scanListCountsDirty = true;
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
-static bool gHistoryScan = false; // Indicateur de scan de l'historique
-static bool gHistorySortLongPressDone = false; //Żeby długie przytrzymanie nie sortowało w pętli co repeat
+static bool gHistoryScan = false;
+static bool gMonitorScan = true; 
+static uint8_t MonitorIndex = 0;
+static bool gHistorySortLongPressDone = false;
 
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
@@ -75,7 +78,8 @@ static bool    SoundBoost = 0;               // case 15
 static uint8_t PttEmission = 0;              // case 16
 //ClearHistory                               // case 17
 //ClearSettings                              // case 18
-#define PARAMETER_COUNT 19
+static uint8_t MonitorTimeIndex = 0;         // case 19   
+#define PARAMETER_COUNT 20
 ////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_BENCH
     static uint32_t benchTickMs = 0;      
@@ -154,6 +158,7 @@ static Mode appMode;
 #define UHF_NOISE_FLOOR 5
 
 static uint16_t scanChannelsCount;
+static uint8_t monitorChannelsCount;
 static void ToggleScanList();
 static void SaveSettings();
 static const uint16_t RSSI_MAX_VALUE = 255;
@@ -186,13 +191,12 @@ typedef struct {
 typedef void (*GetListRowFn)(uint16_t index, ListRow *row);
 
 /***************************BIG RAM******************************************/
-
-static uint32_t *ScanFrequencies = NULL;
-static bandparameters *BParams = NULL;
-static uint32_t     HFreqs[HISTORY_SIZE];
-static uint8_t      HCount[HISTORY_SIZE];
-static bool         HBlacklisted[HISTORY_SIZE];
-
+static uint32_t         *ScanFrequencies = NULL;
+static bandparameters   *BParams = NULL;
+static uint32_t         HFreqs[HISTORY_SIZE];
+static uint8_t          HCount[HISTORY_SIZE];
+static bool             HBlacklisted[HISTORY_SIZE];
+static uint32_t         MonitorFreqs[MONITOR_SIZE];
 /****************************************************************************/
 
 SpectrumSettings settings = {stepsCount: STEPS_128,
@@ -848,7 +852,23 @@ static void LoadActiveScanFrequencies(void)
             }
     }
     }
+}
 
+static void LoadMonitorFrequencies(void)
+{   
+    memset(MonitorFreqs, 0, (MONITOR_SIZE) * sizeof(uint32_t));
+    monitorChannelsCount = 0;
+    ChannelAttributes_t cache;
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
+    {   MR_LoadChannelAttributesFromFlash(ch, &cache);
+        if (cache.scanlist == 20) {
+            ChannelInfo_t freqs  = FetchChannelFrequency(ch);
+            if (freqs.frequency) {
+                MonitorFreqs[monitorChannelsCount] = freqs.frequency;
+                if (++monitorChannelsCount > MONITOR_SIZE) return; //Limit monitor freqs
+            }
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1558,7 +1578,7 @@ static void Measure() {
     }
 
 #ifdef ENABLE_DEV
-    //char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
+    char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
 #endif
 }
 
@@ -2099,12 +2119,8 @@ static void nextFrequencyinterlaced() {
     static uint16_t lastStep = 0;
     static uint16_t jumpSize = 2500;
     static uint16_t loops = 1;
-    static uint32_t columns = 0;
-
-    // Recalcul des constantes si le pas change
     if (scanInfo.scanStep != lastStep) {
         lastStep = scanInfo.scanStep;
-        
         uint8_t idx = 0;
         for (uint8_t i = 0; i < 23; i++) {
             if (scanStepValues[i] == lastStep) {
@@ -2114,12 +2130,11 @@ static void nextFrequencyinterlaced() {
         }
         jumpSize = jumpSizes[idx];
         loops    = interlacedLoops[idx];
-        columns = (GetStepsCount() + (loops - 1)) / loops;
-        if (columns == 0) columns = 1;
     }
-    uint32_t currentColumn = scanInfo.i % columns;
-    uint32_t currentPass   = scanInfo.i / columns;
-    scanInfo.f = gScanRangeStart + (currentColumn * jumpSize) + (currentPass * lastStep);
+    uint32_t pass = scanInfo.i % loops; 
+    uint32_t baseStep = scanInfo.i / loops;
+    scanInfo.f = gScanRangeStart + (baseStep * jumpSize) + (pass * lastStep);
+
 #ifdef ENABLE_DEV
     //char str[64] = "";sprintf(str, "j %d l %d f %d \r\n", jumpSize,loops,scanInfo.f);LogUart(str);
 #endif
@@ -2551,6 +2566,15 @@ static void HandleKeyParameters(uint8_t key) {
                 case 18: /* Reset to defaults */
                         if (isKey3) ClearSettings();
                       break;
+                case 19: /* gMonitorTime */
+                    MonitorTimeIndex = isKey3 ?
+                                 (MonitorTimeIndex == 5 ? 0 : MonitorTimeIndex + 1) :
+                                 (MonitorTimeIndex == 0 ? 5 : MonitorTimeIndex - 1);
+                    static const int MonitorMap[] = {0, 50, 100, 200, 500, 1000};
+                    gMonitorTime = MonitorMap[MonitorTimeIndex];
+                    if (MonitorTimeIndex) gMonitorScan = true; 
+                    else gMonitorScan = false; 
+                    break;
               }
         break;
         }
@@ -3377,7 +3401,7 @@ static void Render() {
 #endif // ENABLE_SCANLIST_SHOW_DETAIL
     
   }
-  #ifdef ENABLE_SCREENSHOT
+  #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     getScreenShot(1);
   #endif
   ST7565_BlitFullScreen();
@@ -3441,40 +3465,26 @@ if (kbd.counter == 2 || (kbd.counter > 17 && (kbd.counter % 15 == 0))) {
 }
 
 static void NextHistoryScanStep() {
-
     uint16_t count = CountValidHistoryItems();
     if (count == 0) return;
-
     uint16_t start = historyListIndex;
-    
-    // Boucle pour trouver le prochain élément non blacklisté
     do {
         historyListIndex++;
         if (historyListIndex >= count) historyListIndex = 0;
-        
-        // Sécurité : si on a fait un tour complet (tout est blacklisté), on s'arrête
         if (historyListIndex == start && HBlacklisted[historyListIndex]) return;
-        
     } while (HBlacklisted[historyListIndex]);
 
-    // Mise à jour de l'affichage (scroll) pour suivre le curseur
     if (historyListIndex < historyScrollOffset) {
         historyScrollOffset = historyListIndex;
-    } else if (historyListIndex >= historyScrollOffset + 6) { // 6 = MAX_VISIBLE_LINES
-        historyScrollOffset = historyListIndex - 6 + 1;
+    } else if (historyListIndex >= historyScrollOffset + MAX_VISIBLE_LINES) {
+        historyScrollOffset = historyListIndex - MAX_VISIBLE_LINES + 1;
     }
-
-    // Mise à jour de la fréquence pour le prochain cycle de mesure
     scanInfo.f = HFreqs[historyListIndex];
-    
-    // Reset du compteur de temps pour la logique de pause
     spectrumElapsedCount = 0;
 }
 
-
 static void UpdateScan() {
     if (SPECTRUM_PAUSED || gIsPeak || SpectrumMonitor || WaitSpectrum) return;
-
     SetF(scanInfo.f);
     Measure();
     if (gIsPeak || SpectrumMonitor || WaitSpectrum) return;
@@ -3482,13 +3492,22 @@ static void UpdateScan() {
 #ifdef ENABLE_BENCH
     benchStepsThisSec++;
 #endif
-
-    if (gHistoryScan && historyListActive) {
-        NextHistoryScanStep();
+    if (MonitorIndex) {
+        scanInfo.f = MonitorFreqs[--MonitorIndex];
         return;
     }
 
-    NextScanStep();
+    if (gMonitorScan && gNextTimeslice_Monitor) { 
+        gNextTimeslice_Monitor = false;
+        if (monitorChannelsCount > 0) {
+            MonitorIndex = monitorChannelsCount;
+            scanInfo.f = MonitorFreqs[--MonitorIndex];
+            return;
+        }
+    }
+    
+    if (gHistoryScan && historyListActive) { NextHistoryScanStep(); }
+    else NextScanStep();
 
 #ifdef ENABLE_BENCH
     if (benchLapDone) {
@@ -3647,6 +3666,7 @@ static void Tick() {
 
 void APP_RunSpectrum(void) {    
     for (;;) {
+        LoadMonitorFrequencies ();
         Mode mode;
         if (!Key_1_pressed ) LoadSettings();
         gComeBack = 0; 
@@ -3786,6 +3806,8 @@ typedef struct {
     uint8_t Spectrum_state;  
     bool Backlight_On_Rx;
     bool SoundBoost;  
+    uint16_t gMonitorTime;
+    bool gMonitorScan;
 } SettingsEEPROM;
 
 
@@ -3835,7 +3857,9 @@ void LoadSettings()
   Backlight_On_Rx = eepromData.Backlight_On_Rx;
   GlitchMax = eepromData.GlitchMax;    
   Spectrum_state = eepromData.Spectrum_state;    
-  SoundBoost = eepromData.SoundBoost;    
+  SoundBoost = eepromData.SoundBoost;
+  gMonitorTime = eepromData.gMonitorTime;
+  gMonitorScan = eepromData.gMonitorScan;    
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
   BK4819_WriteRegister(BK4819_REG_29, eepromData.R29);
   BK4819_WriteRegister(BK4819_REG_19, eepromData.R19);
@@ -3876,7 +3900,8 @@ static void SaveSettings()
   eepromData.GlitchMax  = GlitchMax;   
   eepromData.Spectrum_state = Spectrum_state;    
   eepromData.SoundBoost = SoundBoost;
-  
+  eepromData.gMonitorTime = gMonitorTime;
+  eepromData.gMonitorScan = gMonitorScan;
   for (int i = 0; i < MAX_BANDS; i++) { 
     if (settings.bandEnabled[i]) {
         eepromData.bandListFlags |= ((uint64_t)1 << i);
@@ -3937,6 +3962,8 @@ void ClearSettings()
   GlitchMax = 20;  
   Spectrum_state = 1; 
   SoundBoost = 0;  
+  gMonitorTime = 200;
+  gMonitorScan = true;
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
   BK4819_WriteRegister(BK4819_REG_11, 0x01B5);
@@ -4251,6 +4278,11 @@ static void GetParametersRow(uint16_t index, ListRow *row) {
         case 18:
             snprintf(row->left, sizeof(row->left), "Reset Default");
             strncpy(row->right, ">", sizeof(row->right) - 1);
+            break;
+        case 19:
+            snprintf(row->left, sizeof(row->left), "Monitor");
+            if (gMonitorScan) snprintf(row->right, sizeof(row->right), "%d ms", gMonitorTime);
+            else snprintf(row->right, sizeof(row->right), "OFF", gMonitorTime);
             break;
         default:
             row->left[0] = '\0';

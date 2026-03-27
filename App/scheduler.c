@@ -55,15 +55,17 @@ void SysTick_Handler(void)
 	{
 		gNextTimeslice_1s = true;
 	} 
-    if ((gGlobalSysTickCounter % 50) == 0) {
-        gNextTimeslice_500ms = true;
-    }
-    if ((gGlobalSysTickCounter % 30) == 0) {
+    if ((gGlobalSysTickCounter % 10) == 0) {
         gNextTimeslice_display = true;
     }
     if ((gGlobalSysTickCounter % 6000) == 0) {
         gNextTimeslice_60s = true;
-
+    }
+    if ((gGlobalSysTickCounter % gMonitorTime/10) == 0) {
+        gNextTimeslice_Monitor = true;
+    }
+    if ((gGlobalSysTickCounter % 50) == 0) {
+        gNextTimeslice_500ms = true;
 #ifdef ENABLE_FEAT_F4HWN
         DECREMENT_AND_TRIGGER(gVfoSaveCountdown_10ms, gScheduleVfoSave);
         DECREMENT_AND_TRIGGER(gTxTimerCountdownAlert_500ms - ALERT_TOT * 2, gTxTimeoutReachedAlert);

@@ -33,6 +33,11 @@
     #include "screenshot.h"
 #endif
 
+#ifdef ENABLE_USB
+    #include "py32f071_ll_bus.h"
+    #include "driver/vcp.h"
+#endif
+
 #ifdef ENABLE_FEAT_F4HWN_MEM
 // Linker symbols (provided by the linker script)
 extern uint8_t _sdata;          // Start of .data in RAM
@@ -90,7 +95,7 @@ static inline uint16_t pct_x100(uint32_t used, uint32_t total)
 }
 #endif
 
-/* void UI_DisplayReleaseKeys(void)
+void UI_DisplayReleaseKeys(void)
 {
     memset(gStatusLine,  0, sizeof(gStatusLine));
 #if defined(ENABLE_FEAT_F4HWN_CTR) || defined(ENABLE_FEAT_F4HWN_INV)
@@ -98,12 +103,17 @@ static inline uint16_t pct_x100(uint32_t used, uint32_t total)
 #endif
     UI_DisplayClear();
 
-    UI_PrintString("RELEASE", 0, 127, 1, 10);
-    UI_PrintString("ALL KEYS", 0, 127, 3, 10);
-
+#ifdef ENABLE_USB
+    UI_PrintString("USB", 0, 127, 1, 10);
+    UI_PrintString("ACTIVATED", 0, 127, 3, 10);
+    VCP_Init();
+#else 
+    UI_PrintString("USB", 0, 127, 1, 10);
+    UI_PrintString("REMOVED", 0, 127, 3, 10);
+#endif
     ST7565_BlitStatusLine();  // blank status line
     ST7565_BlitFullScreen();
-} */
+}
 
 void UI_DisplayWelcome(void)
 {
