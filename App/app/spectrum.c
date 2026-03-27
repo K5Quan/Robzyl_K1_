@@ -51,7 +51,6 @@ static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
 static bool gHistoryScan = false;
-static bool gMonitorScan = true; 
 static uint8_t MonitorIndex = 0;
 static bool gHistorySortLongPressDone = false;
 
@@ -76,9 +75,10 @@ static uint8_t AUTO_KEYLOCK = AUTOLOCK_OFF;  // case 13
 static uint8_t GlitchMax = 20;               // case 14 
 static bool    SoundBoost = 0;               // case 15
 static uint8_t PttEmission = 0;              // case 16
-//ClearHistory                               // case 17
-//ClearSettings                              // case 18
-static uint8_t MonitorTimeIndex = 0;         // case 19   
+static bool gMonitorScan = true;             // case 17
+//ClearHistory                               // case 18
+//ClearSettings                              // case 19
+   
 #define PARAMETER_COUNT 20
 ////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_BENCH
@@ -1914,7 +1914,7 @@ static void UpdateCssDetection(void) {
 
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
-    if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
+    if ((f == 0) || f < 1400000 || f > 130000000 ) f=fprev;
     else fprev = f;
 
     char freqStr[18];
@@ -2556,25 +2556,20 @@ static void HandleKeyParameters(uint8_t key) {
                       SoundBoost = !SoundBoost;
                       break;
                 case 16: // PttEmission
-                        PttEmission = isKey3 ?
+                      PttEmission = isKey3 ?
                             (PttEmission >= 2 ? 0 : PttEmission + 1) :
                             (PttEmission <= 0 ? 2 : PttEmission - 1);
-                        break;  
-                case 17: /* Clear history */
+                      break;  
+                case 17: /* gMonitorScan */
+                    gMonitorScan = !gMonitorScan; 
+                    break;
+                case 18: /* Clear history */
                         if (isKey3) ClearHistory();
                       break;
-                case 18: /* Reset to defaults */
-                        if (isKey3) ClearSettings();
+                case 19: /* Reset to defaults */
+                      if (isKey3) ClearSettings();
                       break;
-                case 19: /* gMonitorTime */
-                    MonitorTimeIndex = isKey3 ?
-                                 (MonitorTimeIndex == 5 ? 0 : MonitorTimeIndex + 1) :
-                                 (MonitorTimeIndex == 0 ? 5 : MonitorTimeIndex - 1);
-                    static const int MonitorMap[] = {0, 50, 100, 200, 500, 1000};
-                    gMonitorTime = MonitorMap[MonitorTimeIndex];
-                    if (MonitorTimeIndex) gMonitorScan = true; 
-                    else gMonitorScan = false; 
-                    break;
+
               }
         break;
         }
@@ -2727,14 +2722,13 @@ static void HandleKeySpectrum(uint8_t key) {
                 SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
                 ToggleScanList(bl, 1);
-                settings.bandEnabled[bl + 1] = true;
+                settings.bandEnabled[bl - 1] = true;
                 RelaunchScan();
             } else if (appMode == FREQUENCY_MODE) {
                 UpdateCurrentFreq(true);
             } else if (appMode == CHANNEL_MODE) {
                 BuildValidScanListIndices();
-                scanListSelectedIndex = (scanListSelectedIndex < validScanListCount
-                                         ? scanListSelectedIndex + 1 : 0);
+                scanListSelectedIndex = (scanListSelectedIndex < 1 ? validScanListCount - 1 : scanListSelectedIndex - 1);
                 ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
                 SetState(SPECTRUM);
                 ResetModifiers();
@@ -3806,7 +3800,6 @@ typedef struct {
     uint8_t Spectrum_state;  
     bool Backlight_On_Rx;
     bool SoundBoost;  
-    uint16_t gMonitorTime;
     bool gMonitorScan;
 } SettingsEEPROM;
 
@@ -3858,7 +3851,6 @@ void LoadSettings()
   GlitchMax = eepromData.GlitchMax;    
   Spectrum_state = eepromData.Spectrum_state;    
   SoundBoost = eepromData.SoundBoost;
-  gMonitorTime = eepromData.gMonitorTime;
   gMonitorScan = eepromData.gMonitorScan;    
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
   BK4819_WriteRegister(BK4819_REG_29, eepromData.R29);
@@ -3900,7 +3892,6 @@ static void SaveSettings()
   eepromData.GlitchMax  = GlitchMax;   
   eepromData.Spectrum_state = Spectrum_state;    
   eepromData.SoundBoost = SoundBoost;
-  eepromData.gMonitorTime = gMonitorTime;
   eepromData.gMonitorScan = gMonitorScan;
   for (int i = 0; i < MAX_BANDS; i++) { 
     if (settings.bandEnabled[i]) {
@@ -3961,8 +3952,7 @@ void ClearSettings()
   osdPopupSetting = 500;
   GlitchMax = 20;  
   Spectrum_state = 1; 
-  SoundBoost = 0;  
-  gMonitorTime = 200;
+  SoundBoost = 0;
   gMonitorScan = true;
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
@@ -3992,6 +3982,7 @@ static bool GetScanListLabel(uint8_t scanListIndex, char* bufferOut) {
         ChannelAttributes_t *att = MR_GetChannelAttributes(ch);
         if (att->scanlist == (uint8_t)(scanListIndex + 1)) {
             first_channel = ch;
+            break;
         }
     }
     if (first_channel == 0xFFFF) return false; 
@@ -4272,18 +4263,19 @@ static void GetParametersRow(uint16_t index, ListRow *row) {
             else                       strncpy(row->right, "LAST RX",  sizeof(row->right) - 1);
             break;
         case 17:
+            snprintf(row->left, sizeof(row->left), "Monitor SL");
+            if (gMonitorScan) snprintf(row->right, sizeof(row->right), "ON");
+            else snprintf(row->right, sizeof(row->right), "OFF");
+            break;
+        case 18:
             snprintf(row->left, sizeof(row->left), "Clear History");
             strncpy(row->right, ">", sizeof(row->right) - 1);
             break;
-        case 18:
+        case 19:
             snprintf(row->left, sizeof(row->left), "Reset Default");
             strncpy(row->right, ">", sizeof(row->right) - 1);
             break;
-        case 19:
-            snprintf(row->left, sizeof(row->left), "Monitor");
-            if (gMonitorScan) snprintf(row->right, sizeof(row->right), "%d ms", gMonitorTime);
-            else snprintf(row->right, sizeof(row->right), "OFF", gMonitorTime);
-            break;
+
         default:
             row->left[0] = '\0';
             break;
