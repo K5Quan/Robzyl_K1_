@@ -81,14 +81,6 @@ static bool gMonitorScan = true;             // case 17
    
 #define PARAMETER_COUNT 20
 ////////////////////////////////////////////////////////////////////
-#ifdef ENABLE_BENCH
-    static uint32_t benchTickMs = 0;      
-    static uint16_t benchStepsThisSec = 0;
-    static uint16_t benchRatePerSec = 0;  
-    static uint32_t benchLapMs = 0;       
-    static uint32_t benchLastLapMs = 0;   
-    static bool benchLapDone = false;
-#endif
 bool Cleared = 0;
 static bool gCounthistory = 1;
 static bool SettingsLoaded = false;
@@ -1070,14 +1062,9 @@ static uint32_t GetScanStep() { return scanStepValues[settings.scanStepIndex]; }
 
 static uint16_t GetStepsCount() 
 { 
-  if (appMode==CHANNEL_MODE)
-  {
-    return scanChannelsCount;
-}
-  if(appMode==SCAN_RANGE_MODE) {
-    return ((gScanRangeStop - gScanRangeStart) / GetScanStep()); //Robby69
-  }
-  if (appMode==SCAN_BAND_MODE) {return (gScanRangeStop - gScanRangeStart) / scanInfo.scanStep;}
+  if (appMode==CHANNEL_MODE)    { return scanChannelsCount; }
+  if (appMode==SCAN_RANGE_MODE) { return (gScanRangeStop - gScanRangeStart) / scanInfo.scanStep;}
+  if (appMode==SCAN_BAND_MODE)  { return (gScanRangeStop - gScanRangeStart) / scanInfo.scanStep;}
   
   return 128 >> settings.stepsCount;
 }
@@ -1411,16 +1398,6 @@ static void ToggleRX(bool on) {
     }
 }
 
-#ifdef ENABLE_BENCH
-static void ResetBenchStats(void) {
-    benchTickMs = 0;
-    benchStepsThisSec = 0;
-    benchRatePerSec = 0;
-    benchLapMs = 0;
-    benchLastLapMs = 0;
-}
-#endif
-
 static void ResetScanStats() {
   scanInfo.rssiMax = scanInfo.rssiMin + 20 ; 
 }
@@ -1485,9 +1462,6 @@ static void RelaunchScan() {
     ToggleRX(false);
     scanInfo.rssiMin = RSSI_MAX_VALUE;
     gIsPeak = false;
-#ifdef ENABLE_BENCH
-    	ResetBenchStats();
-#endif
 }
 
 uint8_t  BK4819_GetExNoiseIndicator(void)
@@ -2115,73 +2089,23 @@ if(appMode!=CHANNEL_MODE){
   
 }
 
-static void nextFrequencyinterlaced() {
-    static uint16_t lastStep = 0;
-    static uint16_t jumpSize = 2500;
-    static uint16_t loops = 1;
-    if (scanInfo.scanStep != lastStep) {
-        lastStep = scanInfo.scanStep;
-        uint8_t idx = 0;
-        for (uint8_t i = 0; i < 23; i++) {
-            if (scanStepValues[i] == lastStep) {
-                idx = i;
-                break;
-            }
-        }
-        jumpSize = jumpSizes[idx];
-        loops    = interlacedLoops[idx];
-    }
-    uint32_t pass = scanInfo.i % loops; 
-    uint32_t baseStep = scanInfo.i / loops;
-    scanInfo.f = gScanRangeStart + (baseStep * jumpSize) + (pass * lastStep);
-
-#ifdef ENABLE_DEV
-    //char str[64] = "";sprintf(str, "j %d l %d f %d \r\n", jumpSize,loops,scanInfo.f);LogUart(str);
-#endif
-}
-
 static void NextScanStep() {
     spectrumElapsedCount = 0;
-#ifdef ENABLE_BENCH
-    benchLapDone = false;
-#endif
-
     if (appMode == CHANNEL_MODE) {
         if (scanChannelsCount == 0) return;
-
-#ifdef ENABLE_BENCH
-        uint16_t prevI = scanInfo.i;
-#endif
         if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
-
-#ifdef ENABLE_BENCH
-        if (scanInfo.i < prevI) benchLapDone = true;   // wrap listy kanałów
-#endif
         scanInfo.f = ScanFrequencies[scanInfo.i];
     } else {
-#ifdef ENABLE_BENCH
-        uint16_t steps = GetStepsCount();
-        uint16_t prevI = scanInfo.i;
-#endif
-
-        if (scanInfo.scanStep < 2500) {
-            nextFrequencyinterlaced();
-        } else {
-            scanInfo.f = gScanRangeStart + (scanInfo.i * scanInfo.scanStep);
-        }
-
-        scanInfo.i++;
-
-#ifdef ENABLE_BENCH
-        if (scanInfo.i > steps) {   // wrap zakresu/pasma/freq
-            scanInfo.i = 0;
-            benchLapDone = true;
-        } else if (scanInfo.i < prevI) {
-            benchLapDone = true;
-        }
-#endif
-    }
+            static uint32_t StartF;
+            if (scanInfo.i == 0) scanInfo.f = StartF = gScanRangeStart;
+            if (scanInfo.f < gScanRangeStop) scanInfo.f += jumpSizes[settings.scanStepIndex];
+            else {StartF += scanInfo.scanStep;
+                scanInfo.f = StartF;
+                }
+            }
+    if(++scanInfo.i > GetStepsCount()) scanInfo.i = 0;
 }
+
 
 static void SortHistoryByFrequencyAscending(void) {
     uint16_t count = CountValidHistoryItems();

@@ -78,14 +78,6 @@ static const uint16_t jumpSizes[] = {
     12500, 20000, 25000, 50000
 };
 
-static const uint16_t interlacedLoops[] = {
-    1, 1, 1, 1, 1, 
-    30, 20, 10, 5, 4, 
-    3, 3, 3, 2, 2, 
-    2, 1, 1, 1, 1, 
-    1, 1, 1, 1  
-};
-
 static const uint16_t scanStepBWRegValues[] = {
     //     RX  RXw TX  BW
     // 0b0 000 000 001 01 1000
