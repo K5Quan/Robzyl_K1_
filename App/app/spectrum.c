@@ -3571,31 +3571,34 @@ static void Tick() {
 	    }
     }
 
-  if (gNextTimeslice_10ms) {
-    HandleUserInput();
-    gNextTimeslice_10ms = 0;
+    if (gNextTimeslice_10ms) {
+        gNextTimeslice_10ms = 0;
+        HandleUserInput();
 #ifdef ENABLE_BENCH
-    if (!isListening && !SPECTRUM_PAUSED && !SpectrumMonitor && !WaitSpectrum) {
-        benchTickMs += 10;
-        benchLapMs  += 10;
-        if (benchTickMs >= 1000) {
-            benchTickMs -= 1000;
-            benchRatePerSec = benchStepsThisSec;
-            benchStepsThisSec = 0;
+        if (!isListening && !SPECTRUM_PAUSED && !SpectrumMonitor && !WaitSpectrum) {
+            benchTickMs += 10;
+            benchLapMs  += 10;
+            if (benchTickMs >= 1000) {
+                benchTickMs -= 1000;
+                benchRatePerSec = benchStepsThisSec;
+                benchStepsThisSec = 0;
+            }
         }
-    }
 #endif
-    if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); 
-    if(SpectrumPauseCount) SpectrumPauseCount--;
-    if (osdPopupTimer > 0) {
-        UI_DisplayPopup(osdPopupText);
-        ST7565_BlitFullScreen();
-        osdPopupTimer -= 10; 
-        if (osdPopupTimer <= 0) {osdPopupText[0] = '\0';}
-        return;
-    }
+        if(SpectrumPauseCount) SpectrumPauseCount--;
+        if (osdPopupTimer > 0) {
+            UI_DisplayPopup(osdPopupText);
+            ST7565_BlitFullScreen();
+            osdPopupTimer -= 10; 
+            if (osdPopupTimer <= 0) {osdPopupText[0] = '\0';}
+            return;
+            }
+        }
 
-  }
+    if (gNextTimeslice_listening) {
+        gNextTimeslice_listening = 0;
+        if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); 
+    }
 
   if (SPECTRUM_PAUSED && (SpectrumPauseCount == 0)) {
       // fin de la pause
@@ -3928,7 +3931,7 @@ void ClearSettings()
   GlitchMax = 20;  
   Spectrum_state = 1; 
   SoundBoost = 0;
-  gMonitorScan = true;
+  gMonitorScan = false;
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
   BK4819_WriteRegister(BK4819_REG_11, 0x01B5);
