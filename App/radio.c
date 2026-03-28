@@ -106,7 +106,7 @@ void RADIO_NextValidList(int8_t direction)
 {
     uint8_t startList = gEeprom.SCAN_LIST_DEFAULT;
     uint8_t attempts = 0;
-    const uint8_t MAX_VALUE = MR_CHANNELS_LIST + 1;  // 25 (1-24 lists + ALL)
+    const uint8_t MAX_VALUE = MR_CHANNELS_LIST + 1;  // 21 (1-20 lists + Monitor)
     
     do {
         if (direction > 0) {

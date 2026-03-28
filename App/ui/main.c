@@ -962,7 +962,7 @@ void UI_DisplayMain(void)
                     uint8_t xStart, xDisplay;
 
                     if (countList == MR_CHANNELS_LIST + 1) {
-                        displayStr = "ALL";
+                        displayStr = "MON";
                         xStart = 113;
                         xDisplay = 115;
                     } 

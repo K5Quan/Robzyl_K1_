@@ -81,6 +81,14 @@ static bool gMonitorScan = true;             // case 17
    
 #define PARAMETER_COUNT 20
 ////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_BENCH
+    static uint32_t benchTickMs = 0;      
+    static uint16_t benchStepsThisSec = 0;
+    static uint16_t benchRatePerSec = 0;  
+    static uint32_t benchLapMs = 0;       
+    static uint32_t benchLastLapMs = 0;   
+    static bool benchLapDone = false;
+#endif
 bool Cleared = 0;
 static bool gCounthistory = 1;
 static bool SettingsLoaded = false;
@@ -853,7 +861,7 @@ static void LoadMonitorFrequencies(void)
     ChannelAttributes_t cache;
     for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
     {   MR_LoadChannelAttributesFromFlash(ch, &cache);
-        if (cache.scanlist == 20) {
+        if (cache.scanlist == 21) {
             ChannelInfo_t freqs  = FetchChannelFrequency(ch);
             if (freqs.frequency) {
                 MonitorFreqs[monitorChannelsCount] = freqs.frequency;
@@ -1398,6 +1406,16 @@ static void ToggleRX(bool on) {
     }
 }
 
+#ifdef ENABLE_BENCH
+static void ResetBenchStats(void) {
+    benchTickMs = 0;
+    benchStepsThisSec = 0;
+    benchRatePerSec = 0;
+    benchLapMs = 0;
+    benchLastLapMs = 0;
+}
+#endif
+
 static void ResetScanStats() {
   scanInfo.rssiMax = scanInfo.rssiMin + 20 ; 
 }
@@ -1462,6 +1480,9 @@ static void RelaunchScan() {
     ToggleRX(false);
     scanInfo.rssiMin = RSSI_MAX_VALUE;
     gIsPeak = false;
+#ifdef ENABLE_BENCH
+    	ResetBenchStats();
+#endif
 }
 
 uint8_t  BK4819_GetExNoiseIndicator(void)
@@ -1888,7 +1909,7 @@ static void UpdateCssDetection(void) {
 
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
-    if ((f == 0) || f < 1400000 || f > 130000000 || (MonitorIndex && !isListening)) f=fprev;
+    if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
     else fprev = f;
 
     char freqStr[18];
@@ -2088,23 +2109,59 @@ if(appMode!=CHANNEL_MODE){
     }
   
 }
-
-static void NextScanStep() {
-    spectrumElapsedCount = 0;
-    if (appMode == CHANNEL_MODE) {
-        if (scanChannelsCount == 0) return;
-        if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
-        scanInfo.f = ScanFrequencies[scanInfo.i];
-    } else {
-            static uint32_t StartF;
-            if (scanInfo.i == 0) scanInfo.f = StartF = gScanRangeStart;
-            if (scanInfo.f < gScanRangeStop) scanInfo.f += jumpSizes[settings.scanStepIndex];
-            else {StartF += scanInfo.scanStep;
-                scanInfo.f = StartF;
+#ifdef ENABLE_BENCH
+    static void NextScanStep() {
+        spectrumElapsedCount = 0;
+        benchLapDone = false;
+        if (appMode == CHANNEL_MODE) {
+            if (scanChannelsCount == 0) return;
+            uint16_t prevI = scanInfo.i;
+            if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+            if (scanInfo.i < prevI) benchLapDone = true;
+            scanInfo.f = ScanFrequencies[scanInfo.i];
+        } else {
+                static uint32_t StartF;
+                if (scanInfo.i == 0) scanInfo.f = StartF = gScanRangeStart;
+                if (scanInfo.f < gScanRangeStop) scanInfo.f += jumpSizes[settings.scanStepIndex];
+                else {StartF += scanInfo.scanStep;
+                    scanInfo.f = StartF;
+                    uint16_t steps = GetStepsCount();
+                    uint16_t prevI = scanInfo.i;
+                if (scanInfo.i > steps) {
+                    scanInfo.i = 0;
+                    benchLapDone = true;
+                } else if (scanInfo.i < prevI) { benchLapDone = true; }
                 }
             }
-    if(++scanInfo.i > GetStepsCount()) scanInfo.i = 0;
-}
+        if(++scanInfo.i > GetStepsCount()) scanInfo.i = 0;
+    }
+#else 
+
+    static void NextScanStep() {
+        spectrumElapsedCount = 0;                
+        static uint32_t StartF;
+        if (appMode == CHANNEL_MODE) {
+            if (scanChannelsCount == 0) return;
+            if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+            scanInfo.f = ScanFrequencies[scanInfo.i];
+        } else {
+            if (scanInfo.i == 0) {
+                StartF = gScanRangeStart;
+                scanInfo.f = StartF;
+            } else {
+                scanInfo.f += jumpSizes[settings.scanStepIndex];
+                if (scanInfo.f >= gScanRangeStop) {
+                    StartF += scanInfo.scanStep;
+                    scanInfo.f = StartF;
+                }
+            }
+            if (++scanInfo.i > GetStepsCount()) scanInfo.i = 0;
+        }
+#ifdef ENABLE_DEV
+    //char str[64] = "";sprintf(str, "NSS %d SF %d %d\r\n", scanInfo.i,StartF,scanInfo.f);LogUart(str);
+#endif 
+    }
+#endif
 
 
 static void SortHistoryByFrequencyAscending(void) {
@@ -3399,41 +3456,35 @@ static void NextHistoryScanStep() {
     spectrumElapsedCount = 0;
 }
 
+static uint32_t savedScanF;
+
 static void UpdateScan() {
     if (SPECTRUM_PAUSED || gIsPeak || SpectrumMonitor || WaitSpectrum) return;
-    uint32_t SaveScF;
     SetF(scanInfo.f);
     Measure();
     if (gIsPeak || SpectrumMonitor || WaitSpectrum) return;
-
 #ifdef ENABLE_BENCH
     benchStepsThisSec++;
 #endif
+
+    if (gMonitorScan && gNextTimeslice_Monitor && monitorChannelsCount) { 
+        gNextTimeslice_Monitor = false;
+        savedScanF = scanInfo.f; // Sauvegarde avant interruption
+        MonitorIndex = monitorChannelsCount + 1;
+    }
     if (MonitorIndex) {
-        scanInfo.f = MonitorFreqs[--MonitorIndex];
+        scanInfo.f = MonitorFreqs[--MonitorIndex-1];
+        if (!MonitorIndex) {
+            scanInfo.f = savedScanF;
+            NextScanStep();
+        }
         return;
     }
-
-    if (gMonitorScan && gNextTimeslice_Monitor) { 
-        gNextTimeslice_Monitor = false;
-        SaveScF = scanInfo.f;
-        if (monitorChannelsCount > 0) {
-            MonitorIndex = monitorChannelsCount;
-            scanInfo.f = MonitorFreqs[--MonitorIndex];
-            return;
-        }
-    }
-    scanInfo.f = SaveScF;    
-    if (gHistoryScan && historyListActive) { NextHistoryScanStep(); }
+    if (gHistoryScan && historyListActive) NextHistoryScanStep();
     else NextScanStep();
-
 #ifdef ENABLE_BENCH
-    if (benchLapDone) {
-        benchLastLapMs = benchLapMs;
-        benchLapMs = 0;
-    }
+    if (benchLapDone) { benchLastLapMs = benchLapMs; benchLapMs = 0; }
 #endif
-
     if (SpectrumSleepMs) {
         BK4819_Sleep();
         BK4819_ToggleGpioOut(BK4819_GPIO0_PIN28_RX_ENABLE, false);
@@ -3576,7 +3627,7 @@ static void Tick() {
     gNextTimeslice_display = 0;
     latestScanListName[0] = '\0';
     RenderStatus();
-    Render();
+    if (!MonitorIndex) Render();
   } 
 }
 
@@ -3937,7 +3988,7 @@ static bool GetScanListLabel(uint8_t scanListIndex, char* bufferOut) {
 static void BuildValidScanListIndices() {
     uint8_t ScanListCount = 0;
     char tempName[17];
-    for (uint8_t i = 0; i < MR_CHANNELS_LIST; i++) {
+    for (uint8_t i = 0; i < MR_CHANNELS_LIST-1; i++) {
 
         if (GetScanListLabel(i, tempName)) {
             validScanListIndices[ScanListCount++] = i;

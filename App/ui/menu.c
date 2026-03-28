@@ -963,7 +963,7 @@ void UI_DisplayMenu(void)
 
         case MENU_S_LIST:
             if (gSubMenuSelection == MR_CHANNELS_LIST + 1)
-                strcpy(String, "ALL");
+                strcpy(String, "MON");
             else {
                 const char *name = gListName[gSubMenuSelection - 1];
                 // If first character is empty/invalid, display "N/A"

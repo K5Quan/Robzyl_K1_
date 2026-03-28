@@ -61,7 +61,7 @@ void SysTick_Handler(void)
     if ((gGlobalSysTickCounter % 6000) == 0) {
         gNextTimeslice_60s = true;
     }
-    if ((gGlobalSysTickCounter % 27) == 0) {
+    if ((gGlobalSysTickCounter % 47) == 0) {
         gNextTimeslice_Monitor = true;
     }
     if ((gGlobalSysTickCounter % 50) == 0) {
