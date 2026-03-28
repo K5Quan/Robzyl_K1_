@@ -1888,7 +1888,7 @@ static void UpdateCssDetection(void) {
 
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
-    if ((f == 0) || f < 1400000 || f > 130000000 ) f=fprev;
+    if ((f == 0) || f < 1400000 || f > 130000000 || (MonitorIndex && !isListening)) f=fprev;
     else fprev = f;
 
     char freqStr[18];
@@ -3158,9 +3158,7 @@ MyDrawFrameLines();
         
   }
 
-    if(isListening) {
-      DrawF(peak.f);
-    }
+    if(isListening) { DrawF(peak.f);}
     else {
       if (SpectrumMonitor) DrawF(lastReceivingFreq);
       else DrawF(scanInfo.f);
@@ -3403,6 +3401,7 @@ static void NextHistoryScanStep() {
 
 static void UpdateScan() {
     if (SPECTRUM_PAUSED || gIsPeak || SpectrumMonitor || WaitSpectrum) return;
+    uint32_t SaveScF;
     SetF(scanInfo.f);
     Measure();
     if (gIsPeak || SpectrumMonitor || WaitSpectrum) return;
@@ -3417,13 +3416,14 @@ static void UpdateScan() {
 
     if (gMonitorScan && gNextTimeslice_Monitor) { 
         gNextTimeslice_Monitor = false;
+        SaveScF = scanInfo.f;
         if (monitorChannelsCount > 0) {
             MonitorIndex = monitorChannelsCount;
             scanInfo.f = MonitorFreqs[--MonitorIndex];
             return;
         }
     }
-    
+    scanInfo.f = SaveScF;    
     if (gHistoryScan && historyListActive) { NextHistoryScanStep(); }
     else NextScanStep();
 

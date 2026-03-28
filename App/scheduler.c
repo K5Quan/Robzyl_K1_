@@ -55,13 +55,13 @@ void SysTick_Handler(void)
 	{
 		gNextTimeslice_1s = true;
 	} 
-    if ((gGlobalSysTickCounter % 10) == 0) {
+    if ((gGlobalSysTickCounter % 15) == 0) {
         gNextTimeslice_display = true;
     }
     if ((gGlobalSysTickCounter % 6000) == 0) {
         gNextTimeslice_60s = true;
     }
-    if ((gGlobalSysTickCounter % 20) == 0) {
+    if ((gGlobalSysTickCounter % 27) == 0) {
         gNextTimeslice_Monitor = true;
     }
     if ((gGlobalSysTickCounter % 50) == 0) {
