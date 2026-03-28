@@ -2671,7 +2671,7 @@ static void OnKeyDown(uint8_t key) {
         break;
 
       case KEY_1: //SKIP OR SAVE
-        BACKLIGHT_TurnOff();
+        Skip();
         break;
      
      case KEY_7:
