@@ -2715,8 +2715,10 @@ static void HandleKeySpectrum(uint8_t key) {
         } else if (appMode == FREQUENCY_MODE) {UpdateCurrentFreq(false);}
         else if (appMode == CHANNEL_MODE) {
             BuildValidScanListIndices();
-            scanListSelectedIndex = (scanListSelectedIndex < validScanListCount ? scanListSelectedIndex + 1 : 0);
-            ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
+            if (validScanListCount > 0) {
+                scanListSelectedIndex = (scanListSelectedIndex + 1) % validScanListCount;
+                ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
+            }
             SetState(SPECTRUM);
             ResetModifiers();
         } else if (appMode == SCAN_RANGE_MODE) {
@@ -3963,7 +3965,7 @@ static bool GetScanListLabel(uint8_t scanListIndex, char* bufferOut) {
 static void BuildValidScanListIndices() {
     uint8_t ScanListCount = 0;
     char tempName[17];
-    for (uint8_t i = 0; i < MR_CHANNELS_LIST-1; i++) {
+    for (uint8_t i = 0; i < MR_CHANNELS_LIST; i++) {
 
         if (GetScanListLabel(i, tempName)) {
             validScanListIndices[ScanListCount++] = i;

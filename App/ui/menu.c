@@ -947,7 +947,7 @@ void UI_DisplayMenu(void)
 
         case MENU_LIST_CH:
             if (gSubMenuSelection == MR_CHANNELS_LIST + 1)
-                strcpy(String, "ALL");
+                strcpy(String, "MON");
             else if (gSubMenuSelection == 0)
                 strcpy(String, "OFF");
             else {

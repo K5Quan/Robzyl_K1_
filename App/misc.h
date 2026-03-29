@@ -44,7 +44,7 @@
     #define MR_CHANNELS_MAX 999
 #endif
 
-#define MR_CHANNELS_LIST 21
+#define MR_CHANNELS_LIST 20
 #define MENU_ITEMS 69
 
 // CACHE-BASED OPTIMIZATION: Only keep active channels in RAM
