@@ -1550,7 +1550,7 @@ static void Measure() {
     else if (rssi < previousRssi) previousRssi = rssi;
 
     uint16_t count = GetStepsCount();
-    uint16_t i = scanInfo.i-1;
+    uint16_t i = scanInfo.i;
 
     if (count > 128) {
             uint32_t totalRange = (uint32_t)GetStepsCount() * scanInfo.scanStep;
@@ -1561,20 +1561,18 @@ static void Measure() {
                 }
             }
     } else {
-        uint16_t j;
         uint16_t base = 128 / count;
         uint16_t rem  = 128 % count;
         uint16_t start = i * base + (i < rem ? i : rem);
         uint16_t end   = (i + 1) * base + ((i + 1) < rem ? (i + 1) : rem);
         if (end > 128) end = 128;
-        for (j = start; j < end; ++j) {
-            rssiHistory[j] = rssi;
-        }
+        for (uint16_t j = start; j < end; ++j) {rssiHistory[j] = rssi;}
+#ifdef ENABLE_DEV
+    char str[64] = "";sprintf(str, "Measure i %d f %d S %d E %d \r\n", scanInfo.i,scanInfo.f, start,end);LogUart(str);
+#endif
+
     }
 
-#ifdef ENABLE_DEV
-    char str[64] = "";sprintf(str, "Measure i %d f %d \r\n", scanInfo.i,scanInfo.f);LogUart(str);
-#endif
 }
 
 static void UpdateDBMaxAuto() { //Zoom
@@ -1853,26 +1851,7 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
     snprintf(buf, buflen, "%u.%05u", f / 100000, f % 100000);
     //RemoveTrailZeros(buf);
 }
-static void FormatLastReceived(char *buf, size_t buflen) {
-  if (lastReceivingFreq < 1400000 || lastReceivingFreq > 130000000) {
-    snprintf(buf, buflen, "---");
-    return;
-  }
 
-  uint16_t channel = BOARD_gMR_fetchChannel(lastReceivingFreq);
-  if (channel != 0xFFFF) {
-    char savedName[12] = "";
-    SETTINGS_FetchChannelName(savedName, channel);
-    if (savedName[0] != '\0') {
-      snprintf(buf, buflen, "%s", savedName);
-    } else {
-      snprintf(buf, buflen, "CH %u", channel + 1);
-    }
-    return;
-  }
-
-  FormatFrequency(lastReceivingFreq, buf, buflen);
-}
 // ------------------ CSS detection ------------------
 static void UpdateCssDetection(void) {
     // Проверяем только когда есть приём сигнала
@@ -1915,8 +1894,6 @@ static void DrawF(uint32_t f) {
     char freqStr[18];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     UpdateCssDetection(); // субтон новый
-    uint16_t channelFd = BOARD_gMR_fetchChannel(f);
-    isKnownChannel = (channelFd != 0xFFFF);
     char line1[19] = "";
     char line1b[19] = "";
     char line2[19] = "";
@@ -1925,6 +1902,8 @@ static void DrawF(uint32_t f) {
     sprintf(line1b, "%s %s", freqStr, StringCode);
     
     if (gNextTimeslice_1s) {
+        uint16_t channelFd = BOARD_gMR_fetchChannel(f);
+        isKnownChannel = (channelFd != 0xFFFF);
         SETTINGS_FetchChannelName(channelName,channelFd );
         gNextTimeslice_1s = 0;
     }
@@ -1994,7 +1973,6 @@ static void DrawF(uint32_t f) {
             if (ShowLines == 3) {
               char lastRx[19] = "";
               char lastRxFreq[19] = "---";
-              FormatLastReceived(lastRx, sizeof(lastRx));
               if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
                 FormatFrequency(lastReceivingFreq, lastRxFreq, sizeof(lastRxFreq));
               }
@@ -2036,12 +2014,6 @@ static void DrawF(uint32_t f) {
 #endif
     }
 }
-
-static void LookupChannelInfo() {
-    gChannel = BOARD_gMR_fetchChannel(peak.f);
-    isKnownChannel = gChannel == 0xFFFF ? false : true;
-    if (isKnownChannel){LookupChannelModulation();}
-  }
 
 static void LookupChannelModulation() {
 	uint8_t tmp;
@@ -2305,7 +2277,7 @@ static void HandleKeyBandList(uint8_t key) {
                     if (bandListSelectedIndex >= bandListScrollOffset + MAX_VISIBLE_LINES)
                         bandListScrollOffset = bandListSelectedIndex - MAX_VISIBLE_LINES + 1;
                 } else {
-                bandListSelectedIndex = 0;
+                    bandListSelectedIndex = 0;
                 }
                 break;
             case KEY_4: /* toggle selected band */
@@ -2701,8 +2673,9 @@ static void HandleKeySpectrum(uint8_t key) {
                 lastReceivingFreq = HFreqs[historyListIndex];
                 SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
-                ToggleScanList(bl, 1);
-                settings.bandEnabled[bl - 1] = true;
+                bandListSelectedIndex = (bandListSelectedIndex < 1 ? bandCount - 1 : bandListSelectedIndex - 1);
+                ToggleScanList(bandListSelectedIndex, 1);
+                settings.bandEnabled[bandListSelectedIndex] = true;
                 RelaunchScan();
             } else if (appMode == FREQUENCY_MODE) {
                 UpdateCurrentFreq(true);
@@ -2735,9 +2708,10 @@ static void HandleKeySpectrum(uint8_t key) {
         lastReceivingFreq = HFreqs[historyListIndex];
         SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
-            ToggleScanList(bl, 1);
-            settings.bandEnabled[bl + 1]= true; //Inverted for K1
-            RelaunchScan(); 
+                bandListSelectedIndex = (bandListSelectedIndex < bandCount -1? bandListSelectedIndex + 1 : 0);
+                ToggleScanList(bandListSelectedIndex, 1);
+                settings.bandEnabled[bandListSelectedIndex]= true; //Inverted for K1
+                RelaunchScan(); 
         } else if (appMode == FREQUENCY_MODE) {UpdateCurrentFreq(false);}
         else if (appMode == CHANNEL_MODE) {
             BuildValidScanListIndices();
@@ -3608,7 +3582,6 @@ static void Tick() {
   }
 
   if(!isListening && gIsPeak && !SpectrumMonitor && !SPECTRUM_PAUSED) {
-     LookupChannelInfo();
      SetF(peak.f);
      ToggleRX(true);
      return;

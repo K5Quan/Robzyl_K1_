@@ -219,8 +219,6 @@ typedef struct ChannelInfo_t {
 
 extern bool gComeBack;
 void APP_RunSpectrum(void);
-//void LookupChannelInfo();
-//void LookupChannelModulation();
 void ClearSettings(void);
 void LoadSettings();
 
