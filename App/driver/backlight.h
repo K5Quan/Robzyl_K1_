@@ -21,6 +21,7 @@
 #include <stdbool.h>
 
 extern uint16_t gBacklightCountdown_500ms;
+extern bool backlightOn;
 extern uint8_t gBacklightBrightness;
 
 #ifdef ENABLE_FEAT_F4HWN

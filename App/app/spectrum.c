@@ -2838,7 +2838,7 @@ static void HandleKeySpectrum(uint8_t key) {
 // ============================================================
 
 static void OnKeyDown(uint8_t key) {
-    BACKLIGHT_TurnOn();
+    if (!backlightOn) {BACKLIGHT_TurnOn();return;}
 
     /* Key-lock guard: only KEY_F unlocks */
     if (gIsKeylocked) {
@@ -3577,12 +3577,12 @@ static void Tick() {
             if (osdPopupTimer <= 0) {osdPopupText[0] = '\0';}
             return;
             }
-        }
 
     if (gNextTimeslice_listening) {
         gNextTimeslice_listening = 0;
         if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); 
     }
+  }
 
   if (SPECTRUM_PAUSED && (SpectrumPauseCount == 0)) {
       // fin de la pause
@@ -3613,7 +3613,7 @@ static void Tick() {
     gNextTimeslice_display = 0;
     latestScanListName[0] = '\0';
     RenderStatus();
-    if (!MonitorIndex) Render();
+    Render();
   } 
 }
 
