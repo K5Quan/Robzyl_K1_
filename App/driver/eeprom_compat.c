@@ -62,7 +62,7 @@ static const AddrMapping_t ADDR_MAPPINGS[] = {
                                                 // Settings Scanlist * 8 Bytes (0x009000)   0x00A130 -> 0x00A140
                                                 // Settings AES * 16 Bytes (0x00A000)       0x00A140 -> 0x00A150
                                                 // Settings * 8 Bytes (0x00B000)            0x00A150 -> 0x00A158
-                                                // Settings ROBZYL * 8 Bytes (0x00C000)      0x00A158 -> 0x00A160
+                                                // Settings F4HWN * 8 Bytes (0x00C000)      0x00A158 -> 0x00A160
                                                 // Settings Version * 16 Bytes              0x00A160 -> 0x00A170
 
     _MK_MAPPING(0x010000, 0x00B000, 0x00B200),  // Calibration 512 Bytes!!!

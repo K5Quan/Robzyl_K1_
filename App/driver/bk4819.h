@@ -113,8 +113,15 @@ void     BK4819_EnterTxMute(void);
 void     BK4819_ExitTxMute(void);
 void     BK4819_Sleep(void);
 void     BK4819_TurnsOffTones_TurnsOnRX(void);
+#ifdef ENABLE_AIRCOPY
+    void     BK4819_SetupAircopy(void);
+#endif
 void     BK4819_ResetFSK(void);
 void     BK4819_Idle(void);
+#ifdef ENABLE_BYP_RAW_DEMODULATORS
+void     BK4819_EnterBypass(void);
+void     BK4819_EnterRaw(void);
+#endif
 void     BK4819_ExitBypass(void);
 void     BK4819_PrepareTransmit(void);
 void     BK4819_TxOn_Beep(void);

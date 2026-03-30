@@ -16,7 +16,9 @@
 
 #include <string.h>
 #include <stdlib.h>
-
+#ifdef ENABLE_FEAT_F4HWN
+    #include "../version.h"
+#endif
 #include "../app/dtmf.h"
 #include "../app/menu.h"
 #include "../bitmaps.h"
@@ -32,9 +34,7 @@
 #include "../misc.h"
 #include "../settings.h"
 
-#ifdef ENABLE_FEAT_F4HWN
-    #include "../version.h"
-#endif
+
 
 #include "helper.h"
 #include "inputbox.h"
@@ -954,7 +954,7 @@ void UI_DisplayMenu(void)
                 const char *name = gListName[gSubMenuSelection - 1];
                 
                 // If first character is empty/invalid, display "N/A"
-                if (name[0] == '\0' || name[0] == '\xff' || name[0] == ' ')
+                if (IsEmptyName(name, sizeof(gListName[0])))
                     sprintf(String, "%02u", gSubMenuSelection);
                 else
                     sprintf(String, "%02u (%.3s)", gSubMenuSelection, name);
@@ -967,7 +967,7 @@ void UI_DisplayMenu(void)
             else {
                 const char *name = gListName[gSubMenuSelection - 1];
                 // If first character is empty/invalid, display "N/A"
-                if (name[0] == '\0' || name[0] == '\xff' || name[0] == ' ')
+                if (IsEmptyName(name, sizeof(gListName[0])))
                     sprintf(String, "%02u", gSubMenuSelection);
                 else
                     sprintf(String, "%02u (%.3s)", gSubMenuSelection, name);
@@ -1187,7 +1187,7 @@ void UI_DisplayMenu(void)
                     gaugeMax = 63;
                     //#endif
                 }
-                gEeprom.VOLUME_GAIN = gSubMenuSelection;
+                // gEeprom.VOLUME_GAIN = gSubMenuSelection;
                 BK4819_WriteRegister(BK4819_REG_48,
                     (11u << 12)                |     // ??? .. 0 ~ 15, doesn't seem to make any difference
                     ( 0u << 10)                |     // AF Rx Gain-1
@@ -1260,7 +1260,7 @@ void UI_DisplayMenu(void)
                 UI_PrintStringSmallNormal(edit, 54, 127, 1);
 
                 #ifdef ENABLE_FEAT_F4HWN
-                    UI_PrintStringSmallNormal(EDITION_STRING, 54, 127, 6);
+                    UI_PrintStringSmallNormal(Edition, 54, 127, 6);
                 #endif
 
                 y = 2;

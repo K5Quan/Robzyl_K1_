@@ -32,8 +32,9 @@
 #include "driver/eeprom.h"
 #include "driver/gpio.h"
 
-
+#if defined(ENABLE_UART)
 #include "driver/uart.h"
+#endif
 
 #if defined(ENABLE_USB)
 #include "driver/vcp.h"

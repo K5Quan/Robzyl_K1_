@@ -222,7 +222,7 @@ void UI_DisplayWelcome(void)
             ST7565_BlitStatusLine();
         #endif
 
-        sprintf(WelcomeString3, "%s Edition", EDITION_STRING);
+        sprintf(WelcomeString3, "%s Edition", Edition);
         UI_PrintStringSmallNormal(WelcomeString3, 0, 127, 6);
 
 #else
@@ -233,7 +233,7 @@ void UI_DisplayWelcome(void)
         ST7565_BlitFullScreen();
 
         #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
-            getScreenShot(true);
+            SCREENSHOT_Update(true);
         #endif
     }
 }

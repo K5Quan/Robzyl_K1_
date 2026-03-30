@@ -1049,6 +1049,31 @@ void RADIO_SetTxParameters(void)
 
 void RADIO_SetModulation(ModulationMode_t modulation)
 {
+    #ifdef ENABLE_BYP_RAW_DEMODULATORS
+    // BYP on BK4829 uses full audio bypass profile.
+    if (modulation == MODULATION_BYP) {
+        BK4819_EnterBypass();
+        BK4819_SetRegValue(afDacGainRegSpec, 0xF);
+        BK4819_WriteRegister(BK4819_REG_3D, 0x2AAB);
+        RADIO_SetupAGC(false, false);
+        return;
+    }
+
+    // RAW on BK4829 uses RX-only filter bypass profile.
+    if (modulation == MODULATION_RAW) {
+        BK4819_EnterRaw();
+        BK4819_SetRegValue(afDacGainRegSpec, 0xF);
+        BK4819_WriteRegister(BK4819_REG_3D, 0x0000);
+        RADIO_SetupAGC(false, false);
+        return;
+    }
+    #endif
+
+    #ifdef ENABLE_BYP_RAW_DEMODULATORS
+    // Ensure we always leave bypass / raw mode before applying normal modulation settings.
+    BK4819_ExitBypass();
+    #endif
+
     BK4819_AF_Type_t mod;
     switch(modulation) {
         default:
@@ -1104,15 +1129,16 @@ void RADIO_SetModulation(ModulationMode_t modulation)
         BK4819_WriteRegister(0x31,uVar1 | 1);
         BK4819_WriteRegister(0x42,0x6f5c);
         BK4819_WriteRegister(0x2a,0x7434);
-        BK4819_WriteRegister(0x2b,0x300);
+        BK4819_WriteRegister(0x2b,0x400);
         BK4819_WriteRegister(0x2f,0x9990);
+        //BK4819_WriteRegister(0x54, 0x9775);
+        //BK4819_WriteRegister(0x55, 0x32c6);
 
-         // steef values
-        //BK4819_WriteRegister(0x54, 0x8546);
-        //BK4819_WriteRegister(0x55, 0x3af0);
+        //BK4819_WriteRegister(0x54, 0x8846);
+        //BK4819_WriteRegister(0x55, 0x38C0);
 
-        //BK4819_WriteRegister(0x54, 0x9775);  // calypso
-        //BK4819_WriteRegister(0x55, 0x32c6);  // removed for better AM reception
+        BK4819_WriteRegister(0x54, 0x9009);
+        BK4819_WriteRegister(0x55, 0x31a9);
 
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_AM, true);
     }
@@ -1124,21 +1150,24 @@ void RADIO_SetModulation(ModulationMode_t modulation)
 
 }
 
-void RADIO_SetupAGC(bool listeningAM, bool disable) //Calypso modifications
+void RADIO_SetupAGC(bool listeningAM, bool disable)
 {
-    //listeningAM = false;
-    disable = false;
-
-    static uint8_t lastSettings;
+    static uint8_t lastSettings = 0xFF;
     uint8_t newSettings = (listeningAM << 1) | disable;
-    if(lastSettings == newSettings)
+    if (lastSettings == newSettings)
         return;
     lastSettings = newSettings;
 
+#ifdef ENABLE_AM_FIX
+    if (listeningAM && gSetting_AM_fix) {
+        BK4819_SetAGC(0);
+        AM_fix_enable(!disable);
+        return;
+    }
+#endif
+
     BK4819_SetAGC(!disable);
     BK4819_InitAGC(listeningAM);
-    
-
 }
 
 void RADIO_SetVfoState(VfoState_t State)
@@ -1212,6 +1241,12 @@ void RADIO_PrepareTX(void)
         // over voltage .. this is being a pain
         State = VFO_STATE_VOLTAGE_HIGH;
     }
+#ifdef ENABLE_BYP_RAW_DEMODULATORS
+    else if (gCurrentVfo->Modulation == MODULATION_BYP || gCurrentVfo->Modulation == MODULATION_RAW) {
+        // BYP/RAW are receive-only modes.
+        State = VFO_STATE_TX_DISABLE;
+    }
+#endif
 #ifndef ENABLE_TX_WHEN_AM
     else if (gCurrentVfo->Modulation != MODULATION_FM) {
         // not allowed to TX if in AM mode
