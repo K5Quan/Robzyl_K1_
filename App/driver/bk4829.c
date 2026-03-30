@@ -238,6 +238,8 @@ uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
 
 void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
 {
+    if(Data == regs_cache[Register])return;
+	regs_cache[Register] = Data;
     CS_Release();
     SCL_Reset();
 

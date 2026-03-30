@@ -3359,7 +3359,7 @@ static void Render() {
     
   }
   #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
-    getScreenShot(1);
+    SCREENSHOT_Update(1);
   #endif
   ST7565_BlitFullScreen();
 }
@@ -3607,7 +3607,7 @@ static void Tick() {
   
   if (gNextTimeslice_display) {
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
-    getScreenShot(true);
+    SCREENSHOT_Update(true);
 #endif
     //if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); // Kolyan test
     gNextTimeslice_display = 0;
