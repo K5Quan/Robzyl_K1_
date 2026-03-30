@@ -311,7 +311,7 @@ extern volatile bool         gNextTimeslice_10ms;
 extern volatile bool         gNextTimeslice_listening;
 extern volatile bool         gNextTimeslice_60s;
 extern volatile bool         gNextTimeslice_display;
-extern volatile bool         gNextTimeslice_1s;
+extern volatile bool         gNextTimeslice_ShowNames;
 
 extern volatile uint16_t     gTxTimerCountdown_500ms;
 extern volatile bool         gTxTimeoutReached;

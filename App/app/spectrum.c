@@ -1445,6 +1445,9 @@ static bool InitScan() {
             }
             nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
             checkedBandCount++;
+#ifdef ENABLE_DEV
+                char str[64] = "";sprintf(str, "nextBandToScanIndex %d bl %d %d\r\n", nextBandToScanIndex,bl,settings.bandEnabled[nextBandToScanIndex]);LogUart(str);
+#endif
         }
     } else {
         if(gScanRangeStart > gScanRangeStop)
@@ -1568,7 +1571,7 @@ static void Measure() {
         if (end > 128) end = 128;
         for (uint16_t j = start; j < end; ++j) {rssiHistory[j] = rssi;}
 #ifdef ENABLE_DEV
-    char str[64] = "";sprintf(str, "Measure i %d f %d S %d E %d \r\n", scanInfo.i,scanInfo.f, start,end);LogUart(str);
+    //char str[64] = "";sprintf(str, "Measure i %d f %d S %d E %d \r\n", scanInfo.i,scanInfo.f, start,end);LogUart(str);
 #endif
 
     }
@@ -1901,11 +1904,14 @@ static void DrawF(uint32_t f) {
     sprintf(line1, "%s", freqStr);
     sprintf(line1b, "%s %s", freqStr, StringCode);
     
-    if (gNextTimeslice_1s) {
+    if (gNextTimeslice_ShowNames) {
         uint16_t channelFd = BOARD_gMR_fetchChannel(f);
+        gChannel = channelFd;
+        LookupChannelModulation();
+        settings.modulationType = channelModulation;
         isKnownChannel = (channelFd != 0xFFFF);
         SETTINGS_FetchChannelName(channelName,channelFd );
-        gNextTimeslice_1s = 0;
+        gNextTimeslice_ShowNames = 0;
     }
     char prefix[9] = "";
     if (appMode == SCAN_BAND_MODE) {
@@ -2673,9 +2679,8 @@ static void HandleKeySpectrum(uint8_t key) {
                 lastReceivingFreq = HFreqs[historyListIndex];
                 SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
-                bandListSelectedIndex = (bandListSelectedIndex < 1 ? bandCount - 1 : bandListSelectedIndex - 1);
-                ToggleScanList(bandListSelectedIndex, 1);
-                settings.bandEnabled[bandListSelectedIndex] = true;
+                ToggleScanList(bl, 1);
+                settings.bandEnabled[bl - 1] = true;
                 RelaunchScan();
             } else if (appMode == FREQUENCY_MODE) {
                 UpdateCurrentFreq(true);
@@ -2708,9 +2713,8 @@ static void HandleKeySpectrum(uint8_t key) {
         lastReceivingFreq = HFreqs[historyListIndex];
         SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
-                bandListSelectedIndex = (bandListSelectedIndex < bandCount -1? bandListSelectedIndex + 1 : 0);
-                ToggleScanList(bandListSelectedIndex, 1);
-                settings.bandEnabled[bandListSelectedIndex]= true; //Inverted for K1
+                ToggleScanList(bl, 1);
+                settings.bandEnabled[bl + 1]= true; //Inverted for K1
                 RelaunchScan(); 
         } else if (appMode == FREQUENCY_MODE) {UpdateCurrentFreq(false);}
         else if (appMode == CHANNEL_MODE) {

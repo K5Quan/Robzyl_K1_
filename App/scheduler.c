@@ -51,9 +51,9 @@ void SysTick_Handler(void)
     
     gNextTimeslice = true;
     gNextTimeslice_10ms = true;
-    if ((gGlobalSysTickCounter % 100) == 0)
+    if ((gGlobalSysTickCounter % 50) == 0)
 	{
-		gNextTimeslice_1s = true;
+		gNextTimeslice_ShowNames = true;
 	} 
     if ((gGlobalSysTickCounter % 20) == 0) {
         gNextTimeslice_display = true;
