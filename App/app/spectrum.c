@@ -833,13 +833,18 @@ static void LoadActiveScanFrequencies(void)
     for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
     {
         MR_LoadChannelAttributesFromFlash(ch, &cache);
-        ChannelInfo_t freqs  = FetchChannelFrequency(ch);
-        if (freqs.frequency) {
-            if (settings.scanListEnabled[cache.scanlist-1])
-                {   ScanFrequencies[scanChannelsCount] = freqs.frequency;
-                    scanChannelsCount++;
+        if (cache.scanlist <= MR_CHANNELS_LIST) {
+            ChannelInfo_t freqs  = FetchChannelFrequency(ch);
+            if (freqs.frequency) {
+                if (settings.scanListEnabled[cache.scanlist-1])
+                    {   ScanFrequencies[scanChannelsCount] = freqs.frequency;
+                        scanChannelsCount++;
+                    }
                 }
-            }
+        }
+#ifdef ENABLE_DEV
+char str[64] = "";sprintf(str, "LASF %d %d %d\r\n", ch,settings.scanListEnabled[cache.scanlist-1],ScanFrequencies[scanChannelsCount-1]);LogUart(str);
+#endif
     }
     if (!scanChannelsCount) { //No active scanlist
     for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
@@ -1446,7 +1451,7 @@ static bool InitScan() {
             nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
             checkedBandCount++;
 #ifdef ENABLE_DEV
-                char str[64] = "";sprintf(str, "nextBandToScanIndex %d bl %d %d\r\n", nextBandToScanIndex,bl,settings.bandEnabled[nextBandToScanIndex]);LogUart(str);
+                //char str[64] = "";sprintf(str, "nextBandToScanIndex %d bl %d %d\r\n", nextBandToScanIndex,bl,settings.bandEnabled[nextBandToScanIndex]);LogUart(str);
 #endif
         }
     } else {
@@ -2133,7 +2138,7 @@ if(appMode!=CHANNEL_MODE){
                     scanInfo.f = StartF;
                 }
             }
-            if (++scanInfo.i > GetStepsCount()) scanInfo.i = 0;
+            if (++scanInfo.i > GetStepsCount()) {scanInfo.i = 0;newScanStart = true;}
         }
 #ifdef ENABLE_DEV
     //char str[64] = "";sprintf(str, "NSS %d SF %d %d\r\n", scanInfo.i,StartF,scanInfo.f);LogUart(str);
@@ -3702,8 +3707,10 @@ static void ToggleScanList(int scanListNumber, int single )
     }
     if (appMode == CHANNEL_MODE) {
         if (single) {memset(settings.scanListEnabled, 0, sizeof(settings.scanListEnabled));}
-        settings.scanListEnabled[scanListNumber] = !settings.scanListEnabled[scanListNumber];
-        refreshScanListName = true;
+        if(scanListNumber < MR_CHANNELS_LIST){
+            settings.scanListEnabled[scanListNumber] = !settings.scanListEnabled[scanListNumber];
+            refreshScanListName = true;
+        }
     }
 }
 
