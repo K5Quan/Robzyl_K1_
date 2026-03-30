@@ -2413,7 +2413,7 @@ static void HandleKeyScanListChannels(uint8_t key) {
 /* --- PARAMETERS_SELECT: navigate settings, edit values --- */
 static void HandleKeyParameters(uint8_t key) {
       switch (key) {
-          case KEY_1:
+          case KEY_UP:
                 if (parametersSelectedIndex > 0) {
                     parametersSelectedIndex--;
                 if (parametersSelectedIndex < parametersScrollOffset)
@@ -2422,7 +2422,7 @@ static void HandleKeyParameters(uint8_t key) {
                 parametersSelectedIndex = PARAMETER_COUNT - 1;
                 }
                 break;
-          case KEY_4:
+          case KEY_DOWN:
                 if (parametersSelectedIndex < PARAMETER_COUNT - 1) { 
                     parametersSelectedIndex++;
                 if (parametersSelectedIndex >= parametersScrollOffset + MAX_VISIBLE_LINES)
@@ -2431,9 +2431,9 @@ static void HandleKeyParameters(uint8_t key) {
                 parametersSelectedIndex = 0;
             }
             break;
-          case KEY_DOWN:
-          case KEY_UP: {
-              bool isKey3 = (key == KEY_DOWN);
+          case KEY_1:
+          case KEY_3: {
+              bool isKey3 = (key == KEY_3);
               switch (parametersSelectedIndex) {
                 case 0: /* RSSI Delay */
                     DelayRssi = isKey3 ?
