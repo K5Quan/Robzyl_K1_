@@ -1231,10 +1231,10 @@ void CheckKeys(void)
                     gPttOnePushCounter++;
             }
         } 
-        else
+        else {
             gPttDebounceCounter = 0;
 
-        //gDebug = gPttOnePushCounter;
+        }
     } 
     else 
 #endif
@@ -1249,8 +1249,9 @@ void CheckKeys(void)
                     StopTransmitting();
                 }
             } 
-            else 
+            else { 
                 gPttDebounceCounter = 0;
+            }
         }
         else if (isPressed)
         {   // PTT pressed
@@ -1262,8 +1263,10 @@ void CheckKeys(void)
                 ProcessKey(KEY_PTT, true, false);
             }
         }
-        else
+        else { 
             gPttDebounceCounter = 0;
+            if (gComeBack) APP_RunSpectrum(); //Robzyl mod for Ninja
+        }
     }
 
 // --------------------- OTHER KEYS ----------------------------

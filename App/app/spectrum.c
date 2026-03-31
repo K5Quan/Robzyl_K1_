@@ -1377,8 +1377,13 @@ static void ToggleRX(bool on) {
     if (SPECTRUM_PAUSED) return;
     if(!on && SpectrumMonitor == 2) {isListening = 1;return;}
     isListening = on;
-
+    gChannel = BOARD_gMR_fetchChannel(scanInfo.f);
+    isKnownChannel = (gChannel != 0xFFFF);
+    
     if (on && isKnownChannel) {
+        LookupChannelModulation();
+        settings.modulationType = channelModulation;
+        SETTINGS_FetchChannelName(channelName,gChannel );
         if(!gForceModulation) settings.modulationType = channelModulation;
         RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
     }
@@ -1908,16 +1913,6 @@ static void DrawF(uint32_t f) {
     char line3[19] = "";
     sprintf(line1, "%s", freqStr);
     sprintf(line1b, "%s %s", freqStr, StringCode);
-    
-    if (gNextTimeslice_ShowNames) {
-        uint16_t channelFd = BOARD_gMR_fetchChannel(f);
-        gChannel = channelFd;
-        LookupChannelModulation();
-        settings.modulationType = channelModulation;
-        isKnownChannel = (channelFd != 0xFFFF);
-        SETTINGS_FetchChannelName(channelName,channelFd );
-        gNextTimeslice_ShowNames = 0;
-    }
     char prefix[9] = "";
     if (appMode == SCAN_BAND_MODE) {
         snprintf(prefix, sizeof(prefix), "B%u ", bl + 1);
@@ -1981,7 +1976,7 @@ static void DrawF(uint32_t f) {
                 ArrowLine = 3;
             }
 
-            if (ShowLines == 3) {
+            if (ShowLines == 3) {                       //LAST RX
               char lastRx[19] = "";
               char lastRxFreq[19] = "---";
               if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
@@ -1989,8 +1984,8 @@ static void DrawF(uint32_t f) {
               }
               UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
               UI_PrintStringSmallbackground(lastRx, 1, LCD_WIDTH - 1, 1, 0);
-             
-              UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
+              UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 2, 0);  // SL or BD + Name
+              UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 3, 0);
               ArrowLine = 3;
             }
 			if (classic && ShowLines == 4) {return;} // BENCH renderujemy osobno
