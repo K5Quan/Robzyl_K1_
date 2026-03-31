@@ -200,9 +200,9 @@ extern const char* const gSubMenu_PTT_ID[5];
     extern const char        gSubMenu_PONMSG[4][8];
 #endif
 #ifdef ENABLE_DTMF_CALLING
-    extern const char        gSubMenu_ROGER[7][6];
+    extern const char        gSubMenu_ROGER[8][6];
 #else
-    extern const char        gSubMenu_ROGER[6][6];
+    extern const char        gSubMenu_ROGER[7][6];
 #endif
 extern const char        gSubMenu_RESET[2][4];
 extern const char* const gSubMenu_F_LOCK[F_LOCK_LEN];

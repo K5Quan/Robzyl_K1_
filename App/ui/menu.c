@@ -45,8 +45,10 @@
 const t_menu_item MenuList[] =
 {
 //   text,          menu ID
+    {"Sql",         MENU_SQL           },
     {"Step",        MENU_STEP          },
     {"Power",       MENU_TXP           }, // was "TXP"
+    {"Roger",       MENU_ROGER         },
     {"RxDCS",       MENU_R_DCS         }, // was "R_DCS"
     {"RxCTCS",      MENU_R_CTCS        }, // was "R_CTCS"
     {"TxDCS",       MENU_T_DCS         }, // was "T_DCS"
@@ -64,7 +66,6 @@ const t_menu_item MenuList[] =
     {"ChSave",      MENU_MEM_CH        }, // was "MEM-CH"
     {"ChDele",      MENU_DEL_CH        }, // was "DEL-CH"
     {"ChName",      MENU_MEM_NAME      },
-
     {"ScList",       MENU_S_LIST       },
     {"ScPri",        MENU_S_PRI        },
     {"PriCh1",       MENU_S_PRI_CH_1   },
@@ -80,7 +81,6 @@ const t_menu_item MenuList[] =
     {"F2Shrt",      MENU_F2SHRT        },
     {"F2Long",      MENU_F2LONG        },
     {"M Long",      MENU_MLONG         },
-
     {"KeyLck",      MENU_AUTOLK        }, // was "AUTOLk"
     {"TxTOut",      MENU_TOT           }, // was "TOT"
     {"BatSav",      MENU_SAVE          }, // was "SAVE"
@@ -97,7 +97,7 @@ const t_menu_item MenuList[] =
 #ifdef ENABLE_VOICE
     {"Voice",       MENU_VOICE         },
 #endif
-    {"Roger",       MENU_ROGER         },
+
     {"STE",         MENU_STE           },
     {"RP STE",      MENU_RP_STE        },
     {"1 Call",      MENU_1_CALL        },
@@ -133,7 +133,7 @@ const t_menu_item MenuList[] =
     {"BatVol",      MENU_VOL           }, // was "VOL"
 #endif
     {"RxMode",      MENU_TDR           },
-    {"Sql",         MENU_SQL           },
+    
 #ifdef ENABLE_FEAT_F4HWN
     {"SetPwr",      MENU_SET_PWR       },
     {"SetPTT",      MENU_SET_PTT       },
@@ -291,7 +291,8 @@ const char gSubMenu_ROGER[][6] =
 	"BLAST",
 	"R2D2",
     "ROGER",
-    "MORSE"
+    "MORSE",
+    "AMBUL",
 #ifdef ENABLE_DTMF_CALLING
     "MDC",
 #endif

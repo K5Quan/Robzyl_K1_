@@ -1265,7 +1265,6 @@ static void ExitAndCopyToVfo() {
             // PTT Mode 2: Last RX
             if (PttEmission == 2) {
                 SpectrumDelay = 0;
-
                 gCurrentVfo->freq_config_TX.Frequency = lastReceivingFreq;
                 gCurrentVfo->freq_config_RX.Frequency = lastReceivingFreq;
                 gEeprom.MrChannel[0]     = 0;
@@ -1867,13 +1866,10 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
 
 // ------------------ CSS detection ------------------
 static void UpdateCssDetection(void) {
-    // Проверяем только когда есть приём сигнала
     if (!isListening && !gIsPeak) {
-        StringCode[0] = '\0';  // очищаем, если нет сигнала
+        StringCode[0] = '\0'; 
         return;
     }
-
-    // Включаем CxCSS детектор
     BK4819_WriteRegister(BK4819_REG_51,
         BK4819_REG_51_ENABLE_CxCSS |
         BK4819_REG_51_AUTO_CDCSS_BW_ENABLE |
@@ -1885,13 +1881,13 @@ static void UpdateCssDetection(void) {
     if (scanResult == BK4819_CSS_RESULT_CDCSS) {
         uint8_t code = DCS_GetCdcssCode(cdcssFreq);
         if (code != 0xFF) {
-            snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]); //субтон цифра
+            snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]);
             return;
         }
     } else if (scanResult == BK4819_CSS_RESULT_CTCSS) {
         uint8_t code = DCS_GetCtcssCode(ctcssFreq);
         if (code < ARRAY_SIZE(CTCSS_Options)) {
-            snprintf(StringCode, sizeof(StringCode), "%u.%uHz", // субтон аналог Hz
+            snprintf(StringCode, sizeof(StringCode), "%u.%uHz",
                      CTCSS_Options[code] / 10, CTCSS_Options[code] % 10);
             return;
         }
@@ -1901,18 +1897,19 @@ static void UpdateCssDetection(void) {
 
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
+    static char lastDetectedCode[16] = "";
     if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
     else fprev = f;
-
+    if (StringCode[0] != '\0') { strncpy(lastDetectedCode, StringCode, sizeof(lastDetectedCode) - 1);}
     char freqStr[18];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
-    UpdateCssDetection(); // субтон новый
+    UpdateCssDetection();
     char line1[19] = "";
     char line1b[19] = "";
     char line2[19] = "";
     char line3[19] = "";
     sprintf(line1, "%s", freqStr);
-    sprintf(line1b, "%s %s", freqStr, StringCode);
+    sprintf(line1b, "%s %s", freqStr, lastDetectedCode);
     char prefix[9] = "";
     if (appMode == SCAN_BAND_MODE) {
         snprintf(prefix, sizeof(prefix), "B%u ", bl + 1);
@@ -1964,7 +1961,7 @@ static void DrawF(uint32_t f) {
     if (classic) {
             if (ShowLines == 2) {
                 UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
-                GUI_DisplaySmallest(StringCode, 80, 17, false, true); // CSS
+                GUI_DisplaySmallest(lastDetectedCode, 80, 17, false, true); // CSS
                 UI_PrintStringSmallbackground(line2,0, LCD_WIDTH - 1, 2, 0);  
                 ArrowLine = 3;
             }
@@ -1977,15 +1974,15 @@ static void DrawF(uint32_t f) {
             }
 
             if (ShowLines == 3) {                       //LAST RX
-              char lastRx[19] = "";
               char lastRxFreq[19] = "---";
               if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
                 FormatFrequency(lastReceivingFreq, lastRxFreq, sizeof(lastRxFreq));
+                sprintf(lastRxFreq,"%s %s", lastRxFreq,lastDetectedCode); 
               }
+
               UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
-              UI_PrintStringSmallbackground(lastRx, 1, LCD_WIDTH - 1, 1, 0);
-              UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 2, 0);  // SL or BD + Name
-              UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 3, 0);
+              UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
+              UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
               ArrowLine = 3;
             }
 			if (classic && ShowLines == 4) {return;} // BENCH renderujemy osobno
@@ -2012,9 +2009,7 @@ static void DrawF(uint32_t f) {
         sprintf(rssiText, "RSSI:%3d", scanInfo.rssi);
         UI_PrintStringSmallbackground(rssiText, 64, 1, 0, 0);
     }
-    if (StringCode[0]) {
-        UI_PrintStringSmallbackground(StringCode, 10, 1, 0, 0);
-    }
+    if (lastDetectedCode[0]) { UI_PrintStringSmallbackground(lastDetectedCode, 10, 1, 0, 0);}
 #ifdef ENABLE_CPU_TEMP
     else RenderCPUTemp();
 #endif

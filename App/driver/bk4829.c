@@ -1865,6 +1865,13 @@ void play_mario_intro() {
     play_note(392, 100);
 }
 
+void play_ambulance() {
+        play_note(960, 150); // Note haute (La)
+        play_note(635, 150); // Note basse (Ré)
+        play_note(960, 150); // Note haute (La)
+
+}
+
 //###########################################################################################
  void roger_beep_r2d2_rnd(void){
 // R2-D2 Style Acknowledgment Beep
@@ -1902,7 +1909,7 @@ switch (song)
 	break;
 	
 	case 3:
-		roger_beep_r2d2_rnd();	
+	    roger_beep_r2d2_rnd();	
 	break;
 	
 	case 4:
@@ -1911,6 +1918,10 @@ switch (song)
 
     case 5:
         send_robzyl_morse();
+	break;
+
+    case 6:
+        play_ambulance();
 	break;
 
 #ifdef ENABLE_DTMF_CALLING	
