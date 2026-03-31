@@ -2614,9 +2614,7 @@ static void HandleKeySpectrum(uint8_t key) {
             break;
         case KEY_7:
             if (historyListActive) {
-#ifdef ENABLE_EEPROM_512K
                 WriteHistory();
-#endif
             } else {
                 SaveSettings();
             }
