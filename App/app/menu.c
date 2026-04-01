@@ -422,7 +422,12 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
         #ifdef ENABLE_FEAT_F4HWN_AUDIO
         case MENU_SET_AUD:
             //*pMin = 0;
-            *pMax = ARRAY_SIZE(gSubMenu_SET_AUD) - 1;
+            if(gTxVfo->Modulation == MODULATION_AM)
+                *pMax = ARRAY_SIZE(gSubMenu_SET_AUD_AM) - 1;
+            else if (gTxVfo->Modulation == MODULATION_USB)
+                *pMax = 0;
+            else
+                *pMax = ARRAY_SIZE(gSubMenu_SET_AUD_FM) - 1;
             break;
         #endif
         #ifdef ENABLE_FEAT_F4HWN_NARROWER
@@ -473,7 +478,9 @@ void MENU_AcceptSetting(void)
         case MENU_SQL:
             gEeprom.SQUELCH_LEVEL = gSubMenuSelection;
             gVfoConfigureMode     = VFO_CONFIGURE;
-            gRequestSaveSquelch   = true;
+            #ifdef ENABLE_FEAT_F4HWN
+                gSquelchLevelOriginal = 10;
+            #endif
             break;
 
         case MENU_STEP:
@@ -918,8 +925,12 @@ void MENU_AcceptSetting(void)
             break;
         #ifdef ENABLE_FEAT_F4HWN_AUDIO
         case MENU_SET_AUD:
-            gSetting_set_audio = gSubMenuSelection;
-            RADIO_SetModulation(gRxVfo->Modulation);
+            if(gTxVfo->Modulation == MODULATION_AM)
+                gSetting_set_audio_am = gSubMenuSelection;
+            else if (gTxVfo->Modulation == MODULATION_FM)
+                gSetting_set_audio_fm = gSubMenuSelection;
+
+            RADIO_SetModulation(gTxVfo->Modulation);
             break;
         #endif
         #ifdef ENABLE_FEAT_F4HWN_NARROWER
@@ -1349,7 +1360,12 @@ void MENU_ShowCurrentSetting(void)
             break;
         #ifdef ENABLE_FEAT_F4HWN_AUDIO
         case MENU_SET_AUD:
-            gSubMenuSelection = gSetting_set_audio;
+            if(gTxVfo->Modulation == MODULATION_AM)
+                gSubMenuSelection = gSetting_set_audio_am;
+            else if (gTxVfo->Modulation == MODULATION_USB)
+                gSubMenuSelection = 0;
+            else
+                gSubMenuSelection = gSetting_set_audio_fm;
             break;
         #endif
         #ifdef ENABLE_FEAT_F4HWN_NARROWER
