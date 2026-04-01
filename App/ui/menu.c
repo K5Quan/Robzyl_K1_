@@ -298,9 +298,9 @@ const char gSubMenu_ROGER[][6] =
 #endif
 };
 
-const char gSubMenu_RESET[][4] =
+const char gSubMenu_RESET[][11] =
 {
-    "VFO",
+    "KEEP\nCHAN",
     "ALL"
 };
 
