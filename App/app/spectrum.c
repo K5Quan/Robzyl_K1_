@@ -215,7 +215,7 @@ SpectrumSettings settings = {stepsCount: STEPS_128,
 
 static uint32_t currentFreq, tempFreq;
 static uint8_t rssiHistory[128];
-static int ShowLines = 1;  // СТРОКА ПО УМОЛЧАНИЮ
+static int ShowLines = 1;
 static uint8_t freqInputIndex = 0;
 static uint8_t freqInputDotIndex = 0;
 static KEY_Code_t freqInputArr[10];
@@ -1588,24 +1588,10 @@ static void Measure() {
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-  static uint8_t z = 5;
-  int newDbMax;
-    if (scanInfo.rssiMax > 0) {
-        newDbMax = Rssi2DBm(scanInfo.rssiMax);
-        
-        if (newDbMax > settings.dbMax + z) {
-            settings.dbMax = settings.dbMax + z;
-        } else if (newDbMax < settings.dbMax - z) {
-            settings.dbMax = settings.dbMax - z;
-        } else {
-            settings.dbMax = newDbMax;
-        }
-    }
 
-    if (scanInfo.rssiMin > 0) {
-        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
-        
-    }
+settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
+settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+
 }
 
 static void AutoAdjustFreqChangeStep() {
@@ -1969,8 +1955,8 @@ static void DrawF(uint32_t f) {
             if (ShowLines == 1) {
                 UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
                 UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
-                UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
-                ArrowLine = 3;
+                //UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
+                ArrowLine = 2;
             }
 
             if (ShowLines == 3) {                       //LAST RX
@@ -3752,6 +3738,7 @@ typedef struct {
     bool Backlight_On_Rx;
     bool SoundBoost;  
     bool gMonitorScan;
+    bool classic;
 } SettingsEEPROM;
 
 
@@ -3803,6 +3790,7 @@ void LoadSettings()
   Spectrum_state = eepromData.Spectrum_state;    
   SoundBoost = eepromData.SoundBoost;
   gMonitorScan = eepromData.gMonitorScan;    
+  classic = eepromData.classic;    
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
   BK4819_WriteRegister(BK4819_REG_29, eepromData.R29);
   BK4819_WriteRegister(BK4819_REG_19, eepromData.R19);
@@ -3844,6 +3832,7 @@ static void SaveSettings()
   eepromData.Spectrum_state = Spectrum_state;    
   eepromData.SoundBoost = SoundBoost;
   eepromData.gMonitorScan = gMonitorScan;
+  eepromData.classic = classic;
   for (int i = 0; i < MAX_BANDS; i++) { 
     if (settings.bandEnabled[i]) {
         eepromData.bandListFlags |= ((uint64_t)1 << i);
@@ -3905,6 +3894,7 @@ void ClearSettings()
   Spectrum_state = 1; 
   SoundBoost = 0;
   gMonitorScan = false;
+  classic = true;
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
   BK4819_WriteRegister(BK4819_REG_11, 0x01B5);
