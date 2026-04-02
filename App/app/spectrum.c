@@ -76,10 +76,12 @@ static uint8_t GlitchMax = 20;               // case 14
 static bool    SoundBoost = 0;               // case 15
 static uint8_t PttEmission = 0;              // case 16
 static bool gMonitorScan = true;             // case 17
-//ClearHistory                               // case 18
-//ClearSettings                              // case 19
+//ClearHistory All                           // case 18
+//ClearHistory BL                            // case 19
+//ClearHistory Not BL                        // case 20
+//ClearSettings                              // case 21
    
-#define PARAMETER_COUNT 20
+#define PARAMETER_COUNT 22
 ////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_BENCH
     static uint32_t benchTickMs = 0;      
@@ -134,7 +136,7 @@ static void UpdateScan();
 static uint8_t bandListSelectedIndex = 0;
 static int bandListScrollOffset = 0;
 static void RenderBandSelect();
-static void ClearHistory();
+static void ClearHistory(uint8_t mode);
 static void DrawMeter(int);
 static void SortHistoryByFrequencyAscending(void); //nowe
 static uint8_t scanListSelectedIndex = 0;
@@ -183,6 +185,7 @@ static char latestScanListName[12];
 static bool refreshScanListName = true;
 static bool IsBlacklisted(uint32_t f);
 static void SetState(State state);
+
 typedef struct {
     char left[17];
     char right[14];
@@ -1187,7 +1190,7 @@ typedef struct HistoryStruct {
 
 static bool historyLoaded = false; // flaga stanu wczytania histotii spectrum
 
-void ReadHistory(void) {
+void LoadHistory(void) {
     HistoryStruct History = {0};
     for (uint16_t position = 0; position < HISTORY_SIZE; position++) {
         PY25Q16_ReadBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),
@@ -2507,9 +2510,15 @@ static void HandleKeyParameters(uint8_t key) {
                     gMonitorScan = !gMonitorScan; 
                     break;
                 case 18: /* Clear history */
-                        if (isKey3) ClearHistory();
-                      break;
-                case 19: /* Reset to defaults */
+                        if (isKey3) ClearHistory(0);
+                        break;
+                case 19: /* Clear history */
+                        if (isKey3) ClearHistory(1);
+                        break;
+                case 20: /* Clear history */
+                        if (isKey3) ClearHistory(2);
+                        break;
+                case 21: /* Reset to defaults */
                       if (isKey3) ClearSettings();
                       break;
 
@@ -3805,7 +3814,7 @@ void LoadSettings()
   BK4819_WriteRegister(BK4819_REG_2B, eepromData.R2B);
   
  if (!historyLoaded) {
-        ReadHistory();
+        LoadHistory();
         historyLoaded = true;
  }
 SettingsLoaded = true;
@@ -3861,17 +3870,34 @@ static void SaveSettings()
   Cleared = 0;
 }
 
-static void ClearHistory() 
-{
-    memset(HFreqs,0,sizeof(HFreqs));
-    memset(HCount,0,sizeof(HCount));
-    memset(HBlacklisted,0,sizeof(HBlacklisted));
+static void ClearHistory(uint8_t mode) {
+    if (mode == 0) {
+        memset(HFreqs, 0, sizeof(HFreqs));
+        memset(HCount, 0, sizeof(HCount));
+        memset(HBlacklisted, 0, sizeof(HBlacklisted));
+    } else if (mode == 1) {
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            if (!HBlacklisted[i]) {
+                HFreqs[i] = 0;
+                HCount[i] = 0;
+            }
+        }
+    } else if (mode == 2) {
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            if (HBlacklisted[i]) {
+                HFreqs[i] = 0;
+                HCount[i] = 0;
+                HBlacklisted[i] = 0;
+            }
+        }
+    }
     historyListIndex = 0;
     historyScrollOffset = 0;
     indexFs = HISTORY_SIZE;
     WriteHistory();
     indexFs = 0;
-    SaveSettings(); 
+    //SaveSettings();
+    LoadHistory();
 }
 
 void ClearSettings() 
@@ -4214,10 +4240,18 @@ static void GetParametersRow(uint16_t index, ListRow *row) {
             else snprintf(row->right, sizeof(row->right), "OFF");
             break;
         case 18:
-            snprintf(row->left, sizeof(row->left), "Clear History");
+            snprintf(row->left, sizeof(row->left), "Clear Histo ALL");
             strncpy(row->right, ">", sizeof(row->right) - 1);
             break;
         case 19:
+            snprintf(row->left, sizeof(row->left), "Clear Histo N BL");
+            strncpy(row->right, ">", sizeof(row->right) - 1);
+            break;
+        case 20:
+            snprintf(row->left, sizeof(row->left), "Clear Histo BL");
+            strncpy(row->right, ">", sizeof(row->right) - 1);
+            break;
+        case 21:
             snprintf(row->left, sizeof(row->left), "Reset Default");
             strncpy(row->right, ">", sizeof(row->right) - 1);
             break;
