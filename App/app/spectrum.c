@@ -2071,6 +2071,7 @@ if(appMode!=CHANNEL_MODE){
 #ifdef ENABLE_BENCH
     static void NextScanStep() {
         spectrumElapsedCount = 0;
+        static uint32_t StartF;
         benchLapDone = false;
         if (appMode == CHANNEL_MODE) {
             if (scanChannelsCount == 0) return;
@@ -2079,20 +2080,21 @@ if(appMode!=CHANNEL_MODE){
             if (scanInfo.i < prevI) benchLapDone = true;
             scanInfo.f = ScanFrequencies[scanInfo.i];
         } else {
-                static uint32_t StartF;
-                if (scanInfo.i == 0) scanInfo.f = StartF = gScanRangeStart;
-                if (scanInfo.f < gScanRangeStop) scanInfo.f += jumpSizes[settings.scanStepIndex];
-                else {StartF += scanInfo.scanStep;
+            if (scanInfo.i == 0) {
+                StartF = gScanRangeStart;
+                scanInfo.f = StartF;
+            } else {
+                scanInfo.f += jumpSizes[settings.scanStepIndex];
+                if (scanInfo.f >= gScanRangeStop) {
+                    StartF += scanInfo.scanStep;
                     scanInfo.f = StartF;
-                    uint16_t steps = GetStepsCount();
-                    uint16_t prevI = scanInfo.i;
-                if (scanInfo.i > steps) {
-                    scanInfo.i = 0;
-                    benchLapDone = true;
-                } else if (scanInfo.i < prevI) { benchLapDone = true; }
+                }
+                uint16_t prevI = scanInfo.i;
+                if (scanInfo.i > GetStepsCount()) { benchLapDone = true; }
+                else if (scanInfo.i < prevI) { benchLapDone = true; }
                 }
             }
-        if(++scanInfo.i > GetStepsCount()) scanInfo.i = 0;
+        if (++scanInfo.i > GetStepsCount()) {scanInfo.i = 0;newScanStart = true;}
     }
 #else 
 
@@ -2782,6 +2784,7 @@ static void HandleKeySpectrum(uint8_t key) {
         break;
         case KEY_MENU:
             if (historyListActive) scanInfo.f = HFreqs[historyListIndex];
+            SpectrumMonitor = 1;
             SetState(STILL);      
             stillFreq = GetInitialStillFreq();
             if (stillFreq >= 1400000 && stillFreq <= 130000000) {
@@ -2981,6 +2984,7 @@ static void OnKeyDownStill(KEY_Code_t key) {
             storedScanStepIndex = -1;
             scanInfo.scanStep = storedScanStepIndex; 
         }
+        SpectrumMonitor = 0;
         SetState(SPECTRUM);
         WaitSpectrum = 0; //Prevent coming back to still directly
         
@@ -3746,6 +3750,9 @@ void LoadSettings()
 {
   if(SettingsLoaded) return;
   SettingsEEPROM  eepromData  = {0};
+#ifndef ENABLE_DEV
+  if(!IsVersionMatching()) ClearSettings();
+#endif
   PY25Q16_ReadBuffer(ADRESS_PARAMS, &eepromData, sizeof(eepromData));
   
   BK4819_WriteRegister(BK4819_REG_10, eepromData.R10);
@@ -3753,9 +3760,7 @@ void LoadSettings()
   BK4819_WriteRegister(BK4819_REG_12, eepromData.R12);
   BK4819_WriteRegister(BK4819_REG_13, eepromData.R13);
   BK4819_WriteRegister(BK4819_REG_14, eepromData.R14);
-  #ifndef ENABLE_DEV
-  if(!IsVersionMatching()) ClearSettings();
-  #endif
+
   for (int i = 0; i < MR_CHANNELS_LIST; i++) {
     settings.scanListEnabled[i] = (eepromData.scanListFlags >> i) & 0x01;
   }

@@ -25,6 +25,7 @@
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
+                "ENABLE_BENCH": false,
                 "ENABLE_CPU_STATS": false,
                 "ENABLE_CPU_TEMP": true,
                 "ENABLE_BIG_FREQ": true,
@@ -77,7 +78,7 @@
                 "ENABLE_SWD": false,
                 "ENABLE_SCANLIST_SHOW_DETAIL":false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "V6.14" 
+                "VERSION_STRING_2": "V6.16b" 
             }
         },
        
@@ -100,6 +101,8 @@
             "cacheVariables": {
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
+                "ENABLE_BENCH": true,
+                "ENABLE_CPU_STATS": true,
                 "EDITION_STRING": "STD",
                 "TARGET": "ROBZYL.K1.STD"
             }
