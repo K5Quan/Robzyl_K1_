@@ -1976,7 +1976,7 @@ static void DrawF(uint32_t f) {
     } else { //Not Classic
 
     DrawMeter(4);
-#ifdef ENABLE_SPECTRUM_LINES
+#ifdef ENABLE_SPECTRUM_LINES_NO
     MyDrawShortHLine(10, 0, 127, 2, false);
     MyDrawShortHLine(35, 0, 5, 1, false);
     MyDrawShortHLine(35, 122, 127, 1, false);
@@ -3006,17 +3006,6 @@ static void RenderStatus() {
   ST7565_BlitStatusLine();
 }
 #ifdef ENABLE_SPECTRUM_LINES
-static uint16_t DBm2Rssi(int dbm)
-{
-    // Формула из оригинального кода: dbm ≈ rssi - 160 (примерно)
-    // Мы делаем обратное: rssi ≈ dbm + 160
-    // Ограничиваем в диапазоне 0..255 (как реальное RSSI от BK4819)
-    int rssi = dbm + 160;
-    if (rssi < 0) rssi = 0;
-    if (rssi > 255) rssi = 255;
-    return (uint16_t)rssi;
-}
-
 
 static void MyDrawHLine(uint8_t y, bool white)
 {
@@ -3075,7 +3064,7 @@ static void MyDrawFrameLines(void)
     MyDrawShortHLine(0, 118, 123, 2, false);  // верх кор прав
     MyDrawShortHLine(17, 0, 10, 1, false);  // верх кор лев
     MyDrawShortHLine(21, 0, 10, 1, false);  // верх кор лев
-    MyDrawShortHLine(19, 11, 119, 2, false);  // центр длин
+    //MyDrawShortHLine(19, 11, 119, 2, false);  // центр длин
     MyDrawShortHLine(21, 120, 127, 1, false);  // кор прав
     MyDrawShortHLine(17, 120, 127, 1, false);  // кор прав
 }
@@ -3125,53 +3114,8 @@ static void RenderSpectrum()
     if (classic) {
         DrawNums();
         DrawSpectrum();
+
 #ifdef ENABLE_SPECTRUM_LINES
- // === ЛИНИИ С ОТСТУПОМ ПО 4 ПИКСЕЛЯ (только линии, тики от края) ===
-const int LEFT_MARGIN  = 4;
-const int RIGHT_MARGIN = 4;
-
-const int lineLevels[] = { -60, -40};   // твои уровни (меняй)
-const int numLineLevels = ARRAY_SIZE(lineLevels);
-const int dashStep = 2;                     // шаг пунктира
-
-const int tickLevels[] = {-20, -50, -70, -100};  // тики (остаются от края)
-const int numTickLevels = ARRAY_SIZE(tickLevels);
-const int tickLength = 3;
-
-int i, y, x;
-
-// ПУНКТИРНЫЕ ЛИНИИ (с отступом 4 пикселя слева и справа)
-for (i = 0; i < numLineLevels; i++) {
-    y = Rssi2Y(DBm2Rssi(lineLevels[i]));
-    if (y < 8 || y > DrawingEndY) continue;
-
-    // Чёрная пунктирная линия (с отступами)
-    for (x = LEFT_MARGIN; x < 128 - RIGHT_MARGIN; x += dashStep) {
-        PutPixel(x, y, true);   // чёрный
-    }
-
-    // Белая пунктирная линия (сдвиг на 1, с отступами)
-    for (x = LEFT_MARGIN + 1; x < 128 - RIGHT_MARGIN; x += dashStep) {
-        PutPixel(x, y, false);  // белый
-    }
-}
-
-// ТИКИ (остаются от самого края — без отступа)
-for (i = 0; i < numTickLevels; i++) {
-    y = Rssi2Y(DBm2Rssi(tickLevels[i]));
-    if (y < 8 || y > DrawingEndY) continue;
-
-    // Левый тик (от x=0)
-    for (x = 0; x < tickLength; x++) {
-        PutPixel(x, y, true);
-    }
-
-    // Правый тик (до x=127)
-    for (x = 0; x < tickLength; x++) {
-        PutPixel(127 - x, y, true);
-    }
-}
-// === КОНЕЦ СЕТКИ ===
 MyDrawFrameLines();
 #endif
         

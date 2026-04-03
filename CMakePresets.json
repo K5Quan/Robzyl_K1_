@@ -55,7 +55,7 @@
                 "ENABLE_FEAT_F4HWN_GAME": false,
                 "ENABLE_FEAT_F4HWN_SCREENSHOT": false,
                 "ENABLE_FEAT_F4HWN_SPECTRUM": true,
-                "ENABLE_SPECTRUM_LINES": false,
+                "ENABLE_SPECTRUM_LINES": true,
                 "ENABLE_FEAT_F4HWN_RX_TX_TIMER": true,
                 "ENABLE_FEAT_F4HWN_CHARGING_C": false,
                 "ENABLE_FEAT_F4HWN_SLEEP": true,
@@ -78,7 +78,7 @@
                 "ENABLE_SWD": false,
                 "ENABLE_SCANLIST_SHOW_DETAIL":false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "V6.16" 
+                "VERSION_STRING_2": "6.17b" 
             }
         },
        
