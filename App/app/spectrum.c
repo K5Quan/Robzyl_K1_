@@ -215,8 +215,8 @@ SpectrumSettings settings = {stepsCount: STEPS_128,
                              bw: BK4819_FILTER_BW_WIDE,
                              listenBw: BK4819_FILTER_BW_WIDE,
                              modulationType: false,
-                             dbMin: -120,
-                             dbMax: -70,
+                             dbMin: -110,
+                             dbMax: -60,
                              scanList: S_SCAN_LIST_ALL,
                              scanListEnabled: {0},
                              bandEnabled: {0}
@@ -2064,33 +2064,53 @@ if(appMode!=CHANNEL_MODE){
 }
 
 static void NextScanStep() {
-        spectrumElapsedCount = 0;                
-        static uint32_t StartF;
-        benchLapDone = false;
+    spectrumElapsedCount = 0;
+#ifdef ENABLE_BENCH
+    benchLapDone = false;
+#endif
+    static uint32_t StartF;
+    if (appMode == CHANNEL_MODE) {
+        if (scanChannelsCount == 0) return;
+#ifdef ENABLE_BENCH
         uint16_t prevI = scanInfo.i;
-        if (appMode == CHANNEL_MODE) {
-            if (scanChannelsCount == 0) return;
-            if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
-            if (scanInfo.i < prevI) benchLapDone = true;
-            scanInfo.f = ScanFrequencies[scanInfo.i];
-        } else {
-            if (scanInfo.i == 0) {
-                StartF = gScanRangeStart;
-                scanInfo.f = StartF;
-            } else {
-                scanInfo.f += jumpSizes[settings.scanStepIndex];
-                if (scanInfo.f >= gScanRangeStop) {
-                    StartF += scanInfo.scanStep;
-                    scanInfo.f = StartF;
-                }
-                if (scanInfo.i > GetStepsCount())   {benchLapDone = true;}
-                else if (scanInfo.i < prevI)        {benchLapDone = true;}
-            }
-            if (++scanInfo.i > GetStepsCount()) {scanInfo.i = 0;newScanStart = true;}
+#endif
+        if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+#ifdef ENABLE_BENCH
+        if (scanInfo.i < prevI) benchLapDone = true;   // pełna pętla listy kanałów
+#endif
+        scanInfo.f = ScanFrequencies[scanInfo.i];
+        return;
+    }
+    // FREQUENCY / SCAN_RANGE / SCAN_BAND
+#ifdef ENABLE_BENCH
+    uint16_t prevI = scanInfo.i;
+    uint16_t steps = GetStepsCount();
+#endif
+    if (scanInfo.i == 0) {
+        StartF = gScanRangeStart;
+        scanInfo.f = StartF;
+    } else {
+        scanInfo.f += jumpSizes[settings.scanStepIndex];
+        if (scanInfo.f >= gScanRangeStop) {
+            StartF += scanInfo.scanStep;
+            scanInfo.f = StartF;
         }
-#ifdef ENABLE_DEV
-    //char str[64] = "";sprintf(str, "NSS %d SF %d %d\r\n", scanInfo.i,StartF,scanInfo.f);LogUart(str);
-#endif 
+    }
+    scanInfo.i++;
+#ifdef ENABLE_BENCH
+    if (scanInfo.i > steps) {
+        scanInfo.i = 0;
+        newScanStart = true;
+        benchLapDone = true;          // pełna pętla zakresu/pasma/freq
+    } else if (scanInfo.i < prevI) {
+        benchLapDone = true;
+    }
+#else
+    if (scanInfo.i > GetStepsCount()) {
+        scanInfo.i = 0;
+        newScanStart = true;
+    }
+#endif
 }
 
 static void SortHistoryByFrequencyAscending(void) {
@@ -2167,7 +2187,7 @@ static void Skip() {
     ToggleRX(false);
     peak.f = scanInfo.f;
     peak.i = scanInfo.i;
-    SetF(scanInfo.f);
+    //SetF(scanInfo.f);
 }
 
 void NextAppMode(void) {
@@ -2203,6 +2223,7 @@ static void SetTrigger50(){
     char triggerText[32];
     if (settings.rssiTriggerLevelUp == 50) {
         sprintf(triggerText, "DYN SQL: OFF");
+        gMonitorScan = 0;
     }
     else {
         sprintf(triggerText, "DYN SQL: %d", settings.rssiTriggerLevelUp);
@@ -2538,17 +2559,23 @@ static void HandleKeySpectrum(uint8_t key) {
 
     switch (key) {
         case KEY_STAR: {
-            int step = (settings.rssiTriggerLevelUp >= 20) ? 5 : 1;
-            settings.rssiTriggerLevelUp =
-                (settings.rssiTriggerLevelUp >= 50 ? 0 : settings.rssiTriggerLevelUp + step);
+            if (kbd.counter > 22) {settings.rssiTriggerLevelUp = 50;}
+            else {
+                int step = (settings.rssiTriggerLevelUp >= 20) ? 5 : 1;
+                settings.rssiTriggerLevelUp =
+                    (settings.rssiTriggerLevelUp >= 50 ? 0 : settings.rssiTriggerLevelUp + step);
+            }
             SPECTRUM_PAUSED = true;
             SetTrigger50();
             break;
         }
         case KEY_F: {
+            if (kbd.counter > 22) {settings.rssiTriggerLevelUp = 50;}
+            else {
             int step = (settings.rssiTriggerLevelUp <= 20) ? 1 : 5;
             settings.rssiTriggerLevelUp =
                 (settings.rssiTriggerLevelUp <= 0 ? 50 : settings.rssiTriggerLevelUp - step);
+            }
             SPECTRUM_PAUSED = true;
             SetTrigger50();
             break;
@@ -2698,14 +2725,14 @@ static void HandleKeySpectrum(uint8_t key) {
                     CompactHistory();
                     SortHistoryByFrequencyAscending();
 
-    if (!historyListActive) {
+                if (!historyListActive) {
                         historyListActive   = true;
                         prevSpectrumMonitor = SpectrumMonitor;
                     }
 
-        historyListIndex = 0;
-                    historyScrollOffset = 0;
-                    gHistorySortLongPressDone = true;
+                historyListIndex = 0;
+                historyScrollOffset = 0;
+                gHistorySortLongPressDone = true;
                 }
             } else if (!historyListActive) {
                 CompactHistory();
