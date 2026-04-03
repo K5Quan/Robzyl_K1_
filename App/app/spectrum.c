@@ -3487,7 +3487,7 @@ static void UpdateListening(void) { // called every 10ms
     }
     if (peak.f == stableFreq) {
         if (++stableCount >= 2) {  // ~600ms
-            if (!SpectrumMonitor) FillfreqHistory(false);
+            if (!SpectrumMonitor) FillfreqHistory(true);
             stableCount = 0;
             if (gEeprom.BACKLIGHT_MAX > 5)
                 BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 1);

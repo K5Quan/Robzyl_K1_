@@ -300,7 +300,7 @@ const char gSubMenu_ROGER[][6] =
 
 const char gSubMenu_RESET[][11] =
 {
-    "KEEP\nCHAN",
+    "VFO",
     "ALL"
 };
 
