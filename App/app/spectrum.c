@@ -1876,9 +1876,10 @@ static void UpdateCssDetection(void) {
     StringCode[0] = '\0';
 }
 
+static char lastDetectedCode[16] = "";
+
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
-    static char lastDetectedCode[16] = "";
     if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
     else fprev = f;
     if (StringCode[0] != '\0') { strncpy(lastDetectedCode, StringCode, sizeof(lastDetectedCode) - 1);}
@@ -1976,13 +1977,6 @@ static void DrawF(uint32_t f) {
     } else { //Not Classic
 
     DrawMeter(4);
-#ifdef ENABLE_SPECTRUM_LINES_NO
-    MyDrawShortHLine(10, 0, 127, 2, false);
-    MyDrawShortHLine(35, 0, 5, 1, false);
-    MyDrawShortHLine(35, 122, 127, 1, false);
-    MyDrawVLine(0,   35, 57, 1);
-    MyDrawVLine(127, 35, 57, 1);         
-#endif
     UI_DisplayFrequency(line1, 10, 2, 0);
     UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
     char rssiText[16];
@@ -2610,7 +2604,10 @@ static void HandleKeySpectrum(uint8_t key) {
             break;
         case KEY_2:
             if (historyListActive) SaveHistoryToFreeChannel();
-            else classic = !classic;
+            else {
+                classic = !classic;
+                sprintf(lastDetectedCode,""); //Erase code
+                }
             break;
         case KEY_8:
             if (historyListActive) {
@@ -2623,6 +2620,7 @@ static void HandleKeySpectrum(uint8_t key) {
                 SpectrumMonitor     = 0;
             } else if (classic) {
                 ShowLines++;
+                sprintf(lastDetectedCode,""); //Erase code
 #ifdef ENABLE_BENCH
                 if (ShowLines > 4 || ShowLines < 1) ShowLines = 1;
 #else
