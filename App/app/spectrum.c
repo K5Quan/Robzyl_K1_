@@ -1592,8 +1592,10 @@ static void Measure() {
 
 static void UpdateDBMaxAuto() { //Zoom
 
-settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
-settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+settings.dbMax = -70;
+settings.dbMin = -120;
+//settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
+//settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
 
 }
 
@@ -1855,10 +1857,7 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
 
 // ------------------ CSS detection ------------------
 static void UpdateCssDetection(void) {
-    if (!isListening && !gIsPeak) {
-        StringCode[0] = '\0'; 
-        return;
-    }
+    if (!isListening ) {return;}
     BK4819_WriteRegister(BK4819_REG_51,
         BK4819_REG_51_ENABLE_CxCSS |
         BK4819_REG_51_AUTO_CDCSS_BW_ENABLE |
