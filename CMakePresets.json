@@ -78,7 +78,7 @@
                 "ENABLE_SWD": false,
                 "ENABLE_SCANLIST_SHOW_DETAIL":false,
                 "VERSION_STRING_1": "v0.22",
-                "VERSION_STRING_2": "V6.16b2" 
+                "VERSION_STRING_2": "V6.16" 
             }
         },
        
@@ -89,6 +89,7 @@
                 "ENABLE_DEV": true,
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
+                "ENABLE_BENCH": true,
                 "ENABLE_CPU_STATS": true,
                 "ENABLE_FEAT_F4HWN_SCREENSHOT": true,
                 "EDITION_STRING": "Dev",
@@ -102,7 +103,7 @@
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
                 "ENABLE_BENCH": true,
-                "ENABLE_CPU_STATS": true,
+                "ENABLE_CPU_STATS": false,
                 "EDITION_STRING": "STD",
                 "TARGET": "ROBZYL.K1.STD"
             }

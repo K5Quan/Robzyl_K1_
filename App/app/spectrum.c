@@ -42,7 +42,13 @@
 // ============================================================
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
-#define HISTORY_SIZE 100
+
+#ifdef ENABLE_CPU_STATS
+    #define HISTORY_SIZE 50
+#else
+    #define HISTORY_SIZE 100
+#endif
+
 #define MONITOR_SIZE 20
 static uint8_t cachedValidScanListCount = 0;
 static uint8_t cachedEnabledScanListCount = 0;
@@ -57,7 +63,7 @@ static bool gHistorySortLongPressDone = false;
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
 // see GetParametersText
-static uint8_t DelayRssi = 2;                // case 0       
+static uint8_t DelayRssi = 3;                // case 0       
 static uint16_t SpectrumDelay = 0;           // case 1      
 static uint16_t MaxListenTime = 0;           // case 2
 static uint32_t gScanRangeStart = 1400000;   // case 3      
@@ -209,8 +215,8 @@ SpectrumSettings settings = {stepsCount: STEPS_128,
                              bw: BK4819_FILTER_BW_WIDE,
                              listenBw: BK4819_FILTER_BW_WIDE,
                              modulationType: false,
-                             dbMin: -128,
-                             dbMax: 10,
+                             dbMin: -120,
+                             dbMax: -70,
                              scanList: S_SCAN_LIST_ALL,
                              scanListEnabled: {0},
                              bandEnabled: {0}
@@ -1566,15 +1572,15 @@ static void Measure() {
 
     uint16_t count = GetStepsCount();
     uint16_t i = scanInfo.i;
-
+    static uint16_t lastPixel = 255;
     if (count > 128) {
-            uint32_t totalRange = (uint32_t)GetStepsCount() * scanInfo.scanStep;
-            if (totalRange > 0) {
-                uint16_t pos = (uint32_t)(scanInfo.f - gScanRangeStart) * 128 / totalRange;
-                if (pos < 128) {
-                    if(rssi >rssiHistory[pos]) rssiHistory[pos] = rssi;
-                }
-            }
+        uint16_t pixel = ((uint32_t)i * 127) / count;
+        if (pixel != lastPixel) {
+            rssiHistory[pixel] = rssi;
+            lastPixel = pixel;
+        } else if (rssi > rssiHistory[pixel]) {
+            rssiHistory[pixel] = rssi;
+        }
     } else {
         uint16_t base = 128 / count;
         uint16_t rem  = 128 % count;
@@ -1582,20 +1588,7 @@ static void Measure() {
         uint16_t end   = (i + 1) * base + ((i + 1) < rem ? (i + 1) : rem);
         if (end > 128) end = 128;
         for (uint16_t j = start; j < end; ++j) {rssiHistory[j] = rssi;}
-#ifdef ENABLE_DEV
-    //char str[64] = "";sprintf(str, "Measure i %d f %d S %d E %d \r\n", scanInfo.i,scanInfo.f, start,end);LogUart(str);
-#endif
-
     }
-
-}
-
-static void UpdateDBMaxAuto() { //Zoom
-
-settings.dbMax = -70;
-settings.dbMin = -120;
-//settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
-//settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
 
 }
 
@@ -2068,16 +2061,15 @@ if(appMode!=CHANNEL_MODE){
     sprintf(String, "%u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
     GUI_DisplaySmallest(String, 90, Bottom_print, false, true);
     }
-  
 }
-#ifdef ENABLE_BENCH
-    static void NextScanStep() {
-        spectrumElapsedCount = 0;
+
+static void NextScanStep() {
+        spectrumElapsedCount = 0;                
         static uint32_t StartF;
         benchLapDone = false;
+        uint16_t prevI = scanInfo.i;
         if (appMode == CHANNEL_MODE) {
             if (scanChannelsCount == 0) return;
-            uint16_t prevI = scanInfo.i;
             if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
             if (scanInfo.i < prevI) benchLapDone = true;
             scanInfo.f = ScanFrequencies[scanInfo.i];
@@ -2091,41 +2083,15 @@ if(appMode!=CHANNEL_MODE){
                     StartF += scanInfo.scanStep;
                     scanInfo.f = StartF;
                 }
-                uint16_t prevI = scanInfo.i;
-                if (scanInfo.i > GetStepsCount()) { benchLapDone = true; }
-                else if (scanInfo.i < prevI) { benchLapDone = true; }
-                }
-            }
-        if (++scanInfo.i > GetStepsCount()) {scanInfo.i = 0;newScanStart = true;}
-    }
-#else 
-
-    static void NextScanStep() {
-        spectrumElapsedCount = 0;                
-        static uint32_t StartF;
-        if (appMode == CHANNEL_MODE) {
-            if (scanChannelsCount == 0) return;
-            if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
-            scanInfo.f = ScanFrequencies[scanInfo.i];
-        } else {
-            if (scanInfo.i == 0) {
-                StartF = gScanRangeStart;
-                scanInfo.f = StartF;
-            } else {
-                scanInfo.f += jumpSizes[settings.scanStepIndex];
-                if (scanInfo.f >= gScanRangeStop) {
-                    StartF += scanInfo.scanStep;
-                    scanInfo.f = StartF;
-                }
+                if (scanInfo.i > GetStepsCount())   {benchLapDone = true;}
+                else if (scanInfo.i < prevI)        {benchLapDone = true;}
             }
             if (++scanInfo.i > GetStepsCount()) {scanInfo.i = 0;newScanStart = true;}
         }
 #ifdef ENABLE_DEV
     //char str[64] = "";sprintf(str, "NSS %d SF %d %d\r\n", scanInfo.i,StartF,scanInfo.f);LogUart(str);
 #endif 
-    }
-#endif
-
+}
 
 static void SortHistoryByFrequencyAscending(void) {
     uint16_t count = CountValidHistoryItems();
@@ -3131,7 +3097,6 @@ static void RenderSpectrum()
 #endif
     if (classic) {
         DrawNums();
-        UpdateDBMaxAuto();
         DrawSpectrum();
 #ifdef ENABLE_SPECTRUM_LINES
  // === ЛИНИИ С ОТСТУПОМ ПО 4 ПИКСЕЛЯ (только линии, тики от края) ===
@@ -3198,10 +3163,6 @@ static void DrawMeter(int line) {
     const uint8_t SQUARE_SIZE    = 4;
     const uint8_t SQUARE_GAP     = 1;
     const uint8_t Y_START_BIT    = 2;
-
-    settings.dbMax = 75; // CALIBRATION LEVEL
-    settings.dbMin = -130;
-
     uint8_t max_width_px = NUM_SQUARES * (SQUARE_SIZE + SQUARE_GAP) - SQUARE_GAP;
     uint8_t fill_px      = Rssi2PX(scanInfo.rssi, 0, max_width_px);
     uint8_t fill_count   = fill_px / (SQUARE_SIZE + SQUARE_GAP);
@@ -3907,7 +3868,7 @@ void ClearSettings()
   settings.listenBw = 0;
   gScanRangeStart = 43000000;
   gScanRangeStop  = 44000000;
-  DelayRssi = 2;
+  DelayRssi = 3;
   PttEmission = 2;
   settings.scanStepIndex = STEP_10kHz;
   ShowLines = 1;
