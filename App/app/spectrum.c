@@ -281,6 +281,33 @@ static uint16_t bandCount;
 STEP_Setting_t channelStep;
 int Rssi2DBm(const uint16_t rssi) {return (rssi >> 1) - 160;}
 
+static int clamp(int v, int min, int max) {
+  return v <= min ? min : (v >= max ? max : v);
+}
+
+static void UpdateDBMaxAuto() { //Zoom
+  static uint8_t z = 2;
+  int newDbMax;
+    if (scanInfo.rssiMax > 0) {
+        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -60, 0);
+        newDbMax = Rssi2DBm(scanInfo.rssiMax);
+
+        if (newDbMax > settings.dbMax + z) {
+            settings.dbMax = settings.dbMax + z;   // montée limitée
+        } else if (newDbMax < settings.dbMax - z) {
+            settings.dbMax = settings.dbMax - z;   // descente limitée
+        } else {
+            settings.dbMax = newDbMax;              // suivi normal
+        }
+    }
+
+    if (scanInfo.rssiMin > 0) {
+        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
+        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+    }
+}
+
+
 BK4819_FilterBandwidth_t ACTION_NextBandwidth(BK4819_FilterBandwidth_t currentBandwidth, const bool dynamic, bool increase)
 {
     BK4819_FilterBandwidth_t nextBandwidth =
@@ -993,9 +1020,7 @@ KEY_Code_t GetKey() {
   return btn;
 }
 
-static int clamp(int v, int min, int max) {
-  return v <= min ? min : (v >= max ? max : v);
-}
+
 
 static void SetState(State state) {
   previousState = currentState;
@@ -3111,6 +3136,7 @@ static void RenderSpectrum()
 #endif
     if (classic) {
         DrawNums();
+        UpdateDBMaxAuto();
         DrawSpectrum();
 
 #ifdef ENABLE_SPECTRUM_LINES
@@ -3135,7 +3161,8 @@ static void DrawMeter(int line) {
     uint8_t max_width_px = NUM_SQUARES * (SQUARE_SIZE + SQUARE_GAP) - SQUARE_GAP;
     uint8_t fill_px      = Rssi2PX(scanInfo.rssi, 0, max_width_px);
     uint8_t fill_count   = fill_px / (SQUARE_SIZE + SQUARE_GAP);
-
+    settings.dbMax = -60; 
+    settings.dbMin = -120;
     // Очистка строки
     for (uint8_t px = 0; px < 128; px++) {
         gFrameBuffer[line][px] = 0;
