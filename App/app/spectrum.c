@@ -1391,7 +1391,7 @@ static void FillfreqHistory(bool countHit)
 } 
 
 static void ToggleRX(bool on) {
-    if (SPECTRUM_PAUSED) return;
+    if (SPECTRUM_PAUSED || settings.rssiTriggerLevelUp == 50) return;
     if(!on && SpectrumMonitor == 2) {isListening = 1;return;}
     isListening = on;
     gChannel = BOARD_gMR_fetchChannel(scanInfo.f);
@@ -1554,11 +1554,14 @@ static void Measure() {
         gIsPeak      = false;
         isFirst      = false;
     }
-    if (settings.rssiTriggerLevelUp == 50 && rssi > previousRssi + UOO_trigger) {
-        peak.f = scanInfo.f;
-        peak.i = scanInfo.i;
-        gIsPeak = true;
-        FillfreqHistory(false);
+    if (settings.rssiTriggerLevelUp == 50) {
+        if  (rssi > previousRssi + UOO_trigger)  {
+            peak.f = scanInfo.f;
+            peak.i = scanInfo.i;
+            gIsPeak = false;
+            isListening = false;
+            FillfreqHistory(false);
+        }
     } else {
             if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
                 SYSTEM_DelayMs(10);
@@ -2065,7 +2068,7 @@ if(appMode!=CHANNEL_MODE){
     GUI_DisplaySmallest(String, 90, Bottom_print, false, true);
     }
 }
-
+bool interlacing = 0;
 static void NextScanStep() {
     spectrumElapsedCount = 0;
 #ifdef ENABLE_BENCH
@@ -2093,10 +2096,14 @@ static void NextScanStep() {
         StartF = gScanRangeStart;
         scanInfo.f = StartF;
     } else {
-        scanInfo.f += jumpSizes[settings.scanStepIndex];
-        if (scanInfo.f >= gScanRangeStop) {
-            StartF += scanInfo.scanStep;
-            scanInfo.f = StartF;
+        if (interlacing){
+            scanInfo.f += jumpSizes[settings.scanStepIndex];
+            if (scanInfo.f >= gScanRangeStop) {
+                StartF += scanInfo.scanStep;
+                scanInfo.f = StartF;
+            }
+        } else {
+            scanInfo.f += scanInfo.scanStep;
         }
     }
     scanInfo.i++;
@@ -2185,6 +2192,9 @@ static void Skip() {
     ToggleRX(false);
     peak.f = scanInfo.f;
     peak.i = scanInfo.i;
+    ToggleAudio(0);
+    ToggleAFDAC(0);
+    ToggleAFBit(0);
     //SetF(scanInfo.f);
 }
 
@@ -2660,8 +2670,9 @@ static void HandleKeySpectrum(uint8_t key) {
                 lastReceivingFreq = HFreqs[historyListIndex];
                 SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
-                ToggleScanList(bl, 1);
-                settings.bandEnabled[bl - 1] = true;
+                bandListSelectedIndex = (bandListSelectedIndex < 1 ? bandCount - 1 : bandListSelectedIndex - 1);
+                ToggleScanList(bandListSelectedIndex, 1);
+                settings.bandEnabled[bandListSelectedIndex] = true;
                 RelaunchScan();
             } else if (appMode == FREQUENCY_MODE) {
                 UpdateCurrentFreq(true);
@@ -2694,8 +2705,9 @@ static void HandleKeySpectrum(uint8_t key) {
         lastReceivingFreq = HFreqs[historyListIndex];
         SetF(lastReceivingFreq);
             } else if (appMode == SCAN_BAND_MODE) {
-                ToggleScanList(bl, 1);
-                settings.bandEnabled[bl + 1]= true; //Inverted for K1
+                bandListSelectedIndex = (bandListSelectedIndex + 1) % bandCount;
+                ToggleScanList(bandListSelectedIndex, 1);
+                settings.bandEnabled[bandListSelectedIndex]= true; //Inverted for K1
                 RelaunchScan(); 
         } else if (appMode == FREQUENCY_MODE) {UpdateCurrentFreq(false);}
         else if (appMode == CHANNEL_MODE) {
@@ -3398,6 +3410,7 @@ static void UpdateScan() {
 
 
 static void UpdateListening(void) { // called every 10ms
+    
     static uint32_t stableFreq = 1;
     static uint16_t stableCount = 0;
     static bool SoundBoostsave = false; // Initialisation
