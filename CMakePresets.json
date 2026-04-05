@@ -25,7 +25,7 @@
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
-                "ENABLE_BENCH": false,
+                "ENABLE_BENCH": true,
                 "ENABLE_CPU_STATS": false,
                 "ENABLE_CPU_TEMP": true,
                 "ENABLE_BIG_FREQ": true,
@@ -89,33 +89,30 @@
                 "ENABLE_DEV": true,
                 "ENABLE_USB": true,
                 "ENABLE_UART": true,
-                "ENABLE_BENCH": true,
                 "ENABLE_CPU_STATS": true,
-                "ENABLE_FEAT_F4HWN_SCREENSHOT": true,
+                "ENABLE_FEAT_F4HWN_SCREENSHOT": false,
                 "EDITION_STRING": "Dev",
                 "TARGET": "ROBZYL.K1.Dev"
             }
         },
         {
-            "name": "STD",
+            "name": "USB",
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": true,
-                "ENABLE_UART": true,
-                "ENABLE_BENCH": true,
-                "ENABLE_CPU_STATS": false,
-                "EDITION_STRING": "STD",
-                "TARGET": "ROBZYL.K1.STD"
+                "ENABLE_UART": false,
+                "EDITION_STRING": "USB",
+                "TARGET": "ROBZYL.K1.USB"
             }
         },
         {
-            "name": "Kenwood",
+            "name": "RS232",
             "inherits": "default",
             "cacheVariables": {
                 "ENABLE_USB": false,
                 "ENABLE_UART": true,
-                "EDITION_STRING": "Kenwood",
-                "TARGET": "ROBZYL.K1.Kenwood"
+                "EDITION_STRING": "RS232",
+                "TARGET": "ROBZYL.K1.RS232"
             }
         },
         {
@@ -135,12 +132,12 @@
             "configurePreset": "Dev"
         },
         {
-            "name": "STD",
-            "configurePreset": "STD"
+            "name": "USB",
+            "configurePreset": "USB"
         },
         {
-            "name": "Kenwood",
-            "configurePreset": "Kenwood"
+            "name": "RS232",
+            "configurePreset": "RS232"
         },
         {
             "name": "NO_COM",

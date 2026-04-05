@@ -242,43 +242,36 @@ static void SendReply_VCP(void *pReply, uint16_t Size)
 static void SendReply(uint32_t Port, void *pReply, uint16_t Size)
 {
 #if defined(ENABLE_USB)
-    if (Port == UART_PORT_VCP)
-    {
+    if (Port == UART_PORT_VCP) {
         SendReply_VCP(pReply, Size);
         return;
     }
 #endif
 
-    Header_t Header;
-    Footer_t Footer;
-
-    if (bIsEncrypted)
-    {
-        uint8_t     *pBytes = (uint8_t *)pReply;
-        unsigned int i;
-        for (i = 0; i < Size; i++)
+    if (bIsEncrypted) {
+        uint8_t *pBytes = (uint8_t *)pReply;
+        for (unsigned int i = 0; i < Size; i++)
             pBytes[i] ^= Obfuscation[i % 16];
     }
 
+#ifdef ENABLE_UART
+    Header_t Header;
     Header.ID = 0xCDAB;
     Header.Size = Size;
-
     UART_Send(&Header, sizeof(Header));
     UART_Send(pReply, Size);
 
-    if (bIsEncrypted)
-    {
+    Footer_t Footer;
+    if (bIsEncrypted) {
         Footer.Padding[0] = Obfuscation[(Size + 0) % 16] ^ 0xFF;
         Footer.Padding[1] = Obfuscation[(Size + 1) % 16] ^ 0xFF;
-    }
-    else
-    {
+    } else {
         Footer.Padding[0] = 0xFF;
         Footer.Padding[1] = 0xFF;
     }
     Footer.ID = 0xBADC;
-
     UART_Send(&Footer, sizeof(Footer));
+#endif
 }
 
 static void SendVersion(uint32_t Port)

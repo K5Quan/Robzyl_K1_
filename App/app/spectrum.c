@@ -43,10 +43,10 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 
-#ifdef ENABLE_CPU_STATS
-    #define HISTORY_SIZE 50
-#else
+#ifdef ENABLE_USB
     #define HISTORY_SIZE 100
+#else
+    #define HISTORY_SIZE 200
 #endif
 
 #define MONITOR_SIZE 20
@@ -203,7 +203,7 @@ typedef void (*GetListRowFn)(uint16_t index, ListRow *row);
 static uint32_t         *ScanFrequencies = NULL;
 static bandparameters   *BParams = NULL;
 static uint32_t         HFreqs[HISTORY_SIZE];
-static uint8_t          HCount[HISTORY_SIZE];
+static uint16_t          HCount[HISTORY_SIZE]; 
 static bool             HBlacklisted[HISTORY_SIZE];
 static uint32_t         MonitorFreqs[MONITOR_SIZE];
 /****************************************************************************/
@@ -222,6 +222,8 @@ SpectrumSettings settings = {stepsCount: STEPS_128,
                              bandEnabled: {0}
                             };
 
+static bool historyTxCounted = false;
+static uint32_t historyTxCountedFreq = 0;
 static uint32_t currentFreq, tempFreq;
 static uint8_t rssiHistory[128];
 static int ShowLines = 1;
@@ -329,6 +331,7 @@ int16_t BK4819_GetAFCValue() { //from Hawk5
 
 #ifdef ENABLE_CPU_TEMP
 int16_t temp_dc;
+uint32_t cpu_hz = 0;
 
 static void RenderCPUTemp(void) {
     char buf[32];
@@ -343,6 +346,9 @@ static void RenderCPUTemp(void) {
     int16_t a_frac = (int16_t)abs(amb_dc % 10);
     snprintf(buf, sizeof(buf), "%d.%d C", (int)a_int, (int)a_frac);
     UI_PrintStringSmallbackground(buf, 1, 1, 0, 0);
+	//char buf[16];
+snprintf(buf, sizeof(buf), "%lu MHz", (unsigned long)(cpu_hz / 1000000U));
+UI_PrintStringSmallbackground(buf, 1, 1, 1, 0);
 }
 #endif
 typedef struct
@@ -1214,7 +1220,7 @@ static void SaveHistoryToFreeChannel(void) {
 
 typedef struct HistoryStruct {
     uint32_t HFreqs;
-    uint8_t HCount;
+    uint16_t HCount;
     uint8_t HBlacklisted;
 } HistoryStruct;
 
@@ -1348,63 +1354,55 @@ static void FillfreqHistory(bool countHit)
     if (f == 0 || f < 1400000 || f > 130000000) return;
 
     uint16_t foundIndex = 0xFFFF;
-    uint16_t foundCount = 0;
-    bool foundBlacklisted = false;
 
     for (uint16_t i = 0; i < indexFs; i++) {
         if (HFreqs[i] == f) {
-            if (lastReceivingFreq != f)
-                    HCount[i]++;
             foundIndex = i;
-            foundCount = HCount[i];
-            foundBlacklisted = HBlacklisted[i];
             break;
         }
     }
-
-    // --- NOWE: nie zmieniaj kolejności i nie dodawaj nowych w trybach Freq Lock / Monitor / History Scan ---
-    bool freezeOrder = historyListActive && (SpectrumMonitor || gHistoryScan);
-    if (freezeOrder) {
-        if (foundIndex != 0xFFFF) {
-            if (gCounthistory && countHit) {
-                HCount[foundIndex] = (foundCount + 1);
-            } else {
-                HCount[foundIndex] = foundCount;
+    if (foundIndex != 0xFFFF) {
+        if (countHit && gCounthistory) {
+            if (!historyTxCounted || historyTxCountedFreq != f) {
+                if (HCount[foundIndex] < 65535) {
+                    HCount[foundIndex]++;
+                }
+                historyTxCounted = true;
+                historyTxCountedFreq = f;
             }
         }
-            lastReceivingFreq = f;
-            return;
-        }
-
-    if (foundIndex != 0xFFFF) {
-        for (uint16_t i = foundIndex; i + 1 < indexFs; i++) {
-            HFreqs[i]       = HFreqs[i + 1];
-            HCount[i]       = HCount[i + 1];
-            HBlacklisted[i] = HBlacklisted[i + 1];
-        }
-        if (indexFs > 0) indexFs--;
+        lastReceivingFreq = f;
+        return;
     }
 
-    uint16_t limit = (indexFs < HISTORY_SIZE) ? indexFs : (HISTORY_SIZE - 1);
-    for (int i = limit; i > 0; i--) {
+    if (!countHit) {
+        lastReceivingFreq = f;
+        return;
+    }
+
+    if (indexFs >= HISTORY_SIZE) {
+        indexFs = HISTORY_SIZE - 1;
+    }
+
+    for (uint16_t i = (indexFs < HISTORY_SIZE - 1 ? indexFs : HISTORY_SIZE - 2); i > 0; i--) {
         HFreqs[i]       = HFreqs[i - 1];
         HCount[i]       = HCount[i - 1];
         HBlacklisted[i] = HBlacklisted[i - 1];
     }
 
     HFreqs[0] = f;
-    HBlacklisted[0] = foundBlacklisted;
+    HCount[0] = 1;
+    HBlacklisted[0] = false;
 
-    if (gCounthistory && countHit) {
-        HCount[0] = (foundIndex != 0xFFFF) ? (foundCount + 1) : 1;
-    } else {
-        HCount[0] = (foundIndex != 0xFFFF) ? foundCount : 0;
+    if (indexFs < HISTORY_SIZE) {
+        indexFs++;
     }
 
-    if (indexFs < HISTORY_SIZE) indexFs++;
     historyListIndex = 0;
+    historyTxCounted = true;
+    historyTxCountedFreq = f;
     lastReceivingFreq = f;
-} 
+}
 
 static void ToggleRX(bool on) {
     if (SPECTRUM_PAUSED) return;
@@ -1573,6 +1571,7 @@ static void Measure() {
     if (settings.rssiTriggerLevelUp == 50 && rssi > previousRssi + UOO_trigger) {
         peak.f = scanInfo.f;
         peak.i = scanInfo.i;
+        gIsPeak = true;
         FillfreqHistory(false);
     } else {
             if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
@@ -1874,8 +1873,11 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
 }
 
 // ------------------ CSS detection ------------------
+static char lastDetectedCode[16] = "";
+
 static void UpdateCssDetection(void) {
-    if (!isListening ) {return;}
+    if (!isListening) { return; }
+
     BK4819_WriteRegister(BK4819_REG_51,
         BK4819_REG_51_ENABLE_CxCSS |
         BK4819_REG_51_AUTO_CDCSS_BW_ENABLE |
@@ -1898,16 +1900,19 @@ static void UpdateCssDetection(void) {
             return;
         }
     }
-    StringCode[0] = '\0';
-}
 
-static char lastDetectedCode[16] = "";
+    StringCode[0] = '\0';
+    lastDetectedCode[0] = '\0';
+}
 
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
     if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
     else fprev = f;
-    if (StringCode[0] != '\0') { strncpy(lastDetectedCode, StringCode, sizeof(lastDetectedCode) - 1);}
+    if (StringCode[0] != '\0') {
+    strncpy(lastDetectedCode, StringCode, sizeof(lastDetectedCode) - 1);
+    lastDetectedCode[sizeof(lastDetectedCode) - 1] = '\0';
+}
     char freqStr[18];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     UpdateCssDetection();
@@ -2631,7 +2636,7 @@ static void HandleKeySpectrum(uint8_t key) {
             if (historyListActive) SaveHistoryToFreeChannel();
             else {
                 classic = !classic;
-                sprintf(lastDetectedCode,""); //Erase code
+                //sprintf(lastDetectedCode,""); //Erase code
                 }
             break;
         case KEY_8:
@@ -2645,7 +2650,7 @@ static void HandleKeySpectrum(uint8_t key) {
                 SpectrumMonitor     = 0;
             } else if (classic) {
                 ShowLines++;
-                sprintf(lastDetectedCode,""); //Erase code
+                //sprintf(lastDetectedCode,""); //Erase code
 #ifdef ENABLE_BENCH
                 if (ShowLines > 4 || ShowLines < 1) ShowLines = 1;
 #else
@@ -3484,6 +3489,11 @@ static void UpdateListening(void) { // called every 10ms
     // timer écoulé
     WaitSpectrum = 0;
     ResetScanStats();
+	
+	    if (!gIsPeak && WaitSpectrum == 0) {
+        historyTxCounted = false;
+        historyTxCountedFreq = 0;
+    }
 }
 
 static void Tick() {
@@ -3622,6 +3632,7 @@ void APP_RunSpectrum(void) {
         historyListActive = false;
 #ifdef ENABLE_CPU_TEMP
         temp_dc = CpuTemp_ReadDeciCelsius();
+        //cpu_hz = CpuInfo_GetClockHz();
 #endif
         while (isInitialized) {Tick();}
 
