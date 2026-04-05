@@ -1,6 +1,8 @@
 # Download on Telegram:
 ## [🗲 Telegram](https://t.me/k5robby69)
 
+## This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
+
 # Robzyl K1 Firmware Documentation
 **USB is deactivated by default**: press any key but PTT when switch ON to enable USB**
 
@@ -140,3 +142,4 @@ Memory channels **1000 to 1024** store custom band settings. For each, define:
 ## [🗲 Youtube Channel](https://www.youtube.com/@robby_69400)
 
 ### 🙏 Many thanks to Zylka, Kolyan, Iggy, Toni, Yves and Francois
+
