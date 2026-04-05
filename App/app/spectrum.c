@@ -98,7 +98,6 @@ static bool gMonitorScan = true;             // case 17
     static bool benchLapDone = false;
 #endif
 bool Cleared = 0;
-static bool gCounthistory = 1;
 static bool SettingsLoaded = false;
 uint8_t  gKeylockCountdown = 0;
 bool     gIsKeylocked = false;
@@ -203,7 +202,6 @@ typedef void (*GetListRowFn)(uint16_t index, ListRow *row);
 static uint32_t         *ScanFrequencies = NULL;
 static bandparameters   *BParams = NULL;
 static uint32_t         HFreqs[HISTORY_SIZE];
-static uint16_t          HCount[HISTORY_SIZE]; 
 static bool             HBlacklisted[HISTORY_SIZE];
 static uint32_t         MonitorFreqs[MONITOR_SIZE];
 /****************************************************************************/
@@ -222,8 +220,6 @@ SpectrumSettings settings = {stepsCount: STEPS_128,
                              bandEnabled: {0}
                             };
 
-static bool historyTxCounted = false;
-static uint32_t historyTxCountedFreq = 0;
 static uint32_t currentFreq, tempFreq;
 static uint8_t rssiHistory[128];
 static int ShowLines = 1;
@@ -331,7 +327,6 @@ int16_t BK4819_GetAFCValue() { //from Hawk5
 
 #ifdef ENABLE_CPU_TEMP
 int16_t temp_dc;
-uint32_t cpu_hz = 0;
 
 static void RenderCPUTemp(void) {
     char buf[32];
@@ -346,9 +341,6 @@ static void RenderCPUTemp(void) {
     int16_t a_frac = (int16_t)abs(amb_dc % 10);
     snprintf(buf, sizeof(buf), "%d.%d C", (int)a_int, (int)a_frac);
     UI_PrintStringSmallbackground(buf, 1, 1, 0, 0);
-	//char buf[16];
-snprintf(buf, sizeof(buf), "%lu MHz", (unsigned long)(cpu_hz / 1000000U));
-UI_PrintStringSmallbackground(buf, 1, 1, 1, 0);
 }
 #endif
 typedef struct
@@ -424,7 +416,6 @@ static const RamWatchEntry_t ram_watch[] = {
     { "ScanFreq",  NULL,            (const void **)&ScanFrequencies,
                                                                     (MR_CHANNEL_LAST + 1)*sizeof(uint32_t), (MR_CHANNEL_LAST + 1), 4, "heap" },
     { "HFreqs",    NULL,            (const void **)&HFreqs,        HISTORY_SIZE*sizeof(uint32_t),     HISTORY_SIZE, 4,   "heap"  },
-    { "HCount",    NULL,            (const void **)&HCount,        HISTORY_SIZE*sizeof(uint8_t),      HISTORY_SIZE, 1,   "heap"  },
     { "HBlkList",  NULL,            (const void **)&HBlacklisted,  HISTORY_SIZE*sizeof(bool),         HISTORY_SIZE, 1,   "heap"  },
 };
 #define RAM_WATCH_COUNT ((uint8_t)(sizeof(ram_watch) / sizeof(ram_watch[0])))
@@ -1153,13 +1144,11 @@ static void DeleteHistoryItem(void) {
     uint16_t indexToDelete = historyListIndex;
     for (uint16_t i = indexToDelete; i < indexFs - 1; i++) {
         HFreqs[i]       = HFreqs[i + 1];
-        HCount[i]       = HCount[i + 1];
         HBlacklisted[i] = HBlacklisted[i + 1];
     }
     indexFs--;
     
     HFreqs[indexFs]       = 0;
-    HCount[indexFs]       = 0;
     HBlacklisted[indexFs] = 0xFF;
 
     if (historyListIndex >= indexFs && indexFs > 0) {
@@ -1220,7 +1209,6 @@ static void SaveHistoryToFreeChannel(void) {
 
 typedef struct HistoryStruct {
     uint32_t HFreqs;
-    uint16_t HCount;
     uint8_t HBlacklisted;
 } HistoryStruct;
 
@@ -1240,7 +1228,6 @@ void LoadHistory(void) {
         }
       if (History.HFreqs){
         HFreqs[position] = History.HFreqs;
-        HCount[position] = History.HCount;
         HBlacklisted[position] = History.HBlacklisted;
         indexFs = position + 1;
       }
@@ -1252,7 +1239,6 @@ void WriteHistory(void) {
     HistoryStruct History = {0};
     for (uint16_t position = 0; position < indexFs; position++) {
         History.HFreqs = HFreqs[position];
-        History.HCount = HCount[position];
         History.HBlacklisted = HBlacklisted[position];
         PY25Q16_WriteBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),
                            (uint8_t *)&History, sizeof(HistoryStruct), 0);
@@ -1260,7 +1246,6 @@ void WriteHistory(void) {
 
     // Marque de fin (HBlacklisted = 0xFF)
     History.HFreqs = 0;
-    History.HCount = 0;
     History.HBlacklisted = 0xFF;
     PY25Q16_WriteBuffer(ADRESS_HISTORY + indexFs * sizeof(HistoryStruct),
                        (uint8_t *)&History, sizeof(HistoryStruct), 0);
@@ -1354,55 +1339,42 @@ static void FillfreqHistory(bool countHit)
     if (f == 0 || f < 1400000 || f > 130000000) return;
 
     uint16_t foundIndex = 0xFFFF;
+    bool foundBlacklisted = false;
 
     for (uint16_t i = 0; i < indexFs; i++) {
         if (HFreqs[i] == f) {
             foundIndex = i;
+            foundBlacklisted = HBlacklisted[i];
             break;
         }
     }
-    if (foundIndex != 0xFFFF) {
-        if (countHit && gCounthistory) {
-            if (!historyTxCounted || historyTxCountedFreq != f) {
-                if (HCount[foundIndex] < 65535) {
-                    HCount[foundIndex]++;
-                }
-                historyTxCounted = true;
-                historyTxCountedFreq = f;
-            }
+    bool freezeOrder = historyListActive && (SpectrumMonitor || gHistoryScan);
+    if (freezeOrder) {
+            lastReceivingFreq = f;
+            return;
         }
-        lastReceivingFreq = f;
-        return;
+
+    if (foundIndex != 0xFFFF) {
+        for (uint16_t i = foundIndex; i + 1 < indexFs; i++) {
+            HFreqs[i]       = HFreqs[i + 1];
+            HBlacklisted[i] = HBlacklisted[i + 1];
+        }
+        if (indexFs > 0) indexFs--;
     }
 
-    if (!countHit) {
-        lastReceivingFreq = f;
-        return;
-    }
-
-    if (indexFs >= HISTORY_SIZE) {
-        indexFs = HISTORY_SIZE - 1;
-    }
-
-    for (uint16_t i = (indexFs < HISTORY_SIZE - 1 ? indexFs : HISTORY_SIZE - 2); i > 0; i--) {
+    uint16_t limit = (indexFs < HISTORY_SIZE) ? indexFs : (HISTORY_SIZE - 1);
+    for (int i = limit; i > 0; i--) {
         HFreqs[i]       = HFreqs[i - 1];
-        HCount[i]       = HCount[i - 1];
         HBlacklisted[i] = HBlacklisted[i - 1];
     }
 
     HFreqs[0] = f;
-    HCount[0] = 1;
-    HBlacklisted[0] = false;
+    HBlacklisted[0] = foundBlacklisted;
 
-    if (indexFs < HISTORY_SIZE) {
-        indexFs++;
-    }
-
+    if (indexFs < HISTORY_SIZE) indexFs++;
     historyListIndex = 0;
-    historyTxCounted = true;
-    historyTxCountedFreq = f;
     lastReceivingFreq = f;
-}
+} 
 
 static void ToggleRX(bool on) {
     if (SPECTRUM_PAUSED) return;
@@ -1766,7 +1738,6 @@ static void Blacklist() {
     }
 
     HFreqs[indexFs]   = peak.f;
-    HCount[indexFs]       = 1;
     HBlacklisted[indexFs] = true;
     historyListIndex = indexFs;
     if (++indexFs >= HISTORY_SIZE) {
@@ -1873,7 +1844,6 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
 }
 
 // ------------------ CSS detection ------------------
-static char lastDetectedCode[16] = "";
 
 static void UpdateCssDetection(void) {
     if (!isListening) { return; }
@@ -1902,17 +1872,12 @@ static void UpdateCssDetection(void) {
     }
 
     StringCode[0] = '\0';
-    lastDetectedCode[0] = '\0';
 }
 
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
     if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
     else fprev = f;
-    if (StringCode[0] != '\0') {
-    strncpy(lastDetectedCode, StringCode, sizeof(lastDetectedCode) - 1);
-    lastDetectedCode[sizeof(lastDetectedCode) - 1] = '\0';
-}
     char freqStr[18];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     UpdateCssDetection();
@@ -1921,7 +1886,7 @@ static void DrawF(uint32_t f) {
     char line2[19] = "";
     char line3[19] = "";
     sprintf(line1, "%s", freqStr);
-    sprintf(line1b, "%s %s", freqStr, lastDetectedCode);
+    sprintf(line1b, "%s %s", freqStr, StringCode);
     char prefix[9] = "";
     if (appMode == SCAN_BAND_MODE) {
         snprintf(prefix, sizeof(prefix), "B%u ", bl + 1);
@@ -1973,7 +1938,7 @@ static void DrawF(uint32_t f) {
     if (classic) {
             if (ShowLines == 2) {
                 UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
-                GUI_DisplaySmallest(lastDetectedCode, 80, 17, false, true); // CSS
+                GUI_DisplaySmallest(StringCode, 80, 17, false, true); // CSS
                 UI_PrintStringSmallbackground(line2,0, LCD_WIDTH - 1, 2, 0);  
                 ArrowLine = 3;
             }
@@ -1989,7 +1954,7 @@ static void DrawF(uint32_t f) {
               char lastRxFreq[19] = "---";
               if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
                 FormatFrequency(lastReceivingFreq, lastRxFreq, sizeof(lastRxFreq));
-                sprintf(lastRxFreq,"%s %s", lastRxFreq,lastDetectedCode); 
+                sprintf(lastRxFreq,"%s %s", lastRxFreq,StringCode); 
               }
 
               UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
@@ -2014,7 +1979,7 @@ static void DrawF(uint32_t f) {
         sprintf(rssiText, "RSSI:%3d", scanInfo.rssi);
         UI_PrintStringSmallbackground(rssiText, 64, 1, 0, 0);
     }
-    if (lastDetectedCode[0]) { UI_PrintStringSmallbackground(lastDetectedCode, 10, 1, 0, 0);}
+    if (StringCode[0]) { UI_PrintStringSmallbackground(StringCode, 10, 1, 0, 0);}
 #ifdef ENABLE_CPU_TEMP
     else RenderCPUTemp();
 #endif
@@ -2150,15 +2115,12 @@ static void SortHistoryByFrequencyAscending(void) {
         for (uint16_t j = i + 1; j < count; j++) {
             if (HFreqs[j] != 0 && (HFreqs[i] == 0 || HFreqs[j] < HFreqs[i])) {
                 uint32_t tf = HFreqs[i];
-                uint8_t  tc = HCount[i];
                 bool     tb = HBlacklisted[i];
 
                 HFreqs[i] = HFreqs[j];
-                HCount[i] = HCount[j];
                 HBlacklisted[i] = HBlacklisted[j];
 
                 HFreqs[j] = tf;
-                HCount[j] = tc;
                 HBlacklisted[j] = tb;
             }
         }
@@ -2177,7 +2139,6 @@ static void CompactHistory(void) {
         if (HFreqs[r] == 0) continue;
         if (w != r) {
             HFreqs[w]       = HFreqs[r];
-            HCount[w]       = HCount[r];
             HBlacklisted[w] = HBlacklisted[r];
         }
         w++;
@@ -2186,7 +2147,6 @@ static void CompactHistory(void) {
     // wyczyść resztę
     for (uint16_t i = w; i < limit; i++) {
         HFreqs[i]       = 0;
-        HCount[i]       = 0;
         HBlacklisted[i] = 0;
     }
 
@@ -2636,13 +2596,11 @@ static void HandleKeySpectrum(uint8_t key) {
             if (historyListActive) SaveHistoryToFreeChannel();
             else {
                 classic = !classic;
-                //sprintf(lastDetectedCode,""); //Erase code
                 }
             break;
         case KEY_8:
             if (historyListActive) {
                 memset(HFreqs,       0, sizeof(HFreqs));
-                memset(HCount,       0, sizeof(HCount));
                 memset(HBlacklisted, 0, sizeof(HBlacklisted));
                 historyListIndex    = 0;
                 historyScrollOffset = 0;
@@ -2650,7 +2608,6 @@ static void HandleKeySpectrum(uint8_t key) {
                 SpectrumMonitor     = 0;
             } else if (classic) {
                 ShowLines++;
-                //sprintf(lastDetectedCode,""); //Erase code
 #ifdef ENABLE_BENCH
                 if (ShowLines > 4 || ShowLines < 1) ShowLines = 1;
 #else
@@ -3489,11 +3446,7 @@ static void UpdateListening(void) { // called every 10ms
     // timer écoulé
     WaitSpectrum = 0;
     ResetScanStats();
-	
-	    if (!gIsPeak && WaitSpectrum == 0) {
-        historyTxCounted = false;
-        historyTxCountedFreq = 0;
-    }
+
 }
 
 static void Tick() {
@@ -3840,20 +3793,17 @@ static void SaveSettings()
 static void ClearHistory(uint8_t mode) {
     if (mode == 0) {
         memset(HFreqs, 0, sizeof(HFreqs));
-        memset(HCount, 0, sizeof(HCount));
         memset(HBlacklisted, 0, sizeof(HBlacklisted));
     } else if (mode == 1) {
         for (int i = 0; i < HISTORY_SIZE; i++) {
             if (!HBlacklisted[i]) {
                 HFreqs[i] = 0;
-                HCount[i] = 0;
             }
         }
     } else if (mode == 2) {
         for (int i = 0; i < HISTORY_SIZE; i++) {
             if (HBlacklisted[i]) {
                 HFreqs[i] = 0;
-                HCount[i] = 0;
                 HBlacklisted[i] = 0;
             }
         }
@@ -4064,7 +4014,6 @@ static void GetHistoryRow(uint16_t index, ListRow *row) {
     char freqStr[10];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     RemoveTrailZeros(freqStr);
-    snprintf(row->right, sizeof(row->right), ":%u", HCount[index]);
 
     char Name[12] = "";
     uint16_t ch = BOARD_gMR_fetchChannel(f);
