@@ -2827,7 +2827,7 @@ static void HandleKeySpectrum(uint8_t key) {
 // ============================================================
 
 static void OnKeyDown(uint8_t key) {
-    if (!backlightOn) {BACKLIGHT_TurnOn();return;}
+    if (!backlightOn) {BACKLIGHT_TurnOn();}
 
     /* Key-lock guard: only KEY_F unlocks */
     if (gIsKeylocked) {
