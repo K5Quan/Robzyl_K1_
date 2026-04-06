@@ -77,7 +77,7 @@ static bool gHistorySortLongPressDone = false;
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
 // see GetParametersText
-static uint8_t DelayRssi = 3;                // case 0       
+static uint8_t  DelayRssi = 3;               // case 0       
 static uint16_t SpectrumDelay = 0;           // case 1      
 static uint16_t MaxListenTime = 0;           // case 2
 static uint32_t gScanRangeStart = 1400000;   // case 3      
@@ -85,17 +85,17 @@ static uint32_t gScanRangeStop = 13000000;   // case 4
 //Step                                       // case 5      
 //ListenBW                                   // case 6      
 //Modulation                                 // case 7      
-static bool Backlight_On_Rx = 0;             // case 8        
+static bool     Backlight_On_Rx = 0;         // case 8
 static uint16_t SpectrumSleepMs = 0;         // case 9
-static uint8_t Noislvl_OFF = NoisLvl;        // case 10
-static uint8_t Noislvl_ON = NoisLvl - NoiseHysteresis;
+static uint8_t  Noislvl_OFF = NoisLvl;        // case 10
+static uint8_t  Noislvl_ON = NoisLvl - NoiseHysteresis;
 static uint16_t osdPopupSetting = 500;       // case 11
 static uint16_t UOO_trigger = 15;            // case 12
-static uint8_t AUTO_KEYLOCK = AUTOLOCK_OFF;  // case 13
-static uint8_t GlitchMax = 20;               // case 14 
-static bool    SoundBoost = 0;               // case 15
-static uint8_t PttEmission = 0;              // case 16
-static bool gMonitorScan = true;             // case 17
+static uint8_t  AUTO_KEYLOCK = AUTOLOCK_OFF; // case 13
+static uint8_t  GlitchMax = 20;              // case 14 
+static bool     SoundBoost = 0;              // case 15
+static uint8_t  PttEmission = 0;             // case 16
+static bool     gMonitorScan = true;         // case 17
 //ClearHistory All                           // case 18
 //ClearHistory BL                            // case 19
 //ClearHistory Not BL                        // case 20
@@ -297,7 +297,8 @@ static int clamp(int v, int min, int max) {
   return v <= min ? min : (v >= max ? max : v);
 }
 
-static void UpdateDBMaxAuto() { //Zoom
+/* static void UpdateDBMaxAuto() { //Zoom
+
   static uint8_t z = 2;
   int newDbMax;
     if (scanInfo.rssiMax > 0) {
@@ -317,6 +318,11 @@ static void UpdateDBMaxAuto() { //Zoom
         settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
         settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
     }
+} */
+
+static void UpdateDBMaxAuto() { //Zoom
+    settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -60, 0);
+    settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
 }
 
 
@@ -1542,6 +1548,8 @@ static void UpdateGlitch() {
     else {gIsPeak = true;}// if glitch is too high, receiving stopped
 }
 
+bool interlacing = 1;
+
 static void Measure() {
     static int16_t previousRssi = 0;
     static bool isFirst = true;
@@ -1586,15 +1594,28 @@ static void Measure() {
     uint16_t count = GetStepsCount();
     uint16_t i = scanInfo.i;
     static uint16_t lastPixel = 255;
-    if (count > 128) {
-        uint16_t pixel = ((uint32_t)i * 127) / count;
+    static uint8_t pixel;
+    if (interlacing && count > 128) {
+        uint32_t diff = (scanInfo.f - gScanRangeStart) / 100;
+        uint32_t span = (gScanRangeStop - gScanRangeStart) / 100;
+        if (span > 0) {
+            pixel = (diff * 127) / span;
+            if (pixel < 128) {
+                rssiHistory[pixel] = rssi;
+            }
+        }
+    }
+
+    if (!interlacing && count > 128) {
+        pixel = ((uint32_t)i * 127) / count;
         if (pixel != lastPixel) {
             rssiHistory[pixel] = rssi;
             lastPixel = pixel;
         } else if (rssi > rssiHistory[pixel]) {
             rssiHistory[pixel] = rssi;
         }
-    } else {
+    }
+    if (count <= 128) {
         uint16_t base = 128 / count;
         uint16_t rem  = 128 % count;
         uint16_t start = i * base + (i < rem ? i : rem);
@@ -2068,7 +2089,7 @@ if(appMode!=CHANNEL_MODE){
     GUI_DisplaySmallest(String, 90, Bottom_print, false, true);
     }
 }
-bool interlacing = 0;
+
 static void NextScanStep() {
     spectrumElapsedCount = 0;
 #ifdef ENABLE_BENCH
@@ -2111,6 +2132,7 @@ static void NextScanStep() {
     if (scanInfo.i > steps) {
         scanInfo.i = 0;
         newScanStart = true;
+        UpdateDBMaxAuto();
         benchLapDone = true;          // pełna pętla zakresu/pasma/freq
     } else if (scanInfo.i < prevI) {
         benchLapDone = true;
@@ -2119,6 +2141,7 @@ static void NextScanStep() {
     if (scanInfo.i > GetStepsCount()) {
         scanInfo.i = 0;
         newScanStart = true;
+        UpdateDBMaxAuto();
     }
 #endif
 }
@@ -3124,7 +3147,7 @@ static void RenderSpectrum()
 #endif
     if (classic) {
         DrawNums();
-        UpdateDBMaxAuto();
+        //UpdateDBMaxAuto();
         DrawSpectrum();
 
 #ifdef ENABLE_SPECTRUM_LINES
@@ -3652,7 +3675,7 @@ static void ToggleScanList(int scanListNumber, int single )
 // SECTION: EEPROM / Settings persistence
 // ============================================================
 
-#ifndef ENABLE_DEV
+#ifdef ENABLE_VERSION
 bool IsVersionMatching(void) {
     uint16_t stored,app_version;
     app_version = APP_VERSION;
@@ -3706,7 +3729,7 @@ void LoadSettings()
 {
   if(SettingsLoaded) return;
   SettingsEEPROM  eepromData  = {0};
-#ifndef ENABLE_DEV
+#ifdef ENABLE_VERSION
   if(!IsVersionMatching()) ClearSettings();
 #endif
   PY25Q16_ReadBuffer(ADRESS_PARAMS, &eepromData, sizeof(eepromData));
