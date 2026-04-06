@@ -662,6 +662,7 @@ KEYACTIONS_LIST = ["NONE",
                    "FLASHLIGHT",
                    "POWER",
                    "MONITOR",
+                   "SPECTRUM",
                    "SCAN",
                    "VOX",
                    "ALARM",
@@ -1828,7 +1829,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
 # add menu firmware with version and option display if version 3.0 and up
         ValFirm = "Firmware : " + self.FIRMWARE_VERSION 
-        Compair1 = "ROBZYL v6.13"  
+        Compair1 = "ROBZYL v6.17"  
 
         if self.FIRMWARE_VERSION == "":
             ValFirm = "Firmware : Only when read from the radio "
