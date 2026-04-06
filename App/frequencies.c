@@ -176,7 +176,6 @@ int32_t TX_freq_check(const uint32_t Frequency)
 		case F_UNLOCK_136_500:
 			if (Frequency >= 13600000 && Frequency <= 50000000) return 0;
 			break;
-
 		case F_UNLOCK_ALL:
 			return 0;
 			break;

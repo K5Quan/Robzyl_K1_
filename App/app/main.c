@@ -188,10 +188,7 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep)
 #endif
             gTxVfo->Band += 1;
 
-            if (gTxVfo->Band == BAND5_350MHz) {
-                // skip if not enabled
-                gTxVfo->Band += 1;
-            } else if (gTxVfo->Band >= BAND_N_ELEM){
+            if (gTxVfo->Band >= BAND_N_ELEM){
                 // go arround if overflowed
                 gTxVfo->Band = BAND1_50MHz;
             }

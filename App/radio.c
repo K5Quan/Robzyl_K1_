@@ -254,14 +254,6 @@ void RADIO_InitInfo(VFO_Info_t *pInfo, const uint16_t ChannelSave, const uint32_
 void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure)
 {
     VFO_Info_t *pVfo = &gEeprom.VfoInfo[VFO];
-
-
-        if (gEeprom.FreqChannel[VFO] == FREQ_CHANNEL_FIRST + BAND5_350MHz)
-            gEeprom.FreqChannel[VFO] = FREQ_CHANNEL_FIRST + BAND6_400MHz;
-
-        if (gEeprom.ScreenChannel[VFO] == FREQ_CHANNEL_FIRST + BAND5_350MHz)
-            gEeprom.ScreenChannel[VFO] = FREQ_CHANNEL_FIRST + BAND6_400MHz;
-
     uint16_t channel = gEeprom.ScreenChannel[VFO];
 
     if (IS_VALID_CHANNEL(channel)) {
@@ -474,7 +466,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
     else if (frequency > frequencyBandTable[band].upper)
         frequency = frequencyBandTable[band].upper;
     else if (channel >= FREQ_CHANNEL_FIRST)
-        frequency = FREQUENCY_RoundToStep(frequency, pVfo->StepFrequency);
+            frequency = FREQUENCY_RoundToStep(frequency, pVfo->StepFrequency);
 
     pVfo->freq_config_RX.Frequency = frequency;
 
@@ -500,10 +492,6 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         pVfo->pRX = &pVfo->freq_config_TX;
         pVfo->pTX = &pVfo->freq_config_RX;
     }
-
-        FREQ_Config_t *pConfig = pVfo->pRX;
-        if (pConfig->Frequency >= 35000000 && pConfig->Frequency < 40000000)
-            pConfig->Frequency = 43300000;
     
     pVfo->Compander = att->compander;
 
