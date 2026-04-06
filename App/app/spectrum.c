@@ -321,8 +321,8 @@ static int clamp(int v, int min, int max) {
 } */
 
 static void UpdateDBMaxAuto() { //Zoom
-    settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
-    settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+    settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
+    settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
 }
 
 
