@@ -44,7 +44,9 @@
 #ifdef ENABLE_REGA
     #include "app/rega.h"
 #endif
-
+#ifdef ENABLE_SPECTRUM
+    #include "app/spectrum.h"
+#endif
 #if defined(ENABLE_FMRADIO)
 static void ACTION_Scan_FM(bool bRestart);
 #endif
@@ -61,6 +63,7 @@ void (*action_opt_table[])(void) = {
     [ACTION_OPT_NONE] = &FUNCTION_NOP,
     [ACTION_OPT_POWER] = &ACTION_Power,
     [ACTION_OPT_MONITOR] = &ACTION_Monitor,
+    [ACTION_OPT_SPECTRUM] = &ACTION_Spectrum,
     [ACTION_OPT_SCAN] = &ACTION_ScanRestart,
     [ACTION_OPT_KEYLOCK] = &COMMON_KeypadLockToggle,
     [ACTION_OPT_A_B] = &COMMON_SwitchVFOs,
@@ -188,6 +191,11 @@ void ACTION_Monitor(void)
     else
 #endif
         gRequestDisplayScreen = gScreenToDisplay;
+}
+
+void ACTION_Spectrum(void)
+{
+    APP_RunSpectrum();
 }
 
 void ACTION_Scan(bool bRestart)
@@ -365,6 +373,7 @@ void ACTION_Handle(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         switch (func) {
             case ACTION_OPT_POWER:
             case ACTION_OPT_MONITOR:
+            case ACTION_OPT_SPECTRUM:
             case ACTION_OPT_A_B:
             case ACTION_OPT_VFO_MR:
             case ACTION_OPT_SWITCH_DEMODUL:

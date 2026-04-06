@@ -443,6 +443,7 @@ const t_sidefunction gSubMenu_SIDEFUNCTIONS[] =
 #endif
     {"POWER",           ACTION_OPT_POWER},
     {"MONITOR",         ACTION_OPT_MONITOR},
+    {"SPECTRUM",        ACTION_OPT_SPECTRUM},
     {"SCAN",            ACTION_OPT_SCAN},
 #ifdef ENABLE_VOX
     {"VOX",             ACTION_OPT_VOX},
