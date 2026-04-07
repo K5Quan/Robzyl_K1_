@@ -1353,7 +1353,7 @@ static uint16_t CountValidHistoryItems() {
     return (indexFs > HISTORY_SIZE) ? HISTORY_SIZE : indexFs;
 }
 
-static void FillfreqHistory(bool countHit)
+static void FillfreqHistory()
 {
     uint32_t f = peak.f;
     if (f == 0 || f < 1400000 || f > 130000000) return;
@@ -1568,7 +1568,7 @@ static void Measure() {
             peak.i = scanInfo.i;
             gIsPeak = false;
             isListening = false;
-            FillfreqHistory(false);
+            FillfreqHistory();
         }
     } else {
             if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
@@ -1578,11 +1578,11 @@ static void Measure() {
                 if (rssi2 > rssi+10) {
                     peak.f = scanInfo.f;
                     peak.i = scanInfo.i-1;
-                }
-                if (settings.rssiTriggerLevelUp < 50) {
-                    gIsPeak = true;
-                    UpdateNoiseOff();
-                    UpdateGlitch();
+                    if (settings.rssiTriggerLevelUp < 50) {
+                        gIsPeak = true;
+                        UpdateNoiseOff();
+                        UpdateGlitch();
+                    }
                 }
             SYSTEM_DelayMs(50);
             scanInfo.rssi = GetRssi();
@@ -1750,6 +1750,21 @@ static void UpdateFreqInput(KEY_Code_t key) {
   
 }
 
+static void Skip() {
+    isListening = 0;
+    WaitSpectrum = 0;
+    spectrumElapsedCount = 0;
+    NextScanStep();
+    gIsPeak = false;
+    ToggleRX(false);
+    peak.f = scanInfo.f;
+    peak.i = scanInfo.i;
+    ToggleAudio(0);
+    ToggleAFDAC(0);
+    ToggleAFBit(0);
+    //SetF(scanInfo.f);
+}
+
 static bool IsBlacklisted(uint32_t f) {
     for (uint16_t i = 0; i < HISTORY_SIZE; i++) {
         if (HFreqs[i] == f && HBlacklisted[i]) {
@@ -1765,7 +1780,7 @@ static void Blacklist() {
     ToggleRX(false);
     isBlacklistApplied = true;
     ResetScanStats();
-    NextScanStep();
+    Skip();
     for (uint16_t i = 0; i < HISTORY_SIZE; i++) {
         if (HFreqs[i] == peak.f) {
             HBlacklisted[i] = true;
@@ -2204,21 +2219,6 @@ static void CompactHistory(void) {
             historyScrollOffset = (indexFs > MAX_VISIBLE_LINES) ? (indexFs - MAX_VISIBLE_LINES) : 0;
         }
     }
-}
-
-static void Skip() {
-    isListening = 0;
-    WaitSpectrum = 0;
-    spectrumElapsedCount = 0;
-    NextScanStep();
-    gIsPeak = false;
-    ToggleRX(false);
-    peak.f = scanInfo.f;
-    peak.i = scanInfo.i;
-    ToggleAudio(0);
-    ToggleAFDAC(0);
-    ToggleAFBit(0);
-    //SetF(scanInfo.f);
 }
 
 void NextAppMode(void) {
@@ -3454,8 +3454,8 @@ static void UpdateListening(void) { // called every 10ms
         SoundBoostsave = SoundBoost;
     }
     if (peak.f == stableFreq) {
-        if (++stableCount >= 2) {  // ~600ms
-            if (!SpectrumMonitor) FillfreqHistory(true);
+        if (++stableCount >= 50) {  // 500ms
+            if (!SpectrumMonitor) FillfreqHistory();
             stableCount = 0;
             if (gEeprom.BACKLIGHT_MAX > 5)
                 BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 1);
