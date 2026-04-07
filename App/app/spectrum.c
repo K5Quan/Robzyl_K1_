@@ -508,7 +508,6 @@ static void RenderMemBuffers(void)
 
 static void OnKeyDownMemBuffers(uint8_t key)
 {
-    BACKLIGHT_TurnOn();
     switch (key) {
     case KEY_UP:
         if (memBufSelectedIndex > 0)
@@ -662,7 +661,6 @@ static void RenderMemViewer(void)
 
 static void OnKeyDownMemViewer(uint8_t key)
 {
-    BACKLIGHT_TurnOn();
     const uint32_t size = RamWatch_GetSize(memBufSelectedIndex);
 
     if (size == 0u || RamWatch_GetPtr(memBufSelectedIndex) == NULL) {
@@ -758,7 +756,6 @@ static void RenderRAMView(void)
 
 static void OnKeyDownRAMView(uint8_t key)
 {
-    BACKLIGHT_TurnOn();
     switch (key) {
     case KEY_MENU:
         /* Navigate forward to the buffer list screen. */
@@ -813,7 +810,6 @@ static void RenderCPUView(void)
 
 static void OnKeyDownCPUView(uint8_t key)
 {
-    BACKLIGHT_TurnOn();
     switch (key) {
     case KEY_8:
         /* Cycle back to RAM diagnostics. */
@@ -865,16 +861,12 @@ static void LoadActiveBands(void) {
         LookupChannelModulation(); //Fill BParams modulation and step
         BParams[bd].modulationType = channelModulation;
         BParams[bd].scanStep =  channelStep;
-//char str[64] = "";
-//sprintf(str, "%d %d %d\r\n", bd, channelModulation, channelStep);LogUart(str);
         ChannelInfo_t freqs = FetchChannelFrequency(gChannel);
         if(!freqs.frequency) return;
         BParams[bd].Startfrequency = freqs.frequency;
         BParams[bd].Stopfrequency  = freqs.offset;
         PY25Q16_ReadBuffer(0x004000 + (gChannel * 16), BParams[bd].BandName, 10);
         bandCount++;
-//char str[64] = "";
-//sprintf(str, "%d %d %d %d %s\r\n", bd, gChannel, BParams[bd].Startfrequency, BParams[bd].Stopfrequency, BParams[bd].BandName);LogUart(str);
     }
 }
 
@@ -895,9 +887,6 @@ static void LoadActiveScanFrequencies(void)
                     }
                 }
         }
-#ifdef ENABLE_DEV
-char str[64] = "";sprintf(str, "LASF %d %d %d\r\n", ch,settings.scanListEnabled[cache.scanlist-1],ScanFrequencies[scanChannelsCount-1]);LogUart(str);
-#endif
     }
     if (!scanChannelsCount) { //No active scanlist
     for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
@@ -1478,9 +1467,6 @@ static bool InitScan() {
             }
             nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
             checkedBandCount++;
-#ifdef ENABLE_DEV
-                //char str[64] = "";sprintf(str, "nextBandToScanIndex %d bl %d %d\r\n", nextBandToScanIndex,bl,settings.bandEnabled[nextBandToScanIndex]);LogUart(str);
-#endif
         }
     } else {
         if(gScanRangeStart > gScanRangeStop)
@@ -2850,7 +2836,7 @@ static void HandleKeySpectrum(uint8_t key) {
 // ============================================================
 
 static void OnKeyDown(uint8_t key) {
-    if (!backlightOn) {BACKLIGHT_TurnOn();}
+    
 
     /* Key-lock guard: only KEY_F unlocks */
     if (gIsKeylocked) {
@@ -2878,7 +2864,6 @@ static void OnKeyDown(uint8_t key) {
 }
 
 static void OnKeyDownFreqInput(uint8_t key) {
-  BACKLIGHT_TurnOn();
   switch (key) {
   case KEY_0:
   case KEY_1:
@@ -2924,7 +2909,6 @@ static void OnKeyDownFreqInput(uint8_t key) {
 static int16_t storedScanStepIndex = -1;
 
 static void OnKeyDownStill(KEY_Code_t key) {
-  BACKLIGHT_TurnOn();
   switch (key) {
       case KEY_3:
          ToggleListeningBW(1);
@@ -3319,6 +3303,7 @@ static void Render() {
 }
 
 static void HandleUserInput(void) {
+    
     kbd.prev = kbd.current;
     kbd.current = GetKey();
     // ---- Anti-rebond + répétition ----
@@ -3332,7 +3317,10 @@ static void HandleUserInput(void) {
       }
 
 if (kbd.counter == 2 || (kbd.counter > 17 && (kbd.counter % 15 == 0))) {
-       
+        if (!backlightOn) {
+            BACKLIGHT_TurnOn();
+            if(gEeprom.BACKLIGHT_TIME) return;
+        }
         switch (currentState) {
             case SPECTRUM:
                 OnKeyDown(kbd.current);
@@ -3501,9 +3489,10 @@ static void UpdateListening(void) { // called every 10ms
 
 static void Tick() {
     if (gNextTimeslice_500ms) {
-        if (gBacklightCountdown_500ms > 0) {
-            if (--gBacklightCountdown_500ms == 0)	BACKLIGHT_TurnOff();}
             gNextTimeslice_500ms = false;
+        if (gBacklightCountdown_500ms > 0) --gBacklightCountdown_500ms;
+        if (gBacklightCountdown_500ms == 0)	   {BACKLIGHT_TurnOff();}
+
         if (gKeylockCountdown > 0) {gKeylockCountdown--;}
         if (AUTO_KEYLOCK && !gKeylockCountdown) {
             if (!gIsKeylocked) ShowOSDPopup("Locked"); 
@@ -3513,6 +3502,7 @@ static void Tick() {
 
     if (gNextTimeslice_10ms) {
         gNextTimeslice_10ms = 0;
+        BACKLIGHT_Update();
         HandleUserInput();
 #ifdef ENABLE_BENCH
         if (!isListening && !SPECTRUM_PAUSED && !SpectrumMonitor && !WaitSpectrum) {
