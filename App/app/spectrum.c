@@ -57,11 +57,14 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 
-#ifdef ENABLE_USB
+#if defined(ENABLE_FEAT_F4HWN_SCREENSHOT)
+    #define HISTORY_SIZE 20
+#elif defined(ENABLE_USB)
     #define HISTORY_SIZE 100
-#else
+#elif defined(ENABLE_UART)
     #define HISTORY_SIZE 200
 #endif
+
 
 #define MONITOR_SIZE 20
 static uint8_t cachedValidScanListCount = 0;

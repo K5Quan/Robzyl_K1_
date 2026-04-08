@@ -92,7 +92,7 @@
                 "ENABLE_VERSION": false,
                 "ENABLE_UART": true,
                 "ENABLE_CPU_STATS": false,
-                "ENABLE_FEAT_F4HWN_SCREENSHOT": false,
+                "ENABLE_FEAT_F4HWN_SCREENSHOT": true,
                 "EDITION_STRING": "Dev",
                 "TARGET": "ROBZYL.K1.Dev.V6.18"
             }
