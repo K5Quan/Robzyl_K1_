@@ -73,6 +73,8 @@ static int historyScrollOffset = 0;
 static bool gHistoryScan = false;
 static uint8_t MonitorIndex = 0;
 static bool gHistorySortLongPressDone = false;
+static uint32_t SpectrumRangeStart = 1400000;
+static uint32_t SpectrumRangeStop = 110000000;
 
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
@@ -80,8 +82,8 @@ static bool gHistorySortLongPressDone = false;
 static uint8_t  DelayRssi = 3;               // case 0       
 static uint16_t SpectrumDelay = 0;           // case 1      
 static uint16_t MaxListenTime = 0;           // case 2
-static uint32_t gScanRangeStart = 1400000;   // case 3      
-static uint32_t gScanRangeStop = 13000000;   // case 4
+static uint32_t RangeStart = 1400000;        // case 3      
+static uint32_t RangeStop = 11000000;        // case 4
 //Step                                       // case 5      
 //ListenBW                                   // case 6      
 //Modulation                                 // case 7      
@@ -197,7 +199,7 @@ static bool newScanStart = true;
 static bool audioState = true;
 static uint8_t bl;
 static State currentState = SPECTRUM, previousState = SPECTRUM;
-static uint8_t Spectrum_state = 1; 
+static uint8_t Spectrum_state = 0; 
 static PeakInfo peak;
 static ScanInfo scanInfo;
 static char latestScanListName[12];
@@ -994,7 +996,7 @@ static uint32_t GetInitialStillFreq(void) {
     if (f < 1400000 || f > 130000000) {
         if (scanInfo.f >= 1400000 && scanInfo.f <= 130000000) return scanInfo.f;
         if (currentFreq >= 1400000 && currentFreq <= 130000000) return currentFreq;
-        return gScanRangeStart; // ostateczny fallback
+        return SpectrumRangeStart; // ostateczny fallback
     }
 
     return f;
@@ -1116,8 +1118,8 @@ static uint32_t GetScanStep() { return scanStepValues[settings.scanStepIndex]; }
 static uint16_t GetStepsCount() 
 { 
   if (appMode==CHANNEL_MODE)    { return scanChannelsCount; }
-  if (appMode==SCAN_RANGE_MODE) { return (gScanRangeStop - gScanRangeStart) / scanInfo.scanStep;}
-  if (appMode==SCAN_BAND_MODE)  { return (gScanRangeStop - gScanRangeStart) / scanInfo.scanStep;}
+  if (appMode==SCAN_RANGE_MODE) { return (SpectrumRangeStop - SpectrumRangeStart) / scanInfo.scanStep;}
+  if (appMode==SCAN_BAND_MODE)  { return (SpectrumRangeStop - SpectrumRangeStart) / scanInfo.scanStep;}
   
   return 128 >> settings.stepsCount;
 }
@@ -1449,42 +1451,50 @@ static bool InitScan() {
     peak.f = 0;
     
     bool scanInitializedSuccessfully = false;
-
-    if (appMode == SCAN_BAND_MODE) {
-        uint8_t checkedBandCount = 0;
-        while (checkedBandCount < bandCount) { 
-            if (settings.bandEnabled[nextBandToScanIndex]) {
-                bl = nextBandToScanIndex; 
-                scanInfo.f = BParams[bl].Startfrequency;
-                scanInfo.scanStep = scanStepValues[BParams[bl].scanStep];
-                settings.scanStepIndex = BParams[bl].scanStep; 
-                if(BParams[bl].Startfrequency>0) gScanRangeStart = BParams[bl].Startfrequency;
-                if(BParams[bl].Stopfrequency>0)  gScanRangeStop = BParams[bl].Stopfrequency;
-                if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
+    switch (appMode) {
+        case SCAN_BAND_MODE:
+            uint8_t checkedBandCount = 0;
+            while (checkedBandCount < bandCount) { 
+                if (settings.bandEnabled[nextBandToScanIndex]) {
+                    bl = nextBandToScanIndex; 
+                    scanInfo.f = BParams[bl].Startfrequency;
+                    scanInfo.scanStep = scanStepValues[BParams[bl].scanStep];
+                    settings.scanStepIndex = BParams[bl].scanStep; 
+                    if(BParams[bl].Startfrequency>0) SpectrumRangeStart = BParams[bl].Startfrequency;
+                    if(BParams[bl].Stopfrequency>0)  SpectrumRangeStop = BParams[bl].Stopfrequency;
+                    if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
+                    nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
+                    scanInitializedSuccessfully = true;
+                    break;
+                }
                 nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
-                scanInitializedSuccessfully = true;
-                break;
+                checkedBandCount++;
             }
-            nextBandToScanIndex = (nextBandToScanIndex + 1) % bandCount;
-            checkedBandCount++;
-        }
-    } else {
-        if(gScanRangeStart > gScanRangeStop)
-		    SWAP(gScanRangeStart, gScanRangeStop);
-        scanInfo.f = gScanRangeStart;
-        scanInfo.scanStep = GetScanStep();
-        scanInitializedSuccessfully = true;
-      }
+            break;
 
-    if (appMode == CHANNEL_MODE) {
-        if (scanChannelsCount == 0) {
-            return false;
-        }
-        scanInfo.f = ScanFrequencies[0];
-        peak.f = scanInfo.f;
-        peak.i = 0;
+        case SCAN_RANGE_MODE:
+            SpectrumRangeStart = RangeStart;
+            SpectrumRangeStop  = RangeStop;
+            if(SpectrumRangeStart > SpectrumRangeStop)
+	    	    SWAP(SpectrumRangeStart, SpectrumRangeStop);
+            scanInfo.f = SpectrumRangeStart;
+            scanInfo.scanStep = GetScanStep();
+            scanInitializedSuccessfully = true;
+            break;
+
+        case FREQUENCY_MODE:
+            currentFreq = gTxVfo->pRX->Frequency;
+            SpectrumRangeStart = currentFreq - (GetBW() >> 1);
+            SpectrumRangeStop  = currentFreq + (GetBW() >> 1);
+            break;
+
+        case CHANNEL_MODE:
+            if (scanChannelsCount == 0) {return false;}
+            scanInfo.f = ScanFrequencies[0];
+            peak.f = scanInfo.f;
+            peak.i = 0;
+            break;
     }
-
     return scanInitializedSuccessfully;
 }
 
@@ -1582,8 +1592,8 @@ static void Measure() {
     static uint16_t lastPixel = 255;
     static uint8_t pixel;
     if (interlacing && count > 128) {
-        uint32_t diff = (scanInfo.f - gScanRangeStart) / 100;
-        uint32_t span = (gScanRangeStop - gScanRangeStart) / 100;
+        uint32_t diff = (scanInfo.f - SpectrumRangeStart) / 100;
+        uint32_t span = (SpectrumRangeStop - SpectrumRangeStart) / 100;
         if (span > 0) {
             pixel = (diff * 127) / span;
             if (pixel < 128) {
@@ -1613,7 +1623,7 @@ static void Measure() {
 }
 
 static void AutoAdjustFreqChangeStep() {
-  settings.frequencyChangeStep = gScanRangeStop - gScanRangeStart;
+  settings.frequencyChangeStep = SpectrumRangeStop - SpectrumRangeStart;
 }
 
 static void UpdateScanStep(bool inc) {
@@ -1632,11 +1642,11 @@ if (inc) {
 
 static void UpdateCurrentFreq(bool inc) {
   if (inc && currentFreq < F_MAX) {
-    gScanRangeStart += settings.frequencyChangeStep;
-    gScanRangeStop += settings.frequencyChangeStep;
+    SpectrumRangeStart += settings.frequencyChangeStep;
+    SpectrumRangeStop += settings.frequencyChangeStep;
   } else if (!inc && currentFreq > settings.frequencyChangeStep) {
-    gScanRangeStart -= settings.frequencyChangeStep;
-    gScanRangeStop -= settings.frequencyChangeStep;
+    SpectrumRangeStart -= settings.frequencyChangeStep;
+    SpectrumRangeStop -= settings.frequencyChangeStep;
   } else {
     return;
   }
@@ -2083,10 +2093,10 @@ if (appMode==CHANNEL_MODE)
 }
 
 if(appMode!=CHANNEL_MODE){
-    sprintf(String, "%u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
+    sprintf(String, "%u.%05u", SpectrumRangeStart / 100000, SpectrumRangeStart % 100000);
     GUI_DisplaySmallest(String, 2, Bottom_print, false, true);
  
-    sprintf(String, "%u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
+    sprintf(String, "%u.%05u", SpectrumRangeStop / 100000, SpectrumRangeStop % 100000);
     GUI_DisplaySmallest(String, 90, Bottom_print, false, true);
     }
 }
@@ -2115,12 +2125,12 @@ static void NextScanStep() {
     uint16_t steps = GetStepsCount();
 #endif
     if (scanInfo.i == 0) {
-        StartF = gScanRangeStart;
+        StartF = SpectrumRangeStart;
         scanInfo.f = StartF;
     } else {
         if (interlacing){
             scanInfo.f += jumpSizes[settings.scanStepIndex];
-            if (scanInfo.f >= gScanRangeStop) {
+            if (scanInfo.f >= SpectrumRangeStop) {
                 StartF += scanInfo.scanStep;
                 scanInfo.f = StartF;
             }
@@ -2692,9 +2702,9 @@ static void HandleKeySpectrum(uint8_t key) {
                 SetState(SPECTRUM);
                 ResetModifiers();
             } else if (appMode == SCAN_RANGE_MODE) {
-                uint32_t rstep = gScanRangeStop - gScanRangeStart;
-                gScanRangeStop  -= rstep;
-                gScanRangeStart -= rstep;
+                uint32_t rstep = SpectrumRangeStop - SpectrumRangeStart;
+                SpectrumRangeStop  -= rstep;
+                SpectrumRangeStart -= rstep;
                 RelaunchScan();
             } else {
                 Skip();
@@ -2728,9 +2738,9 @@ static void HandleKeySpectrum(uint8_t key) {
             SetState(SPECTRUM);
             ResetModifiers();
         } else if (appMode == SCAN_RANGE_MODE) {
-                uint32_t rstep = gScanRangeStop - gScanRangeStart;
-                gScanRangeStop  += rstep;
-                gScanRangeStart += rstep;
+                uint32_t rstep = SpectrumRangeStop - SpectrumRangeStart;
+                SpectrumRangeStop  += rstep;
+                SpectrumRangeStart += rstep;
             RelaunchScan();
             } else {
         Skip();
@@ -2771,7 +2781,7 @@ static void HandleKeySpectrum(uint8_t key) {
         if (++SpectrumMonitor > 2) SpectrumMonitor = 0;
         if (SpectrumMonitor == 1) {
             if (lastReceivingFreq < 1400000 || lastReceivingFreq > 130000000) {
-                lastReceivingFreq = (scanInfo.f >= 1400000) ? scanInfo.f : gScanRangeStart;}
+                lastReceivingFreq = (scanInfo.f >= 1400000) ? scanInfo.f : SpectrumRangeStart;}
                 peak.f     = lastReceivingFreq;
                 scanInfo.f = lastReceivingFreq;
                 SetF(lastReceivingFreq);
@@ -2896,9 +2906,9 @@ static void OnKeyDownFreqInput(uint8_t key) {
       ResetModifiers();
     }
     if (currentState == PARAMETERS_SELECT && parametersSelectedIndex == 3)
-        gScanRangeStart = tempFreq;
+        RangeStart = tempFreq;
     if (currentState == PARAMETERS_SELECT && parametersSelectedIndex == 4)
-        gScanRangeStop = tempFreq;
+        RangeStop = tempFreq;
 
     break;
   default:
@@ -3317,10 +3327,7 @@ static void HandleUserInput(void) {
       }
 
 if (kbd.counter == 2 || (kbd.counter > 17 && (kbd.counter % 15 == 0))) {
-        if (!backlightOn) {
-            BACKLIGHT_TurnOn();
-            if(gEeprom.BACKLIGHT_TIME) return;
-        }
+        BACKLIGHT_TurnOn();
         switch (currentState) {
             case SPECTRUM:
                 OnKeyDown(kbd.current);
@@ -3491,7 +3498,7 @@ static void Tick() {
     if (gNextTimeslice_500ms) {
             gNextTimeslice_500ms = false;
         if (gBacklightCountdown_500ms > 0) --gBacklightCountdown_500ms;
-        if (gBacklightCountdown_500ms == 0)	   {BACKLIGHT_TurnOff();}
+        if (gEeprom.BACKLIGHT_TIME <61 && gBacklightCountdown_500ms == 0) {BACKLIGHT_TurnOff();}
 
         if (gKeylockCountdown > 0) {gKeylockCountdown--;}
         if (AUTO_KEYLOCK && !gKeylockCountdown) {
@@ -3597,8 +3604,8 @@ void APP_RunSpectrum(void) {
         ResetModifiers();
         if (appMode==FREQUENCY_MODE && !Key_1_pressed) {
             currentFreq = gTxVfo->pRX->Frequency;
-            gScanRangeStart = currentFreq - (GetBW() >> 1);
-            gScanRangeStop  = currentFreq + (GetBW() >> 1);
+            SpectrumRangeStart = currentFreq - (GetBW() >> 1);
+            SpectrumRangeStop  = currentFreq + (GetBW() >> 1);
         }
         Key_1_pressed = 0;
         BackupRegisters();
@@ -3736,8 +3743,8 @@ void LoadSettings()
   settings.rssiTriggerLevelUp = eepromData.Trigger;
   settings.listenBw = eepromData.listenBw;
   BK4819_SetFilterBandwidth(settings.listenBw, false);
-  if (eepromData.RangeStart >= 1400000) gScanRangeStart = eepromData.RangeStart;
-  if (eepromData.RangeStop >= 1400000) gScanRangeStop = eepromData.RangeStop;
+  if (eepromData.RangeStart >= 1400000) RangeStart = eepromData.RangeStart;
+  if (eepromData.RangeStop >= 1400000)  RangeStop = eepromData.RangeStop;
   settings.scanStepIndex = eepromData.scanStepIndex;
   for (int i = 0; i < MAX_BANDS; i++) {
     settings.bandEnabled[i] = (eepromData.bandListFlags & ((uint64_t)1 << i)) != 0;
@@ -3788,8 +3795,8 @@ static void SaveSettings()
   }
   eepromData.Trigger = settings.rssiTriggerLevelUp;
   eepromData.listenBw = settings.listenBw;
-  eepromData.RangeStart = gScanRangeStart;
-  eepromData.RangeStop = gScanRangeStop;
+  eepromData.RangeStart = RangeStart;
+  eepromData.RangeStop =  RangeStop;
   eepromData.DelayRssi = DelayRssi;
   eepromData.PttEmission = PttEmission;
   eepromData.scanStepIndex = settings.scanStepIndex;
@@ -3863,8 +3870,8 @@ void ClearSettings()
   settings.scanListEnabled[0] = 1;
   settings.rssiTriggerLevelUp = 5;
   settings.listenBw = 0;
-  gScanRangeStart = 43000000;
-  gScanRangeStop  = 44000000;
+  RangeStart = 43000000;
+  RangeStop  = 44000000;
   DelayRssi = 3;
   PttEmission = 2;
   settings.scanStepIndex = STEP_10kHz;
@@ -3879,7 +3886,7 @@ void ClearSettings()
   UOO_trigger = 15;
   osdPopupSetting = 500;
   GlitchMax = 20;  
-  Spectrum_state = 1; 
+  Spectrum_state = 0; 
   SoundBoost = 0;
   gMonitorScan = false;
   classic = true;
@@ -4107,20 +4114,17 @@ static void GetParametersRow(uint16_t index, ListRow *row) {
             snprintf(row->right, sizeof(row->right), "%s", labels[IndexMaxLT]);
             break;
         case 3: {
-            /* Preserve full frequency precision with trailing-zero removal */
             char tmp[12];
             snprintf(tmp, sizeof(tmp), "%u.%05u",
-                     gScanRangeStart / 100000, gScanRangeStart % 100000);
-           // RemoveTrailZeros(tmp);
+                     RangeStart / 100000, RangeStart % 100000);
             snprintf(row->left,  sizeof(row->left),  "Fstart:");
             snprintf(row->right, sizeof(row->right), "%s", tmp);
             break;
         }
         case 4: {
-            /* Preserve full frequency precision with trailing-zero removal */
             char tmp[12];
             snprintf(tmp, sizeof(tmp), "%u.%05u",
-                     gScanRangeStop / 100000, gScanRangeStop % 100000);
+                     RangeStop / 100000, RangeStop % 100000);
            // RemoveTrailZeros(tmp);
             snprintf(row->left,  sizeof(row->left),  "Fstop:");
             snprintf(row->right, sizeof(row->right), "%s", tmp);
