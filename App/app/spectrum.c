@@ -294,7 +294,7 @@ static void LoadActiveScanFrequencies(void);
     static MemViewMode_t memViewMode = MEM_VIEW_HEX_ASCII;
     static void OnKeyDownCPUView(uint8_t key);
 #endif
-static uint16_t bandCount;
+static uint8_t bandCount;
 STEP_Setting_t channelStep;
 int Rssi2DBm(const uint16_t rssi) {return (rssi >> 1) - 160;}
 
@@ -302,31 +302,8 @@ static int clamp(int v, int min, int max) {
   return v <= min ? min : (v >= max ? max : v);
 }
 
-/* static void UpdateDBMaxAuto() { //Zoom
-
-  static uint8_t z = 2;
-  int newDbMax;
-    if (scanInfo.rssiMax > 0) {
-        newDbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -60, 0);
-        newDbMax = Rssi2DBm(scanInfo.rssiMax);
-
-        if (newDbMax > settings.dbMax + z) {
-            settings.dbMax = settings.dbMax + z;   // montée limitée
-        } else if (newDbMax < settings.dbMax - z) {
-            settings.dbMax = settings.dbMax - z;   // descente limitée
-        } else {
-            settings.dbMax = newDbMax;              // suivi normal
-        }
-    }
-
-    if (scanInfo.rssiMin > 0) {
-        settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
-        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
-    }
-} */
-
 static void UpdateDBMaxAuto() { //Zoom
-    settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -80, 0);
+    settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -100, -20);
     settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
 }
 
@@ -862,7 +839,7 @@ static void LoadActiveBands(void) {
     bandCount = 0;
     for (uint16_t bd = 0; bd < MAX_BANDS; bd++)
     {
-        gChannel = bd + 999;
+        gChannel = bd + MR_CHANNELS_MAX;
         LookupChannelModulation(); //Fill BParams modulation and step
         BParams[bd].modulationType = channelModulation;
         BParams[bd].scanStep =  channelStep;
@@ -1212,7 +1189,7 @@ static void SaveHistoryToFreeChannel(void) {
         tempVFO.CHANNEL_BANDWIDTH = settings.listenBw; 
         tempVFO.OUTPUT_POWER = OUTPUT_POWER_LOW1;
         tempVFO.STEP_SETTING = STEP_12_5kHz; 
-        SETTINGS_SaveChannel(freeCh,0, &tempVFO, 2);
+        SETTINGS_SaveChannel(freeCh, 0, &tempVFO, 2);
         LoadActiveScanFrequencies();
         sprintf(str, "SAVED TO CH %d", freeCh + 1);
         ShowOSDPopup(str);
@@ -2312,12 +2289,12 @@ static void HandleKeyBandList(uint8_t key) {
                     RelaunchScan();
                 }
                 break;
-        case KEY_EXIT:
-                SpectrumMonitor = 0;
-                SetState(SPECTRUM);
-                RelaunchScan(); 
-                gForceModulation = 0; // KOLYAN ADD
-                break;
+            case KEY_EXIT:
+                    SpectrumMonitor = 0;
+                    SetState(SPECTRUM);
+                    RelaunchScan(); 
+                    gForceModulation = 0; // KOLYAN ADD
+                    break;
             default:
                 break;
         }
@@ -3144,7 +3121,6 @@ static void RenderSpectrum()
 #endif
     if (classic) {
         DrawNums();
-        //UpdateDBMaxAuto();
         DrawSpectrum();
 
 #ifdef ENABLE_SPECTRUM_LINES
@@ -3534,10 +3510,10 @@ static void Tick() {
             return;
             }
 
-    if (gNextTimeslice_listening) {
+/*     if (gNextTimeslice_listening) {
         gNextTimeslice_listening = 0;
         if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); 
-    }
+    } */
   }
 
   if (SPECTRUM_PAUSED && (SpectrumPauseCount == 0)) {
@@ -3565,7 +3541,7 @@ static void Tick() {
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     SCREENSHOT_Update(true);
 #endif
-    //if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); // Kolyan test
+    if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); // Kolyan test
     gNextTimeslice_display = 0;
     latestScanListName[0] = '\0';
     RenderStatus();
