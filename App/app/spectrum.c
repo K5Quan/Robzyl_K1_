@@ -3428,7 +3428,7 @@ static void UpdateListening(void) { // called every 10ms
         SoundBoostsave = SoundBoost;
     }
     if (peak.f == stableFreq) {
-        if (++stableCount >= 50) {  // 500ms
+        if (++stableCount >= 2) {  // 400ms
             if (!SpectrumMonitor) FillfreqHistory();
             stableCount = 0;
             if (gEeprom.BACKLIGHT_MAX > 5)

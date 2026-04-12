@@ -41,6 +41,15 @@
 
 static uint16_t gBK4819_GpioOutState;
 
+#define SHORT_DELAY()                                                          \
+  __asm volatile("nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n"                               \
+                 "nop\n nop\n nop\n nop\n nop\n")
 bool gRxIdleMode;
 
 static inline void CS_Assert()
@@ -196,16 +205,16 @@ static uint16_t BK4819_ReadU16(void)
     uint16_t     Value;
 
     SDA_SetDir(false);
-    SYSTICK_DelayUs(1);
+    SHORT_DELAY();
     Value = 0;
     for (i = 0; i < 16; i++)
     {
         Value <<= 1;
         Value |= SDA_ReadInput();
         SCL_Set();
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
         SCL_Reset();
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
     }
     SDA_SetDir(true);
 
@@ -216,22 +225,19 @@ uint16_t regs_cache[128] = {[0 ... 127] = 0xFFFF};
 
 uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
 {
+      __disable_irq();
     uint16_t Value;
-
     CS_Release();
     SCL_Reset();
-
-    SYSTICK_DelayUs(1);
-
+    SHORT_DELAY();
     CS_Assert();
     BK4819_WriteU8(Register | 0x80);
     Value = BK4819_ReadU16();
     CS_Release();
-
-    SYSTICK_DelayUs(1);
-
+    SHORT_DELAY();
     SCL_Set();
     SDA_Set();
+    __enable_irq();
 	regs_cache[Register] = Value;
     return Value;
 }
@@ -243,20 +249,20 @@ void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
     CS_Release();
     SCL_Reset();
 
-    SYSTICK_DelayUs(1);
+    SHORT_DELAY();
 
     CS_Assert();
     BK4819_WriteU8(Register);
 
-    SYSTICK_DelayUs(1);
+    SHORT_DELAY();
 
     BK4819_WriteU16(Data);
 
-    SYSTICK_DelayUs(1);
+    SHORT_DELAY();
 
     CS_Release();
 
-    SYSTICK_DelayUs(1);
+    SHORT_DELAY();
 
     SCL_Set();
     SDA_Set();
@@ -274,14 +280,14 @@ void BK4819_WriteU8(uint8_t Data)
         else
             SDA_Set();
 
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
         SCL_Set();
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
 
         Data <<= 1;
 
         SCL_Reset();
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
     }
 }
 
@@ -297,14 +303,14 @@ void BK4819_WriteU16(uint16_t Data)
         else
             SDA_Set();
 
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
         SCL_Set();
 
         Data <<= 1;
 
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
         SCL_Reset();
-        SYSTICK_DelayUs(1);
+        SHORT_DELAY();
     }
 }
 
