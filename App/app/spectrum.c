@@ -49,7 +49,7 @@
 #define NoisLvl 45
 #define NoiseHysteresis 15
           /////////////////////////DEBUG//////////////////////////
-//char str[64] = "";sprintf(str, "%d\r\n", Spectrum_state );//LogUart(str);
+//char str[64] = "";sprintf(str, "%d\r\n", Spectrum_state );LogUart(str);
 
 // ============================================================
 // SECTION: State variables
@@ -301,10 +301,24 @@ int Rssi2DBm(const uint16_t rssi) {return (rssi >> 1) - 160;}
 static int clamp(int v, int min, int max) {
   return v <= min ? min : (v >= max ? max : v);
 }
+static void ZoomOut (void){
+    settings.dbMax = 0;
+    settings.dbMin = -160;
+}
 
 static void UpdateDBMaxAuto() { //Zoom
-    settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -100, -20);
-    settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -160, -120);
+    scanInfo.rssiMax = 0;
+    scanInfo.rssiMin = 65535;
+    for (uint8_t i = 0; i < 127;i++) {
+      if (rssiHistory[i] > scanInfo.rssiMax) {scanInfo.rssiMax = rssiHistory[i];}
+      else 
+      if (rssiHistory[i] < scanInfo.rssiMin) {scanInfo.rssiMin = rssiHistory[i];}
+    }
+    settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
+    settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+    //settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -70, -20);
+    //settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -120, -90);
+    //char str[64] = "";sprintf(str, "%d %d\r\n", Rssi2DBm(scanInfo.rssiMax),Rssi2DBm(scanInfo.rssiMin) );LogUart(str);
 }
 
 
@@ -1013,6 +1027,7 @@ KEY_Code_t GetKey() {
 static void SetState(State state) {
   previousState = currentState;
   currentState = state;
+  ZoomOut();
 }
 
 // ============================================================
@@ -1388,8 +1403,6 @@ static void ToggleRX(bool on) {
     
     if (on) { 
         Fmax = peak.f;
-
-        //BK4819_WriteRegister(BK4819_REG_37, 0x1D0F); // 0x1D0F defoult. 0x1D0F is ok for me
         BK4819_RX_TurnOn();
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
@@ -1397,8 +1410,7 @@ static void ToggleRX(bool on) {
         BK4819_WriteRegister(BK4819_REG_3F, BK4819_REG_02_CxCSS_TAIL);
 
     } else { 
-        
-        //BK4819_WriteRegister(BK4819_REG_37, 0x000F);
+        //BK4819_WriteRegister(BK4819_REG_37, 0x1F1F); //0x0A63
         RADIO_SetModulation(MODULATION_FM);
         BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, false); //Scan in 25K bandwidth
         BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 0);
@@ -1532,7 +1544,6 @@ static void Measure() {
     uint16_t rssi = scanInfo.rssi = GetRssi();
     UpdateScanInfo();
     if (scanInfo.f % 1300000 == 0 || IsBlacklisted(scanInfo.f)) rssi = scanInfo.rssi = 0;
-
     if (isFirst) {
         previousRssi = rssi;
         gIsPeak      = false;
@@ -1621,17 +1632,13 @@ if (inc) {
 }
 
 static void UpdateCurrentFreq(bool inc) {
-  if (inc && currentFreq < F_MAX) {
-    SpectrumRangeStart += settings.frequencyChangeStep;
-    SpectrumRangeStop += settings.frequencyChangeStep;
-  } else if (!inc && currentFreq > settings.frequencyChangeStep) {
-    SpectrumRangeStart -= settings.frequencyChangeStep;
-    SpectrumRangeStop -= settings.frequencyChangeStep;
-  } else {
-    return;
-  }
+    AutoAdjustFreqChangeStep();
+    if (inc) {
+        gTxVfo->pRX->Frequency += settings.frequencyChangeStep;
+    } else {
+        gTxVfo->pRX->Frequency -= settings.frequencyChangeStep;
+    }
   ResetModifiers();
-  
 }
 
 static void ToggleModulation() {
@@ -2092,7 +2099,10 @@ static void NextScanStep() {
 #ifdef ENABLE_BENCH
         uint16_t prevI = scanInfo.i;
 #endif
-        if (++scanInfo.i >= scanChannelsCount) scanInfo.i = 0;
+        if (++scanInfo.i >= scanChannelsCount) {
+            scanInfo.i = 0;
+            UpdateDBMaxAuto();
+        }
 #ifdef ENABLE_BENCH
         if (scanInfo.i < prevI) benchLapDone = true;   // pełna pętla listy kanałów
 #endif
@@ -2223,6 +2233,7 @@ void NextAppMode(void) {
         SpectrumPauseCount = 0;
         newScanStart = true;
         ToggleRX(false);
+        ZoomOut();
 }
 
 
@@ -2668,64 +2679,77 @@ static void HandleKeySpectrum(uint8_t key) {
                     historyScrollOffset = historyListIndex;
                 lastReceivingFreq = HFreqs[historyListIndex];
                 SetF(lastReceivingFreq);
-            } else if (appMode == SCAN_BAND_MODE) {
-                bandListSelectedIndex = (bandListSelectedIndex < 1 ? bandCount - 1 : bandListSelectedIndex - 1);
-                ToggleScanList(bandListSelectedIndex, 1);
-                settings.bandEnabled[bandListSelectedIndex] = true;
-                RelaunchScan();
-            } else if (appMode == FREQUENCY_MODE) {
-                UpdateCurrentFreq(true);
-            } else if (appMode == CHANNEL_MODE) {
-                BuildValidScanListIndices();
-                scanListSelectedIndex = (scanListSelectedIndex < 1 ? validScanListCount - 1 : scanListSelectedIndex - 1);
-                ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
-                SetState(SPECTRUM);
-                ResetModifiers();
-            } else if (appMode == SCAN_RANGE_MODE) {
-                uint32_t rstep = SpectrumRangeStop - SpectrumRangeStart;
-                SpectrumRangeStop  -= rstep;
-                SpectrumRangeStart -= rstep;
-                RelaunchScan();
             } else {
-                Skip();
+                ZoomOut();
+                switch (appMode) {
+                    case SCAN_BAND_MODE:
+                        bandListSelectedIndex = (bandListSelectedIndex < 1 ? bandCount - 1 : bandListSelectedIndex - 1);
+                        ToggleScanList(bandListSelectedIndex, 1);
+                        settings.bandEnabled[bandListSelectedIndex] = true;
+                        RelaunchScan();
+                        break;
+                    case FREQUENCY_MODE:
+                        UpdateCurrentFreq(0);
+                        break;
+                    case CHANNEL_MODE:
+                        BuildValidScanListIndices();
+                        scanListSelectedIndex = (scanListSelectedIndex < 1 ? validScanListCount - 1 : scanListSelectedIndex - 1);
+                        ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
+                        SetState(SPECTRUM);
+                        ResetModifiers();
+                        break;
+                    case SCAN_RANGE_MODE:
+                        uint32_t rstep = SpectrumRangeStop - SpectrumRangeStart;
+                        SpectrumRangeStop  -= rstep;
+                        SpectrumRangeStart -= rstep;
+                        RelaunchScan();
+                        break;
+                }
+            } 
+            break;
+        case KEY_DOWN:
+            if (historyListActive) {
+                uint16_t count = CountValidHistoryItems();
+                SpectrumMonitor = 1;
+                if (!count) return;
+                if (++historyListIndex >= count) {
+                    historyListIndex    = 0;
+                    historyScrollOffset = 0;
+                }
+                if (historyListIndex >= historyScrollOffset + MAX_VISIBLE_LINES)
+                    historyScrollOffset = historyListIndex - MAX_VISIBLE_LINES + 1;
+                lastReceivingFreq = HFreqs[historyListIndex];
+                SetF(lastReceivingFreq);
+            } else {
+                ZoomOut();
+                switch (appMode) {
+                    case SCAN_BAND_MODE:
+                        bandListSelectedIndex = (bandListSelectedIndex + 1) % bandCount;
+                        ToggleScanList(bandListSelectedIndex, 1);
+                        settings.bandEnabled[bandListSelectedIndex]= true; //Inverted for K1
+                        RelaunchScan();
+                        break;
+                    case FREQUENCY_MODE:
+                        UpdateCurrentFreq(1);
+                        break;
+                    case CHANNEL_MODE:
+                        BuildValidScanListIndices();
+                        if (validScanListCount > 0) {
+                            scanListSelectedIndex = (scanListSelectedIndex + 1) % validScanListCount;
+                            ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
+                        }
+                        SetState(SPECTRUM);
+                        ResetModifiers();
+                        break;
+                    case SCAN_RANGE_MODE:
+                        uint32_t rstep = SpectrumRangeStop - SpectrumRangeStart;
+                        SpectrumRangeStop  += rstep;
+                        SpectrumRangeStart += rstep;
+                        RelaunchScan();
+                        break;
+                }
             }
             break;
-  case KEY_DOWN:
-      if (historyListActive) {
-        uint16_t count = CountValidHistoryItems();
-        SpectrumMonitor = 1;
-        if (!count) return;
-        if (++historyListIndex >= count) {
-            historyListIndex    = 0;
-            historyScrollOffset = 0;
-        }
-        if (historyListIndex >= historyScrollOffset + MAX_VISIBLE_LINES)
-            historyScrollOffset = historyListIndex - MAX_VISIBLE_LINES + 1;
-        lastReceivingFreq = HFreqs[historyListIndex];
-        SetF(lastReceivingFreq);
-            } else if (appMode == SCAN_BAND_MODE) {
-                bandListSelectedIndex = (bandListSelectedIndex + 1) % bandCount;
-                ToggleScanList(bandListSelectedIndex, 1);
-                settings.bandEnabled[bandListSelectedIndex]= true; //Inverted for K1
-                RelaunchScan(); 
-        } else if (appMode == FREQUENCY_MODE) {UpdateCurrentFreq(false);}
-        else if (appMode == CHANNEL_MODE) {
-            BuildValidScanListIndices();
-            if (validScanListCount > 0) {
-                scanListSelectedIndex = (scanListSelectedIndex + 1) % validScanListCount;
-                ToggleScanList(validScanListIndices[scanListSelectedIndex], 1);
-            }
-            SetState(SPECTRUM);
-            ResetModifiers();
-        } else if (appMode == SCAN_RANGE_MODE) {
-                uint32_t rstep = SpectrumRangeStop - SpectrumRangeStart;
-                SpectrumRangeStop  += rstep;
-                SpectrumRangeStart += rstep;
-            RelaunchScan();
-            } else {
-        Skip();
-    }
-  break;
   case KEY_4:
             if (appMode != SCAN_RANGE_MODE) ToggleStepsCount();
     break;
@@ -3406,7 +3430,7 @@ static void UpdateScan() {
 }
 
 
-static void UpdateListening(void) { // called every 10ms
+static void UpdateListening(void) { // called every 200ms
     
     static uint32_t stableFreq = 1;
     static uint16_t stableCount = 0;
@@ -3446,7 +3470,7 @@ static void UpdateListening(void) { // called every 10ms
         UpdateGlitch();
     }
         
-    spectrumElapsedCount += 10; //in ms
+    spectrumElapsedCount += 200; //in ms
     uint32_t maxCount = (uint32_t)MaxListenTime * 1000;
 
     if (MaxListenTime && spectrumElapsedCount >= maxCount && !SpectrumMonitor) {
@@ -3463,8 +3487,8 @@ static void UpdateListening(void) { // called every 10ms
     if (WaitSpectrum > 61000)
         return;
 
-    if (WaitSpectrum > 10) {
-        WaitSpectrum -= 10;
+    if (WaitSpectrum > 200) {
+        WaitSpectrum -= 200;
         return;
     }
     // timer écoulé
@@ -3510,10 +3534,6 @@ static void Tick() {
             return;
             }
 
-/*     if (gNextTimeslice_listening) {
-        gNextTimeslice_listening = 0;
-        if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); 
-    } */
   }
 
   if (SPECTRUM_PAUSED && (SpectrumPauseCount == 0)) {
@@ -3541,7 +3561,7 @@ static void Tick() {
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     SCREENSHOT_Update(true);
 #endif
-    if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening(); // Kolyan test
+    if (isListening || SpectrumMonitor || WaitSpectrum) UpdateListening();
     gNextTimeslice_display = 0;
     latestScanListName[0] = '\0';
     RenderStatus();
@@ -3556,6 +3576,7 @@ void APP_RunSpectrum(void) {
         LoadMonitorFrequencies ();
         Mode mode;
         if (!Key_1_pressed ) LoadSettings();
+        Key_1_pressed = 0;
         gComeBack = 0; 
         switch (Spectrum_state) {
             case 0:  mode = FREQUENCY_MODE;  break;
@@ -3578,7 +3599,6 @@ void APP_RunSpectrum(void) {
         gEeprom.CURRENT_STATE = 4;
         SETTINGS_WriteCurrentState();
 #endif
-        if (!Key_1_pressed) LoadSettings(); 
         appMode = mode;
         ResetModifiers();
         if (appMode==FREQUENCY_MODE && !Key_1_pressed) {
@@ -3586,7 +3606,6 @@ void APP_RunSpectrum(void) {
             SpectrumRangeStart = currentFreq - (GetBW() >> 1);
             SpectrumRangeStop  = currentFreq + (GetBW() >> 1);
         }
-        Key_1_pressed = 0;
         BackupRegisters();
         BK4819_WriteRegister(BK4819_REG_30, 0);
         SYSTEM_DelayMs(10);

@@ -174,7 +174,7 @@ typedef struct bandparameters {
   ModulationMode_t modulationType;
 } bandparameters;
 
-#define MAX_BANDS 24
+#define MAX_BANDS 50
 
 typedef struct SpectrumSettings {
   uint32_t frequencyChangeStep;  

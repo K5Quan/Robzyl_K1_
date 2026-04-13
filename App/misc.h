@@ -41,7 +41,7 @@
 #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     #define MR_CHANNELS_MAX 200
 #else
-    #define MR_CHANNELS_MAX 999
+    #define MR_CHANNELS_MAX 974
 #endif
 
 #define MR_CHANNELS_LIST 20
@@ -309,7 +309,6 @@ extern volatile uint8_t      gSerialConfigCountDown_500ms;
 extern volatile bool         gNextTimeslice_500ms;
 extern volatile bool         gNextTimeslice_Monitor;
 extern volatile bool         gNextTimeslice_10ms;
-extern volatile bool         gNextTimeslice_listening;
 extern volatile bool         gNextTimeslice_60s;
 extern volatile bool         gNextTimeslice_display;
 extern volatile bool         gNextTimeslice_ShowNames;
