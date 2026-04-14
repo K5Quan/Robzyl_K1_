@@ -67,9 +67,6 @@ static volatile uint8_t gRequestedSpectrumState = 0;
 
 
 #define MONITOR_SIZE 20
-static uint8_t cachedValidScanListCount = 0;
-static uint8_t cachedEnabledScanListCount = 0;
-static bool scanListCountsDirty = true;
 static uint16_t historyListIndex = 0;
 static uint16_t indexFs = 0;
 static int historyScrollOffset = 0;
@@ -866,12 +863,47 @@ static void LoadActiveBands(void) {
     }
 }
 
+static char osdPopupText[32] = "";
+
+static void ShowOSDPopup(const char *str)
+{   osdPopupTimer = osdPopupSetting;
+    strncpy(osdPopupText, str, sizeof(osdPopupText)-1);
+    osdPopupText[sizeof(osdPopupText)-1] = '\0';
+}
+
+#define MAX_CHANNELS 500
+
+static uint16_t CountValidFrequencies(void) {
+    uint16_t count = 0;
+    ChannelAttributes_t cache;
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && count < MAX_CHANNELS; ch++) {
+        MR_LoadChannelAttributesFromFlash(ch, &cache);
+        if (cache.scanlist > 0 && cache.scanlist <= MR_CHANNELS_LIST) {
+            if (FetchChannelFrequency(ch).frequency && settings.scanListEnabled[cache.scanlist-1]) count++;
+        }
+    }
+    if (count > 0) return count; 
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && count < MAX_CHANNELS; ch++) {
+        if (FetchChannelFrequency(ch).frequency) count++;
+    }
+    return count;
+}
+
 static void LoadActiveScanFrequencies(void)
 {   if(appMode!=CHANNEL_MODE) return;
-    memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
+    if (ScanFrequencies != NULL) { free(ScanFrequencies); ScanFrequencies = NULL; }
+    uint16_t needed = CountValidFrequencies();
+    if (needed > 0) {
+        ScanFrequencies = (uint32_t *)malloc(needed * sizeof(uint32_t));
+        if (!ScanFrequencies) return;
+    }
+    char str[32];
+    sprintf(str, "%d CHANNELS", needed);
+    ShowOSDPopup(str);
+    //memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
     scanChannelsCount = 0;
     ChannelAttributes_t cache;
-    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && scanChannelsCount < MAX_CHANNELS; ch++)
     {
         MR_LoadChannelAttributesFromFlash(ch, &cache);
         if (cache.scanlist <= MR_CHANNELS_LIST) {
@@ -885,7 +917,7 @@ static void LoadActiveScanFrequencies(void)
         }
     }
     if (!scanChannelsCount) { //No active scanlist
-    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && scanChannelsCount < MAX_CHANNELS; ch++)
     {
         ChannelInfo_t freqs  = FetchChannelFrequency(ch);
         if (freqs.frequency) {
@@ -962,16 +994,6 @@ static void ResetInterrupts();
 static char StringCode[10] = "";
 
 static bool parametersStateInitialized = false;
-
-//
-static char osdPopupText[32] = "";
-
-// 
-static void ShowOSDPopup(const char *str)
-{   osdPopupTimer = osdPopupSetting;
-    strncpy(osdPopupText, str, sizeof(osdPopupText)-1);
-    osdPopupText[sizeof(osdPopupText)-1] = '\0';
-}
 
 static uint32_t stillFreq = 0;
 static uint32_t GetInitialStillFreq(void) {
@@ -2043,36 +2065,19 @@ static void LookupChannelModulation() {
     channelStep = tmp;
 }
 
-static void UpdateScanListCountsCached(void) {
-    if (!scanListCountsDirty) return;
 
-    BuildValidScanListIndices();
-    cachedValidScanListCount = validScanListCount;
-    cachedEnabledScanListCount = 0;
-
-    for (uint8_t i = 0; i < cachedValidScanListCount; i++) {
-        uint8_t realIndex = validScanListIndices[i];
-        if (settings.scanListEnabled[realIndex]) {
-            cachedEnabledScanListCount++;
-        }
-    }
-
-    scanListCountsDirty = false;
-}
 
 
 static void DrawNums() {
 if (appMode==CHANNEL_MODE) 
 {
-  UpdateScanListCountsCached();
-
-  uint8_t displayEnabled = (cachedEnabledScanListCount == 0)
-      ? cachedValidScanListCount
-      : cachedEnabledScanListCount;
-
-  sprintf(String, "SL:%u/%u", displayEnabled, cachedValidScanListCount);
+  uint8_t selectedCount = 0;
+  for (uint8_t i = 0; i < validScanListCount; i++) {
+      if (settings.scanListEnabled[validScanListIndices[i]]) selectedCount++;
+  }
+  sprintf(String, "SL:%u/%u", selectedCount, validScanListCount);
   GUI_DisplaySmallest(String, 2, Bottom_print, false, true);
-
+  
   sprintf(String, "CH:%u", scanChannelsCount);
   GUI_DisplaySmallest(String, 96, Bottom_print, false, true);
 
@@ -3569,8 +3574,6 @@ static void Tick() {
   } 
 }
 
-
-
 void APP_RunSpectrum(void) {    
     for (;;) {
         LoadMonitorFrequencies ();
@@ -3586,9 +3589,7 @@ void APP_RunSpectrum(void) {
             default: mode = FREQUENCY_MODE;  break;
         }
         if(mode == CHANNEL_MODE) {
-            if (ScanFrequencies == NULL) {
-                ScanFrequencies = (uint32_t *)malloc((MR_CHANNEL_LAST + 1) * sizeof(uint32_t));}
-            if (ScanFrequencies) LoadActiveScanFrequencies();
+            LoadActiveScanFrequencies();
         }
         if(mode == SCAN_BAND_MODE){
             if (BParams == NULL) {

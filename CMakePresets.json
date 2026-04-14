@@ -103,7 +103,7 @@
             "cacheVariables": {
                 "ENABLE_USB": true,
                 "ENABLE_UART": false,
-                "ENABLE_VERSION": false,
+                "ENABLE_VERSION": true,
                 "EDITION_STRING": "USB",
                 "TARGET": "ROBZYL.K1.USB.V6.20"
             }
