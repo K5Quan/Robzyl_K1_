@@ -113,6 +113,7 @@ static bool     gMonitorScan = true;         // case 17
     static uint32_t benchLastLapMs = 0;   
     static bool benchLapDone = false;
 #endif
+uint8_t osdPopupIndex = 3;
 bool Cleared = 0;
 static bool SettingsLoaded = false;
 uint8_t  gKeylockCountdown = 0;
@@ -2021,11 +2022,15 @@ static void DrawF(uint32_t f) {
               ArrowLine = 3;
             }
 			if (classic && ShowLines == 4) {return;} // BENCH renderujemy osobno
-    if (Fmax) 
-      {
-          FormatFrequency(Fmax, freqStr, sizeof(freqStr));
-          GUI_DisplaySmallest(freqStr,  50, Bottom_print, false,true);
-      }
+    if (Fmax) {
+        if(isListening) {
+            snprintf(String, sizeof(String), "%d dBm", Rssi2DBm(scanInfo.rssi));
+            GUI_DisplaySmallest(String, 50, Bottom_print, false, true);
+        } else {
+            snprintf(String, sizeof(String), "Rate: %u/s", benchRatePerSec);
+            GUI_DisplaySmallest(String, 42, Bottom_print, false, true);
+        }
+    }
 
     } else { //Not Classic
 
@@ -2430,9 +2435,9 @@ static void HandleKeyParameters(uint8_t key) {
                                  (DelayRssi >= 6 ? 1 : DelayRssi + 1) :
                                  (DelayRssi <= 1 ? 6 : DelayRssi - 1);
                     {
-                        static const int rssiMap[] = {1, 5, 10, 15, 20};
+/*                         static const int rssiMap[] = {1, 5, 10, 15, 20};
                         settings.rssiTriggerLevelUp =
-                            (DelayRssi >= 1 && DelayRssi <= 5) ? rssiMap[DelayRssi - 1] : 20;
+                            (DelayRssi >= 1 && DelayRssi <= 5) ? rssiMap[DelayRssi - 1] : 20; */
                     }
                       break;
                 case 1: /* Spectrum Delay */
@@ -2488,9 +2493,11 @@ static void HandleKeyParameters(uint8_t key) {
                       Noislvl_ON = NoisLvl - NoiseHysteresis;                      
                       break;
                 case 11: /* OSD popup duration */
-                      osdPopupSetting = isKey3 ? 
-                                      (osdPopupSetting >= 5000 ? 0    : osdPopupSetting + 500) :
-                                      (osdPopupSetting <= 0    ? 5000 : osdPopupSetting - 500);
+                      static const int osdPopupTimes[] = {0, 200, 300, 500, 1000, 2000, 3000};
+                      osdPopupIndex = isKey3 ? 
+                                      (osdPopupIndex >= 6 ? 0 : osdPopupIndex + 1):
+                                      (osdPopupIndex <= 0 ? 6 : osdPopupIndex - 1);
+                      osdPopupSetting = osdPopupTimes[osdPopupIndex];
                       break;
                 case 12: /* Record trigger */
                       UOO_trigger = isKey3 ? 
