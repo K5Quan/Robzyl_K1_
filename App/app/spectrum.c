@@ -2056,7 +2056,7 @@ static void DrawF(uint32_t f) {
               ArrowLine = 3;
             }
 			if (classic && ShowLines == 4) {return;} // BENCH renderujemy osobno
-    if (Fmax) {
+    
         if(isListening) {
             snprintf(String, sizeof(String), "%d dBm", Rssi2DBm(scanInfo.rssi));
             GUI_DisplaySmallest(String, 50, Bottom_print, false, true);
@@ -2064,8 +2064,7 @@ static void DrawF(uint32_t f) {
             snprintf(String, sizeof(String), "Rate: %u/s", benchRatePerSec);
             GUI_DisplaySmallest(String, 42, Bottom_print, false, true);
         }
-    }
-
+    
     } else { //Not Classic
 
     DrawMeter(4);
