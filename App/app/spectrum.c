@@ -27,7 +27,36 @@
 #include "ui/main.h"
 #ifdef ENABLE_CPU_STATS
     #include "app/mem_stats.h"
+#else
+    #include <stdint.h>
+    #include <sys/types.h>
+    #include <errno.h>
+
+    extern char _end; 
+    static char *local_heap_ptr = NULL;
+
+    caddr_t _sbrk(int incr) {
+        if (local_heap_ptr == NULL) local_heap_ptr = &_end;
+
+        char *prev_heap_ptr = local_heap_ptr;
+        register char *sp asm("sp");
+
+        if (local_heap_ptr + incr + 64 > sp) {
+            errno = ENOMEM;
+            return (caddr_t)-1;
+        }
+
+        local_heap_ptr += incr;
+        return (caddr_t)prev_heap_ptr;
+    }
+
+    uint32_t MemStats_GetFreeGap(void) {
+        register char *sp asm("sp");
+        char *brk = (local_heap_ptr != NULL) ? local_heap_ptr : &_end;
+        return (sp > brk) ? (uint32_t)(sp - brk) : 0u;
+    }
 #endif
+
 #ifdef ENABLE_CPU_TEMP
     #include "driver/cpu_temp.h"
 #endif
@@ -305,6 +334,7 @@ static void ZoomOut (void){
 }
 
 static void UpdateDBMaxAuto() { //Zoom
+    //if (ShowLines == 2) {ZoomOut(); return;}
     scanInfo.rssiMax = 0;
     scanInfo.rssiMin = 65535;
     for (uint8_t i = 0; i < 127;i++) {
@@ -312,7 +342,7 @@ static void UpdateDBMaxAuto() { //Zoom
       else 
       if (rssiHistory[i] < scanInfo.rssiMin) {scanInfo.rssiMin = rssiHistory[i];}
     }
-    settings.dbMax = Rssi2DBm(scanInfo.rssiMax);
+    settings.dbMax = Rssi2DBm(scanInfo.rssiMax) + 3;
     settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
     //settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -70, -20);
     //settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -120, -90);
@@ -734,7 +764,7 @@ static void RenderRAMView(void)
     snprintf(buf, sizeof(buf), "Heap peak:  %5lu B", (unsigned long)hpeak);
     GUI_DisplaySmallest(buf, 1, y, false, true); y += 8;
 
-    snprintf(buf, sizeof(buf), "Free gap:   %5lu B", (unsigned long)hfree);
+    snprintf(buf, sizeof(buf), "Free RAM:   %5lu B", (unsigned long)hfree);
     GUI_DisplaySmallest(buf, 1, y, false, true); y += 8;
 
     /* RAM usage percentage (integer arithmetic, no floats) */
@@ -872,19 +902,21 @@ static void ShowOSDPopup(const char *str)
     osdPopupText[sizeof(osdPopupText)-1] = '\0';
 }
 
-#define MAX_CHANNELS 500
+//#define MAX_CHANNELS 500
 
 static uint16_t CountValidFrequencies(void) {
     uint16_t count = 0;
     ChannelAttributes_t cache;
-    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && count < MAX_CHANNELS; ch++) {
+    //for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && count < MAX_CHANNELS; ch++) {
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++) {
         MR_LoadChannelAttributesFromFlash(ch, &cache);
         if (cache.scanlist > 0 && cache.scanlist <= MR_CHANNELS_LIST) {
             if (FetchChannelFrequency(ch).frequency && settings.scanListEnabled[cache.scanlist-1]) count++;
         }
     }
     if (count > 0) return count; 
-    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && count < MAX_CHANNELS; ch++) {
+    //for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && count < MAX_CHANNELS; ch++) {
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++) {
         if (FetchChannelFrequency(ch).frequency) count++;
     }
     return count;
@@ -904,7 +936,8 @@ static void LoadActiveScanFrequencies(void)
     //memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
     scanChannelsCount = 0;
     ChannelAttributes_t cache;
-    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && scanChannelsCount < MAX_CHANNELS; ch++)
+    //for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && scanChannelsCount < MAX_CHANNELS; ch++)
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
     {
         MR_LoadChannelAttributesFromFlash(ch, &cache);
         if (cache.scanlist <= MR_CHANNELS_LIST) {
@@ -918,7 +951,8 @@ static void LoadActiveScanFrequencies(void)
         }
     }
     if (!scanChannelsCount) { //No active scanlist
-    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && scanChannelsCount < MAX_CHANNELS; ch++)
+    //for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST && scanChannelsCount < MAX_CHANNELS; ch++)
+    for (uint16_t ch = MR_CHANNEL_FIRST; ch <= MR_CHANNEL_LAST; ch++)
     {
         ChannelInfo_t freqs  = FetchChannelFrequency(ch);
         if (freqs.frequency) {
@@ -3143,7 +3177,9 @@ static void RenderBenchmark(void) {
     snprintf(line, sizeof(line), "Cur lap: %lu.%01lus",
              benchLapMs / 1000, (benchLapMs % 1000) / 100);
     UI_PrintStringSmallbackground(line, 1, LCD_WIDTH - 1, 4, 0);
-    UI_PrintStringSmallbackground("8:VIEW 1:SKIP 5:PARAM", 1, LCD_WIDTH - 1, 6, 0);
+    uint32_t hfree = MemStats_GetFreeGap();
+    snprintf(line, sizeof(line), "FREE RAM: %5lu B", (unsigned long)hfree);
+    UI_PrintStringSmallbackground(line, 1, LCD_WIDTH - 1, 5, 0);
 }
 #endif
 

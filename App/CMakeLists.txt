@@ -145,7 +145,6 @@ enable_feature(ENABLE_FLASHLIGHT
 
 enable_feature(ENABLE_SPECTRUM
     app/spectrum.c
-    app/mem_stats.c
 )
 enable_feature(ENABLE_BIG_FREQ)
 enable_feature(ENABLE_SMALL_BOLD)
