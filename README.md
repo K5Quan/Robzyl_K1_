@@ -1,5 +1,4 @@
-# Download on Telegram:
-## [🗲 Telegram](https://t.me/k5robby69)
+# [🗲  Join the Telegram](https://t.me/k5robby69)
 
 ## This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
 
