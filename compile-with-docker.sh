@@ -45,9 +45,9 @@ fi
 # ---------------------------------------------
 # Validate preset name
 # ---------------------------------------------
-if [[ ! "$PRESET" =~ ^(Dev|USB|RS232|NO_COM|All)$ ]]; then
+if [[ ! "$PRESET" =~ ^(Dev|USB|RS232|All)$ ]]; then
   echo "❌ Unknown preset: '$PRESET'"
-  echo "Valid presets are: Dev USB RS232 NO_COM All"
+  echo "Valid presets are: Dev USB RS232 All"
   exit 1
 fi
 
@@ -108,7 +108,7 @@ build_preset() {
 # Handle 'All' preset
 # ---------------------------------------------
 if [[ "$PRESET" == "All" ]]; then
-  PRESETS=(Dev USB RS232 NO_COM)
+  PRESETS=(USB RS232)
   for p in "${PRESETS[@]}"; do
     build_preset "$p"
   done

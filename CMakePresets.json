@@ -117,16 +117,6 @@
                 "EDITION_STRING": "RS232",
                 "TARGET": "ROBZYL.K1.RS232.V6.21b"
             }
-        },
-        {
-            "name": "NO_COM",
-            "inherits": "default",
-            "cacheVariables": {
-                "ENABLE_USB": false,
-                "ENABLE_UART": false,
-                "EDITION_STRING": "NO_COM",
-                "TARGET": "ROBZYL.K1.NO_COM.V6.21b"
-            }
         }
     ],
     "buildPresets": [
@@ -141,10 +131,6 @@
         {
             "name": "RS232",
             "configurePreset": "RS232"
-        },
-        {
-            "name": "NO_COM",
-            "configurePreset": "NO_COM"
         }
     ]
 }
