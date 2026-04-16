@@ -324,21 +324,6 @@ void BK4819_SetAGC(bool enable)
         | (!enable << 15)   // 0  AGC fix mode
         | (3u << 12)       // 3  AGC fix index
     );
-
-    // if(enable) {
-    //  BK4819_WriteRegister(BK4819_REG_7B, 0x8420);
-    // }
-    // else {
-    //  BK4819_WriteRegister(BK4819_REG_7B, 0x318C);
-
-    //  BK4819_WriteRegister(BK4819_REG_7C, 0x595E);
-    //  BK4819_WriteRegister(BK4819_REG_20, 0x8DEF);
-
-    //  for (uint8_t i = 0; i < 8; i++) {
-    //      //BK4819_WriteRegister(BK4819_REG_06, ((i << 13) | 0x2500u) + 0x036u);
-    //      BK4819_WriteRegister(BK4819_REG_06, (i & 7) << 13 | 0x4A << 7 | 0x36);
-    //  }
-    // }
 }
 
 void BK4819_InitAGC(ModulationMode_t modulation)
