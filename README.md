@@ -3,36 +3,20 @@
 
 ## This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
 
+refer to this manual for global instructions, here we describe the spectrum and specific instructions for Robzyl:
+## [🗲 F4HWN Manual](https://github.com/armel/uv-k1-k5v3-firmware-custom/wiki)
+
 # Robzyl K1 Firmware Documentation
 **USB is deactivated by default**: press any key but PTT when switch ON to enable USB**
 
 **CHIRP Driver included**: `Chirp_Robzyl_K1.py`  
 This driver also allows 
-* **customization of the 24 bands on channels 1000 to 1024.**
+* **customization of the 50 bands on channels 975 to 1024.**
+Select start frequency  and offset as stop frequency, step and modulation
+
 * **Scanlist Monitor setting**
-
-**Main Menu** accessible in MR/VFO mode:
-
-## Keyboard Shortcuts
-
-| Key | Short Press | Long Press | F+ |
-|--------|-------|------|----|
-| **MENU** | Menu | - | - |
-| **EXIT** | Exit | - | - |
-| **< >** | ↑↓ Keys | - | Squelch ↑↓ |
-| **1** | - | Band Plan | Band Plan |
-| **2** | - | VFO A/B | - |
-| **3** | - | VFO/MR | - |
-| **4** | - | Frequency Copy | Frequency Copy |
-| **5** | - | **Robzyl Spectrum** | - |
-| **6** | - | Power ↑↓ | Power ↑↓ |
-| **7** | - | VOX N/A | - |
-| **8** | Rev Freq | Backlight Max/Min | - |
-| **9** | - | Favorite Channel | Backlight Max/Min |
-| **\*** | - | Scan VFO/MR | CTCSS/DCS Scan |
-| **F** | Function | Keypad Lock | - |
-
----
+Select up to 20ch to Monitor scanlist anywhere in the channels.
+<img width="2573" height="612" alt="image" src="https://github.com/user-attachments/assets/65648e2e-808f-4594-b7ce-bb3b91204502" />
 
 ## Robzyl Spectrum
 
@@ -46,29 +30,29 @@ This driver also allows
 ### Practical Use
 
 **Launch Spectrum**: `F+5` from VFO mode.
-
+Spectrum launch  can also be affected to a Side Key in menu.
 ![Main View](https://github.com/user-attachments/assets/f28463e6-5542-4c1d-ace4-b2ab3a44c4ac)
 
 * **Top line**: DSxx (Dynamic Squelch), Modulation, Listen BW, Step (or A+XXXX/AFC during listening).
 * **Second line**: Current frequency and scan-list or band (depending on mode).
-* **Bottom line**: Current span and center frequency peak.
+* **Bottom line**: Current span and dbm level or channel scan speed
 
 **Key Mapping:**
 
 | Key | Function |
 |-----|----------|
-| **1** | Activate backlight |
+| **1** | Skip receiving frequency |
 | **2** | Simplified screen (scanner) |
 | **3** | Select listening bandwidth |
 | **4** | Selection menu (single/multiple SL or BD) |
-| **5** | Access Settings (1/4 to navigate, </> to change values) |
+| **5** | Access Settings (</> to navigate, 1/3 to change values) |
 | **6** | Toggle BAND, SCAN-LIST, RANGE, FREQUENCY modes |
 | **7** | Save main settings |
-| **8** | Toggle BIG/CLASSIC frequency display |
+| **8** | Toggle BIG/CLASSIC/LAST RX/BENCH display |
 | **9** | Select modulation |
 | **0** | Access reception history |
 | **M** | Enter Still Mode (monitoring and register access) |
-| **PTT** | Skip current frequency |
+| **PTT** | transmit to LAST RX/LAST VFO/NINJA, as selected in [5] |
 | **SIDE KEY 1** | Toggle Normal -> FL (Freq Lock) -> M (Monitor) |
 | **SIDE KEY 2** | Blacklist current frequency |
 | ***/F** | Adjust Dynamic Squelch (Uxx) |
@@ -88,14 +72,18 @@ This driver also allows
 * **ListenBW**: Set listening bandwidth.
 * **Modulation**: FM/AM/USB.
 * **RX_Backlight_ON**: Enable backlight during spectrum reception.
-* **PowerSave**: Increases LCD refresh delay.
+* **PowerSave**: adds sleep between scan cycles to reduced power consumption.
 * **Noislvl_OFF**: Noise floor adjustment to avoid false triggers.
 * **Popups**: Message display duration.
-* **Record Trig**: Save history when Dynamic Squelch is OFF.
+* **Record Trig**: Level to save history when Dynamic Squelch is OFF.
 * **Key Unlocked**: Auto keypad lock.
 * **GlitchMax**: Noise rejection level.
 * **SoundBoostON**: Higher volume (risk of distortion).
-* **Clear History**: Erase EEPROM history.
+* **Monitor SL**: activates the regular monitoring of channels identified as Monitor scanlist.
+* **Clear History All**:   Erase EEPROM history.
+* **Clear History N BL**:  Erase history but keep blacklisted frequencies.
+* **Clear History BL**:    Erase blacklisted frequencies.
+
 * **Reset Default**: Reset spectrum parameters and registers.
 
 ---
@@ -132,9 +120,9 @@ Dynamic list of received signals. Navigate to listen (auto-engages Freq Lock).
 
 ---
 
-## Chirp Configuration (Bands 1000-1024)
-![Chirp Config](https://github.com/user-attachments/assets/dbc68936-3d7a-478b-a290-6e30d5f67f77)
-Memory channels **1000 to 1024** store custom band settings. For each, define:
+## Chirp Configuration 
+<img width="2614" height="814" alt="image" src="https://github.com/user-attachments/assets/b6bf2c7a-1aa1-4822-8ab1-a7f97d448930" />
+Memory channels **975 to 1024** store custom band settings. For each, define:
 * Start and End frequency (via offset).
 * Band Name.
 * Modulation & Frequency Step.
