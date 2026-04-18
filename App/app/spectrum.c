@@ -1912,8 +1912,8 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
 // ------------------ CSS detection ------------------
 
 static void UpdateCssDetection(void) {
-    if (!isListening) { return; }
-
+    static uint32_t PrevFreq = 0;
+    if (PrevFreq == scanInfo.f) return; //we already have a code for this freq
     BK4819_WriteRegister(BK4819_REG_51,
         BK4819_REG_51_ENABLE_CxCSS |
         BK4819_REG_51_AUTO_CDCSS_BW_ENABLE |
@@ -1925,12 +1925,14 @@ static void UpdateCssDetection(void) {
     if (scanResult == BK4819_CSS_RESULT_CDCSS) {
         uint8_t code = DCS_GetCdcssCode(cdcssFreq);
         if (code != 0xFF) {
+            PrevFreq = scanInfo.f;
             snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]);
             return;
         }
     } else if (scanResult == BK4819_CSS_RESULT_CTCSS) {
         uint8_t code = DCS_GetCtcssCode(ctcssFreq);
         if (code < ARRAY_SIZE(CTCSS_Options)) {
+            PrevFreq = scanInfo.f;
             snprintf(StringCode, sizeof(StringCode), "%u.%uHz",
                      CTCSS_Options[code] / 10, CTCSS_Options[code] % 10);
             return;
@@ -1946,7 +1948,6 @@ static void DrawF(uint32_t f) {
     else fprev = f;
     char freqStr[18];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
-    UpdateCssDetection();
     char line1[19] = "";
     char line1b[19] = "";
     char line2[19] = "";
@@ -3463,9 +3464,8 @@ static void UpdateListening(void) { // called every 200ms
         SoundBoostsave = SoundBoost;
     }
     if (peak.f == stableFreq) {
-        if (++stableCount >= 2) {  // 400ms
+        if (++stableCount == 2) {  // 400ms
             if (!SpectrumMonitor) FillfreqHistory();
-            stableCount = 0;
             if (gEeprom.BACKLIGHT_MAX > 5)
                 BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 1);
             if(Backlight_On_Rx) BACKLIGHT_TurnOn();
@@ -3525,6 +3525,7 @@ static void Tick() {
         gNextTimeslice_10ms = 0;
         BACKLIGHT_Update();
         HandleUserInput();
+        UpdateCssDetection();
 #ifdef ENABLE_BENCH
         if (!isListening && !SPECTRUM_PAUSED && !SpectrumMonitor && !WaitSpectrum) {
             benchTickMs += 10;
