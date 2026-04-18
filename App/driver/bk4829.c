@@ -38,6 +38,7 @@
 
 //static const uint8_t DTMF_TONE1_GAIN = 65;
 //static const uint8_t DTMF_TONE2_GAIN = 93;
+
 static uint16_t gBK4819_GpioOutState;
 
 #define SHORT_DELAY()                                                          \
@@ -245,8 +246,6 @@ void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
 {
     if(Data == regs_cache[Register])return;
 	regs_cache[Register] = Data;
-    
-    __disable_irq();
     CS_Release();
     SCL_Reset();
 
@@ -267,7 +266,6 @@ void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
 
     SCL_Set();
     SDA_Set();
-    __enable_irq();
 }
 
 void BK4819_WriteU8(uint8_t Data)

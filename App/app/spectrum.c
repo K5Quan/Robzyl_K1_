@@ -86,17 +86,6 @@
 static volatile bool gSpectrumChangeRequested = false;
 static volatile uint8_t gRequestedSpectrumState = 0;
 
-// ============================================================
-// SECTION: HISTORY
-// ============================================================
-uint8_t code = 0;
-typedef struct {
-    uint32_t    HFreqs;
-    uint8_t     HBlacklisted;
-    uint8_t     HCount;
-    uint8_t     code; // 0=None, 1-50=CTCSS, 100+=DCS
-} HistoryStruct;
-
 #if defined(ENABLE_FEAT_F4HWN_SCREENSHOT)
     #define HISTORY_SIZE 20
 #elif defined(ENABLE_USB)
@@ -105,18 +94,16 @@ typedef struct {
     #define HISTORY_SIZE 200
 #endif
 
+
+#define MONITOR_SIZE 20
 static uint16_t historyListIndex = 0;
-static int historyScrollOffset = 0;
-static bool gHistorySortLongPressDone = false;
-
-// ============================================================
-
 static uint16_t indexFs = 0;
+static int historyScrollOffset = 0;
 static bool gHistoryScan = false;
 static uint8_t MonitorIndex = 0;
+static bool gHistorySortLongPressDone = false;
 static uint32_t SpectrumRangeStart = 1400000;
 static uint32_t SpectrumRangeStop = 110000000;
-#define MONITOR_SIZE 20
 
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
@@ -260,8 +247,6 @@ typedef void (*GetListRowFn)(uint16_t index, ListRow *row);
 static uint32_t         *ScanFrequencies = NULL;
 static bandparameters   *BParams = NULL;
 static uint32_t         HFreqs[HISTORY_SIZE];
-static uint8_t          HCode[HISTORY_SIZE];
-static uint8_t          HCount[HISTORY_SIZE];
 static bool             HBlacklisted[HISTORY_SIZE];
 static uint32_t         MonitorFreqs[MONITOR_SIZE];
 /****************************************************************************/
@@ -1222,15 +1207,11 @@ static void DeleteHistoryItem(void) {
     for (uint16_t i = indexToDelete; i < indexFs - 1; i++) {
         HFreqs[i]       = HFreqs[i + 1];
         HBlacklisted[i] = HBlacklisted[i + 1];
-        HCode[i]        = HCode[i + 1];
-        HCount[i]       = HCount[i + 1];
     }
     indexFs--;
     
-    HFreqs[indexFs]         = 0;
-    HBlacklisted[indexFs]   = 0xFF;
-    HCode[indexFs]          = 0;
-    HCount[indexFs]         = 0;
+    HFreqs[indexFs]       = 0;
+    HBlacklisted[indexFs] = 0xFF;
 
     if (historyListIndex >= indexFs && indexFs > 0) {
         historyListIndex = indexFs - 1;
@@ -1288,6 +1269,12 @@ static void SaveHistoryToFreeChannel(void) {
     }
 }
 
+typedef struct HistoryStruct {
+    uint32_t HFreqs;
+    uint8_t HBlacklisted;
+} HistoryStruct;
+
+
 static bool historyLoaded = false; // flaga stanu wczytania histotii spectrum
 
 void LoadHistory(void) {
@@ -1302,23 +1289,19 @@ void LoadHistory(void) {
             break;
         }
       if (History.HFreqs){
-        HFreqs[position]        = History.HFreqs;
-        HBlacklisted[position]  = History.HBlacklisted;
-        HCode[position]         = History.code;
-        HCount[position]        = History.HCount;
-        indexFs                 = position + 1;
+        HFreqs[position] = History.HFreqs;
+        HBlacklisted[position] = History.HBlacklisted;
+        indexFs = position + 1;
       }
     }
 }
 
 
-void SaveHistory(void) {
+void WriteHistory(void) {
     HistoryStruct History = {0};
     for (uint16_t position = 0; position < indexFs; position++) {
-        History.HFreqs          = HFreqs[position];
-        History.HBlacklisted    = HBlacklisted[position];
-        History.code            = HCode[position];
-        History.HCount          = HCount[position];
+        History.HFreqs = HFreqs[position];
+        History.HBlacklisted = HBlacklisted[position];
         PY25Q16_WriteBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),
                            (uint8_t *)&History, sizeof(HistoryStruct), 0);
     }
@@ -1412,40 +1395,6 @@ static uint16_t CountValidHistoryItems() {
     return (indexFs > HISTORY_SIZE) ? HISTORY_SIZE : indexFs;
 }
 
-// ------------------ CSS detection ------------------
-
-static void UpdateCssDetection(void) {
-    if (!isListening) { return; }
-
-    BK4819_WriteRegister(BK4819_REG_51,
-        BK4819_REG_51_ENABLE_CxCSS |
-        BK4819_REG_51_AUTO_CDCSS_BW_ENABLE |
-        BK4819_REG_51_AUTO_CTCSS_BW_ENABLE |
-        (51u << BK4819_REG_51_SHIFT_CxCSS_TX_GAIN1));
-
-    BK4819_CssScanResult_t scanResult = BK4819_GetCxCSSScanResult(&cdcssFreq, &ctcssFreq);
-
-    if (scanResult == BK4819_CSS_RESULT_CDCSS) {
-        code = DCS_GetCdcssCode(cdcssFreq);
-        if (code != 0xFF) {
-            snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]);
-            code += 100;
-            //HCode[indexFs] = code;
-            return;
-        }
-    } else if (scanResult == BK4819_CSS_RESULT_CTCSS) {
-        code = DCS_GetCtcssCode(ctcssFreq);
-        if (code < ARRAY_SIZE(CTCSS_Options)) {
-            snprintf(StringCode, sizeof(StringCode), "%u.%uHz",
-                     CTCSS_Options[code] / 10, CTCSS_Options[code] % 10);
-            //HCode[indexFs] = code;
-            return;
-        }
-    }
-
-    StringCode[0] = '\0';
-}
-
 static void FillfreqHistory()
 {
     uint32_t f = peak.f;
@@ -1453,10 +1402,9 @@ static void FillfreqHistory()
 
     uint16_t foundIndex = 0xFFFF;
     bool foundBlacklisted = false;
+
     for (uint16_t i = 0; i < indexFs; i++) {
         if (HFreqs[i] == f) {
-            HCount[i]++;
-            HCode[i] = code;
             foundIndex = i;
             foundBlacklisted = HBlacklisted[i];
             break;
@@ -1472,8 +1420,6 @@ static void FillfreqHistory()
         for (uint16_t i = foundIndex; i + 1 < indexFs; i++) {
             HFreqs[i]       = HFreqs[i + 1];
             HBlacklisted[i] = HBlacklisted[i + 1];
-            HCode[i] = HCode[i + 1];
-            HCount[i] = HCount[i + 1];
         }
         if (indexFs > 0) indexFs--;
     }
@@ -1482,14 +1428,11 @@ static void FillfreqHistory()
     for (int i = limit; i > 0; i--) {
         HFreqs[i]       = HFreqs[i - 1];
         HBlacklisted[i] = HBlacklisted[i - 1];
-        HCode[i]        = HCode[i - 1];
-        HCount[i]       = HCount[i - 1];
     }
 
     HFreqs[0] = f;
     HBlacklisted[0] = foundBlacklisted;
-    HCode[0] = code;
-    HCount[0] = 1;
+
     if (indexFs < HISTORY_SIZE) indexFs++;
     historyListIndex = 0;
     lastReceivingFreq = f;
@@ -1668,7 +1611,7 @@ static void Measure() {
             peak.i = scanInfo.i;
             gIsPeak = false;
             isListening = false;
-            //FillfreqHistory();
+            FillfreqHistory();
         }
     } else {
             if (!gIsPeak && rssi > previousRssi + settings.rssiTriggerLevelUp) {
@@ -1966,12 +1909,44 @@ static void FormatFrequency(uint32_t f, char *buf, size_t buflen) {
     //RemoveTrailZeros(buf);
 }
 
+// ------------------ CSS detection ------------------
+
+static void UpdateCssDetection(void) {
+    if (!isListening) { return; }
+
+    BK4819_WriteRegister(BK4819_REG_51,
+        BK4819_REG_51_ENABLE_CxCSS |
+        BK4819_REG_51_AUTO_CDCSS_BW_ENABLE |
+        BK4819_REG_51_AUTO_CTCSS_BW_ENABLE |
+        (51u << BK4819_REG_51_SHIFT_CxCSS_TX_GAIN1));
+
+    BK4819_CssScanResult_t scanResult = BK4819_GetCxCSSScanResult(&cdcssFreq, &ctcssFreq);
+
+    if (scanResult == BK4819_CSS_RESULT_CDCSS) {
+        uint8_t code = DCS_GetCdcssCode(cdcssFreq);
+        if (code != 0xFF) {
+            snprintf(StringCode, sizeof(StringCode), "D%03oN", DCS_Options[code]);
+            return;
+        }
+    } else if (scanResult == BK4819_CSS_RESULT_CTCSS) {
+        uint8_t code = DCS_GetCtcssCode(ctcssFreq);
+        if (code < ARRAY_SIZE(CTCSS_Options)) {
+            snprintf(StringCode, sizeof(StringCode), "%u.%uHz",
+                     CTCSS_Options[code] / 10, CTCSS_Options[code] % 10);
+            return;
+        }
+    }
+
+    StringCode[0] = '\0';
+}
+
 static void DrawF(uint32_t f) {
     static uint32_t fprev;
     if ((f == 0) || f < 1400000 || f > 130000000) f=fprev;
     else fprev = f;
     char freqStr[18];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
+    UpdateCssDetection();
     char line1[19] = "";
     char line1b[19] = "";
     char line2[19] = "";
@@ -2200,20 +2175,14 @@ static void SortHistoryByFrequencyAscending(void) {
     for (uint16_t i = 0; i < count - 1; i++) {
         for (uint16_t j = i + 1; j < count; j++) {
             if (HFreqs[j] != 0 && (HFreqs[i] == 0 || HFreqs[j] < HFreqs[i])) {
-                uint32_t    tf  = HFreqs[i];
-                bool        tb  = HBlacklisted[i];
-                uint8_t     tc  = HCode[i];
-                uint8_t     tco = HCount[i];
+                uint32_t tf = HFreqs[i];
+                bool     tb = HBlacklisted[i];
 
-                HFreqs[i]           = HFreqs[j];
-                HBlacklisted[i]     = HBlacklisted[j];
-                HCode[i]            = HCode[j];
-                HCount[i]           = HCount[j];
-                
-                HFreqs[j]       = tf;
+                HFreqs[i] = HFreqs[j];
+                HBlacklisted[i] = HBlacklisted[j];
+
+                HFreqs[j] = tf;
                 HBlacklisted[j] = tb;
-                HCode[j]        = tc;
-                HCount[j]       = tco;
             }
         }
     }
@@ -2232,17 +2201,14 @@ static void CompactHistory(void) {
         if (w != r) {
             HFreqs[w]       = HFreqs[r];
             HBlacklisted[w] = HBlacklisted[r];
-            HCode[w]        = HCode[r];
-            HCount[w]       = HCount[r];
         }
         w++;
     }
 
+    // wyczyść resztę
     for (uint16_t i = w; i < limit; i++) {
         HFreqs[i]       = 0;
         HBlacklisted[i] = 0;
-        HCode[i]        = 0;
-        HCount[i]       = 0;
     }
 
     indexFs = w;
@@ -2673,7 +2639,7 @@ static void HandleKeySpectrum(uint8_t key) {
             break;
         case KEY_7:
             if (historyListActive) {
-                SaveHistory();
+                WriteHistory();
             } else {
                 SaveSettings();
             }
@@ -3495,11 +3461,11 @@ static void UpdateListening(void) { // called every 200ms
             BK4819_WriteRegister(0x75, 0xF50B);
         }
         SoundBoostsave = SoundBoost;
-    } 
+    }
     if (peak.f == stableFreq) {
-        if (++stableCount == 2) {  // 400ms
+        if (++stableCount >= 2) {  // 400ms
             if (!SpectrumMonitor) FillfreqHistory();
-            //stableCount = 0;
+            stableCount = 0;
             if (gEeprom.BACKLIGHT_MAX > 5)
                 BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 1);
             if(Backlight_On_Rx) BACKLIGHT_TurnOn();
@@ -3559,7 +3525,6 @@ static void Tick() {
         gNextTimeslice_10ms = 0;
         BACKLIGHT_Update();
         HandleUserInput();
-        UpdateCssDetection();
 #ifdef ENABLE_BENCH
         if (!isListening && !SPECTRUM_PAUSED && !SpectrumMonitor && !WaitSpectrum) {
             benchTickMs += 10;
@@ -3881,14 +3846,10 @@ static void ClearHistory(uint8_t mode) {
     if (mode == 0) {
         memset(HFreqs, 0, sizeof(HFreqs));
         memset(HBlacklisted, 0, sizeof(HBlacklisted));
-        memset(HCode, 0, sizeof(HCode));
-        memset(HCount, 0, sizeof(HCount));
     } else if (mode == 1) {
         for (int i = 0; i < HISTORY_SIZE; i++) {
             if (!HBlacklisted[i]) {
                 HFreqs[i] = 0;
-                HCode[i] = 0;
-                HCount[i] = 0;
             }
         }
     } else if (mode == 2) {
@@ -3896,15 +3857,13 @@ static void ClearHistory(uint8_t mode) {
             if (HBlacklisted[i]) {
                 HFreqs[i] = 0;
                 HBlacklisted[i] = 0;
-                HCode[i] = 0;
-                HCount[i] = 0;
             }
         }
     }
     historyListIndex = 0;
     historyScrollOffset = 0;
     indexFs = HISTORY_SIZE;
-    SaveHistory();
+    WriteHistory();
     indexFs = 0;
     //SaveSettings();
     LoadHistory();
@@ -4115,15 +4074,10 @@ static void GetHistoryRow(uint16_t index, ListRow *row) {
         Name[10] = '\0';
     }
     const char *prefix = HBlacklisted[index] ? "#" : "";
-    
-    if (HCode[index]) {
-        if (HCode[index] <= 100) {
-            snprintf(row->right, sizeof(row->right), "CT:%u.%uHz #%d", CTCSS_Options[HCode[index]] / 10, CTCSS_Options[HCode[index]] % 10,HCount[index]);
-        } else {
-            snprintf(row->right, sizeof(row->right), "DC:D%03oN #%d", DCS_Options[HCode[index]-100],HCount[index]);
-        }
-    }
-    snprintf(row->left, sizeof(row->left), "%s%s %s", prefix, freqStr, Name);
+    if (Name[0])
+        snprintf(row->left, sizeof(row->left), "%s%s %s", prefix, freqStr, Name);
+    else
+        snprintf(row->left, sizeof(row->left), "%s%s", prefix, freqStr);
 }
 
 /* Scanlist multiselect: "N:name" on left, "*" on right when enabled */
@@ -4325,7 +4279,7 @@ static void RenderHistoryList() {
     sprintf(title, "HISTORY: %d", count);
     /* title shown in normal mode; signal meter shown in FL/Monitor mode via useMeter=true */
     RenderUnifiedList(title, true, count, historyListIndex,
-                      historyScrollOffset, true, true, GetHistoryRow);
+                      historyScrollOffset, true, false, GetHistoryRow);
 }
 
 #ifdef ENABLE_SCANLIST_SHOW_DETAIL
