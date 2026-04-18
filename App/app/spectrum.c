@@ -214,7 +214,6 @@ struct FrequencyBandInfo {
     uint32_t upper;
     uint32_t middle;
 };
-static bool isBlacklistApplied;
 static uint32_t cdcssFreq;
 static uint16_t ctcssFreq;
 //static uint8_t refresh = 0; // СУБТОНО ЗАПРОС ВСЕГДА
@@ -1871,32 +1870,6 @@ static bool IsBlacklisted(uint32_t f) {
     return false;
 }
 
-static void Blacklist() {
-    if (peak.f == 0) return;
-    gIsPeak = 0;
-    ToggleRX(false);
-    isBlacklistApplied = true;
-    ResetScanStats();
-    Skip();
-    for (uint16_t i = 0; i < HISTORY_SIZE; i++) {
-        if (HFreqs[i] == peak.f) {
-            HBlacklisted[i] = true;
-            historyListIndex = i;
-            gIsPeak = 0;
-            return;
-        }
-    }
-
-    HFreqs[indexFs]   = peak.f;
-    HBlacklisted[indexFs] = true;
-    historyListIndex = indexFs;
-    if (++indexFs >= HISTORY_SIZE) {
-      historyScrollOffset = 0;
-      indexFs=0;
-    }  
-}
-
-
 // ============================================================
 // SECTION: Display / rendering helpers
 // ============================================================
@@ -2878,20 +2851,15 @@ static void HandleKeySpectrum(uint8_t key) {
     }
     break;
     case KEY_SIDE2:
-    if (historyListActive) {
-        HBlacklisted[historyListIndex] = !HBlacklisted[historyListIndex];
-        ShowOSDPopup(HBlacklisted[historyListIndex] ? "BL ADDED" : "BL REMOVED");
-        RenderHistoryList();
-        gIsPeak = 0;
-        ToggleRX(false);
-        isBlacklistApplied = true;
-        ResetScanStats();
-        NextScanStep();
-        } else {
-            Blacklist();
-            WaitSpectrum = 0;
-            ShowOSDPopup("BL ADD");
-            }
+        if (historyListActive) {
+            HBlacklisted[historyListIndex] = !HBlacklisted[historyListIndex];
+            ShowOSDPopup(HBlacklisted[historyListIndex] ? "BL ADDED" : "BL REMOVED");
+            RenderHistoryList();
+            gIsPeak = 0;
+            ToggleRX(false);
+            ResetScanStats();
+            NextScanStep();
+        }
         break;
     case KEY_PTT:
         ExitAndCopyToVfo();
@@ -3076,10 +3044,6 @@ static void OnKeyDownStill(KEY_Code_t key) {
     if (SpectrumMonitor == 2) ToggleRX(1);
       break;
 
-      case KEY_SIDE2: 
-            Blacklist();
-            WaitSpectrum = 0; //don't wait if this frequency not interesting
-      break;
       case KEY_PTT:
         ExitAndCopyToVfo();
         break;
