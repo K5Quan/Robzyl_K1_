@@ -1145,7 +1145,7 @@ static void RestoreRegisters() {
 }
 
 static void ToggleAFBit(bool on) {
-  uint32_t reg = regs_cache[BK4819_REG_47]; //KARINA mod
+  uint32_t reg = BK4819_ReadRegister(BK4819_REG_47);
     reg &= ~(1 << 8);
     if (on)
         reg |= on << 8;
@@ -1153,7 +1153,7 @@ static void ToggleAFBit(bool on) {
 }
 
 static void ToggleAFDAC(bool on) {
-  uint32_t Reg = regs_cache[BK4819_REG_30]; //KARINA mod
+  uint32_t Reg = BK4819_ReadRegister(BK4819_REG_30);
     Reg &= ~(1 << 9);
     if (on)
         Reg |= (1 << 9);

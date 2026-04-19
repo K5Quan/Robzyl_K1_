@@ -221,8 +221,6 @@ static uint16_t BK4819_ReadU16(void)
     return Value;
 }
 
-uint16_t regs_cache[128] = {[0 ... 127] = 0xFFFF};
-
 uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
 {
       __disable_irq();
@@ -238,14 +236,11 @@ uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
     SCL_Set();
     SDA_Set();
     __enable_irq();
-	regs_cache[Register] = Value;
     return Value;
 }
 
 void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
 {
-    if(Data == regs_cache[Register])return;
-	regs_cache[Register] = Data;
     CS_Release();
     SCL_Reset();
 
