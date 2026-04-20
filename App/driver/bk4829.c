@@ -220,6 +220,8 @@ static uint16_t BK4819_ReadU16(void)
 
     return Value;
 }
+uint16_t reg_30_cache = 0xFFFF;
+uint16_t reg_47_cache = 0xFFFF;
 
 uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
 {
@@ -236,29 +238,32 @@ uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
     SCL_Set();
     SDA_Set();
     __enable_irq();
+    if (Register == BK4819_REG_30) reg_30_cache = Value;
+    if (Register == BK4819_REG_47) reg_47_cache = Value;
     return Value;
 }
 
 void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
 {
+    if (Register == BK4819_REG_30) {
+        if(Data == reg_30_cache) return;
+        reg_30_cache = Data;
+    }
+    if (Register == BK4819_REG_47) {
+        if(Data == reg_47_cache) return;
+        reg_47_cache = Data;
+    }
+    
     CS_Release();
     SCL_Reset();
-
     SHORT_DELAY();
-
     CS_Assert();
     BK4819_WriteU8(Register);
-
     SHORT_DELAY();
-
     BK4819_WriteU16(Data);
-
     SHORT_DELAY();
-
     CS_Release();
-
     SHORT_DELAY();
-
     SCL_Set();
     SDA_Set();
 }

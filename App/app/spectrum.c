@@ -1145,18 +1145,16 @@ static void RestoreRegisters() {
 }
 
 static void ToggleAFBit(bool on) {
-  uint32_t reg = BK4819_ReadRegister(BK4819_REG_47);
+    uint32_t reg = reg_47_cache;
     reg &= ~(1 << 8);
-    if (on)
-        reg |= on << 8;
+    if (on) reg |= on << 8;
     BK4819_WriteRegister(BK4819_REG_47, reg);
 }
 
 static void ToggleAFDAC(bool on) {
-  uint32_t Reg = BK4819_ReadRegister(BK4819_REG_30);
+    uint32_t Reg = reg_30_cache;
     Reg &= ~(1 << 9);
-    if (on)
-        Reg |= (1 << 9);
+    if (on) Reg |= (1 << 9);
     BK4819_WriteRegister(BK4819_REG_30, Reg);
 }
 
@@ -1166,7 +1164,7 @@ static void SetF(uint32_t sf) {
   if (SPECTRUM_PAUSED) return;
   BK4819_SetFrequency(f);
   BK4819_PickRXFilterPathBasedOnFrequency(f);
-  uint16_t reg = BK4819_ReadRegister(BK4819_REG_30);
+  uint16_t reg = reg_30_cache;
   BK4819_WriteRegister(BK4819_REG_30, 0);
   BK4819_WriteRegister(BK4819_REG_30, reg);
 }
