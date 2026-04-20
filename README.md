@@ -33,8 +33,6 @@ Select up to 20ch to Monitor scanlist anywhere in the channels.
 Spectrum launch  can also be affected to a Side Key in menu.
 <img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/e1b36840-c0e6-4747-ac08-284a64d65f9c" />
 
-![Main View](https://github.com/user-attachments/assets/f28463e6-5542-4c1d-ace4-b2ab3a44c4ac)
-
 * **Top line**: DSxx (Dynamic Squelch), Modulation, Listen BW, Step (or A+XXXX/AFC during listening).
 * **Second line**: Current frequency and scan-list or band (depending on mode).
 * **Bottom line**: Current span and dbm level or channel scan speed
@@ -64,7 +62,7 @@ Spectrum launch  can also be affected to a Side Key in menu.
 
 ## Settings Menu
 
-![Settings Menu](https://github.com/user-attachments/assets/be9c4ea0-72ca-4fc9-85d7-323c3553bb9f)
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/be9c4ea0-72ca-4fc9-85d7-323c3553bb9f" />
 
 * **RSSI Delay**: RSSI capture time in ms.
 * **SpectrumDelay**: Hang time after signal drops below squelch.
