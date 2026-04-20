@@ -5,7 +5,13 @@
 This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
 Refer to this manual for global instructions,[🗲 F4HWN Manual](https://github.com/armel/uv-k1-k5v3-firmware-custom/wiki)
 Here we describe the spectrum and specific instructions for Robzyl:
-# SEE HISTORY CHANGE HERE BELOW
+## HISTORY CHANGES
+### V6.20 to V6.21
+* Add count and code to history
+* BL fix working in spectrum and history
+* show RAM usage in BENCH menu
+* fix close call didn't exit
+  
 # Robzyl K1 Firmware Documentation
 **USB is deactivated by default**: press any key but PTT when switch ON to enable USB**
 
@@ -127,12 +133,3 @@ Memory channels **975 to 1024** store custom band settings. For each, define:
 * Start and End frequency (via offset).
 * Band Name.
 * Modulation & Frequency Step.
-
-
-
-# HISTORY CHANGES
-## V6.20 to V6.21
-* Add count and code to history
-* BL fix working in spectrum and history
-* show RAM usage in BENCH menu
-* fix close call didn't exit
