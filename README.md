@@ -14,7 +14,10 @@ Here we describe the spectrum and specific instructions for Robzyl:
 * fix close call didn't exit
   
 # Robzyl K1 Firmware Documentation
-**USB is deactivated by default**: press any key but PTT when switch ON to enable USB**
+
+* RS232 version uses the kenwood cable and has 200 history entries
+* USB version uses USB-C cable and has 100 history entries,
+* USB is deactivated by default: press any key but PTT when switch ON to enable USB
 
 **CHIRP Driver included**: `Chirp_Robzyl_K1.py`  
 This driver also allows 
