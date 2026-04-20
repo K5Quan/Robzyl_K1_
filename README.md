@@ -1,10 +1,11 @@
-# [🗲  Join the Telegram](https://t.me/k5robby69)
+# [🗲  Join the Robzyl Dev Telegram](https://t.me/k5robby69)
+## [🗲 Youtube Channel](https://www.youtube.com/@robby_69400)
+### 🙏 Many thanks to Robzyl Team : Zylka, Kolyan, Iggy, Toni, Yves and Francois
 
-## This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
-
-refer to this manual for global instructions, here we describe the spectrum and specific instructions for Robzyl:
-## [🗲 F4HWN Manual](https://github.com/armel/uv-k1-k5v3-firmware-custom/wiki)
-
+This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
+Refer to this manual for global instructions,[🗲 F4HWN Manual](https://github.com/armel/uv-k1-k5v3-firmware-custom/wiki)
+Here we describe the spectrum and specific instructions for Robzyl:
+# SEE HISTORY CHANGE HERE BELOW
 # Robzyl K1 Firmware Documentation
 **USB is deactivated by default**: press any key but PTT when switch ON to enable USB**
 
@@ -30,6 +31,8 @@ Select up to 20ch to Monitor scanlist anywhere in the channels.
 
 **Launch Spectrum**: `F+5` from VFO mode.
 Spectrum launch  can also be affected to a Side Key in menu.
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/e1b36840-c0e6-4747-ac08-284a64d65f9c" />
+
 ![Main View](https://github.com/user-attachments/assets/f28463e6-5542-4c1d-ace4-b2ab3a44c4ac)
 
 * **Top line**: DSxx (Dynamic Squelch), Modulation, Listen BW, Step (or A+XXXX/AFC during listening).
@@ -53,7 +56,7 @@ Spectrum launch  can also be affected to a Side Key in menu.
 | **M** | Enter Still Mode (monitoring and register access) |
 | **PTT** | transmit to LAST RX/LAST VFO/NINJA, as selected in [5] |
 | **SIDE KEY 1** | Toggle Normal -> FL (Freq Lock) -> M (Monitor) |
-| **SIDE KEY 2** | Blacklist current frequency |
+| **SIDE KEY 2** | Blacklist last recived frequency |
 | ***/F** | Adjust Dynamic Squelch (Uxx) |
 | **< >** | Navigate SL, bands, or frequency |
 
@@ -126,7 +129,11 @@ Memory channels **975 to 1024** store custom band settings. For each, define:
 * Band Name.
 * Modulation & Frequency Step.
 
-## [🗲 Youtube Channel](https://www.youtube.com/@robby_69400)
 
-### 🙏 Many thanks to Zylka, Kolyan, Iggy, Toni, Yves and Francois
 
+# HISTORY CHANGES
+## V6.20 to V6.21
+* Add count and code to history
+* BL fix working in spectrum and history
+* show RAM usage in BENCH menu
+* fix close call didn't exit
