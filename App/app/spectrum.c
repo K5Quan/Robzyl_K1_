@@ -1850,6 +1850,25 @@ static bool IsBlacklisted(uint32_t f) {
     return false;
 }
 
+static void Blacklist() {
+    if (lastReceivingFreq == 0) return;
+    Skip();
+    for (uint16_t i = 0; i < HISTORY_SIZE; i++) {
+        if (HFreqs[i] == lastReceivingFreq) {
+            HBlacklisted[i] = true;
+            historyListIndex = i;
+            return;
+        }
+    }
+    HFreqs[indexFs]   = lastReceivingFreq;
+    HBlacklisted[indexFs] = true;
+    historyListIndex = indexFs;
+    if (++indexFs >= HISTORY_SIZE) {
+      historyScrollOffset = 0;
+      indexFs=0;
+    }  
+}
+
 // ============================================================
 // SECTION: Display / rendering helpers
 // ============================================================
@@ -2875,7 +2894,12 @@ static void HandleKeySpectrum(uint8_t key) {
             ToggleRX(false);
             ResetScanStats();
             NextScanStep();
-        }
+        } else {
+            Blacklist();
+            char Text[32];
+            sprintf(Text, "BL %u.%05u Hz", lastReceivingFreq / 100000, lastReceivingFreq % 100000);
+            ShowOSDPopup(Text);
+            }
         break;
     case KEY_PTT:
         ExitAndCopyToVfo();
