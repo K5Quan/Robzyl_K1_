@@ -62,7 +62,7 @@ Spectrum launch  can also be affected to a Side Key in menu.
 
 ## Settings Menu
 
-<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/be9c4ea0-72ca-4fc9-85d7-323c3553bb9f" />
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/0dc3df55-390e-4c5b-9ec2-a7d4c87563e2" />
 
 * **RSSI Delay**: RSSI capture time in ms.
 * **SpectrumDelay**: Hang time after signal drops below squelch.
@@ -91,17 +91,18 @@ Spectrum launch  can also be affected to a Side Key in menu.
 ## Operating Modes
 
 ### 1. Simplified View
-![Simplified View](https://github.com/user-attachments/assets/3594c6c6-728a-4ffc-88ac-5495ab352456)
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/362a5072-ad74-400c-885a-7714a9593b09" />
 Summary: Ambient Temp, RSSI level, Frequency, and Channel/Band name.
 
 ### 2. Still Mode (Monitoring)
-![Still Mode](https://github.com/user-attachments/assets/a51c16cc-7d03-49ff-99f2-9cfc6ff8f52b)
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/191f52a7-65d5-49da-a974-6fb3fa4aa790" />
+
 Launched with **M** during active listening. Advanced users can modify registers here.
 * **< >**: Change frequency by step.
 * ***/F**: Change step size.
 
 ### 3. Frequency History
-![Frequency History](https://github.com/user-attachments/assets/b0ca73b5-b64a-4b85-bcc2-ee6ffac59bb0)
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/c450c258-1a85-4feb-84d0-392d10a4bd03" />
 Dynamic list of received signals. Navigate to listen (auto-engages Freq Lock).
 * **SK1**: Toggle FL / Monitor.
 * **< >**: Navigate history (FL mode).
@@ -110,12 +111,12 @@ Dynamic list of received signals. Navigate to listen (auto-engages Freq Lock).
 * **7**: Save history to EEPROM.
 
 ### 4. ScanLists (SL Mode)
-![ScanList Selection](https://github.com/user-attachments/assets/722c1eeb-30ce-4433-9f66-1ccab36be85a)
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/596db4a0-cda3-4d24-ae40-d8fb620e1da4" />
 * **Function**: Loads memories assigned to scanlists into the spectrum.
 * **Menu [4]**: Select SLs with **^/v**. **[5]** for exclusive, **[4]** for multi-select.
 
 ### 5. Predefined Bands (BAND Mode)
-![Band Selection](https://github.com/user-attachments/assets/75c924b3-139a-4d04-8fde-337045eba6d0)
+<img width="512" height="320" alt="image" src="https://github.com/user-attachments/assets/96a33eb9-4c2e-40ca-a324-438213bf3cfa" />
 * **Function**: Analyzes preset bands (PMR, CB, AERO, HAM, etc.).
 
 ---
