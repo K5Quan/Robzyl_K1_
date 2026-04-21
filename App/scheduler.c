@@ -51,22 +51,13 @@ void SysTick_Handler(void)
     
     gNextTimeslice = true;
     gNextTimeslice_10ms = true;
-    if ((gGlobalSysTickCounter % 50) == 0)
-	{
-		gNextTimeslice_ShowNames = true;
-	} 
-    if ((gGlobalSysTickCounter % 20) == 0) {
-        gNextTimeslice_display = true;
-    }
-  
-    if ((gGlobalSysTickCounter % 6000) == 0) {
-        gNextTimeslice_60s = true;
-    }
-    if ((gGlobalSysTickCounter % 47) == 0) {
-        gNextTimeslice_Monitor = true;
-    }
-    if ((gGlobalSysTickCounter % 50) == 0) {
+    if ((gGlobalSysTickCounter % 20) == 0)      {gNextTimeslice_display = true;}
+    if ((gGlobalSysTickCounter % 47) == 0)      {gNextTimeslice_Monitor = true;}
+    if ((gGlobalSysTickCounter % 100) == 0)      {gNextTimeslice_HTimeS = true;}
+    if ((gGlobalSysTickCounter % 6000) == 0)    {gNextTimeslice_60s = true;}
+    if ((gGlobalSysTickCounter % 50) == 0)      {
         gNextTimeslice_500ms = true;
+        gNextTimeslice_ShowNames = true;
 #ifdef ENABLE_FEAT_F4HWN
         DECREMENT_AND_TRIGGER(gVfoSaveCountdown_10ms, gScheduleVfoSave);
         DECREMENT_AND_TRIGGER(gTxTimerCountdownAlert_500ms - ALERT_TOT * 2, gTxTimeoutReachedAlert);
@@ -74,7 +65,6 @@ void SysTick_Handler(void)
             DECREMENT(gRxTimerCountdown_500ms);
         #endif
 #endif
-        
         DECREMENT_AND_TRIGGER(gTxTimerCountdown_500ms, gTxTimeoutReached);
         DECREMENT(gSerialConfigCountDown_500ms);
     }

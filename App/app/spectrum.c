@@ -95,6 +95,7 @@ typedef struct {
     uint8_t     HBlacklisted;
     uint8_t     HCount;
     uint8_t     code; // 0=None, 1-50=CTCSS, 100+=DCS
+    uint16_t    HTimeS;
 } HistoryStruct;
 
 #if defined(ENABLE_FEAT_F4HWN_SCREENSHOT)
@@ -252,7 +253,7 @@ static void SetState(State state);
 
 typedef struct {
     char left[17];
-    char right[14];
+    char right[22];
 } ListRow;
 
 typedef void (*GetListRowFn)(uint16_t index, ListRow *row);
@@ -264,6 +265,7 @@ static uint32_t         HFreqs[HISTORY_SIZE];
 static uint8_t          HCode[HISTORY_SIZE];
 static uint8_t          HCount[HISTORY_SIZE];
 static bool             HBlacklisted[HISTORY_SIZE];
+static uint32_t         HTimeS[HISTORY_SIZE];  
 static uint32_t         MonitorFreqs[MONITOR_SIZE];
 /****************************************************************************/
 
@@ -1223,6 +1225,7 @@ static void DeleteHistoryItem(void) {
         HBlacklisted[i] = HBlacklisted[i + 1];
         HCode[i]        = HCode[i + 1];
         HCount[i]       = HCount[i + 1];
+        HTimeS[i]       = HTimeS[i + 1];
     }
     indexFs--;
     
@@ -1230,7 +1233,7 @@ static void DeleteHistoryItem(void) {
     HBlacklisted[indexFs]   = 0xFF;
     HCode[indexFs]          = 0;
     HCount[indexFs]         = 0;
-
+    HTimeS[indexFs]         = 0;
     if (historyListIndex >= indexFs && indexFs > 0) {
         historyListIndex = indexFs - 1;
     } else if (indexFs == 0) {
@@ -1292,11 +1295,17 @@ static bool historyLoaded = false; // flaga stanu wczytania histotii spectrum
 void LoadHistory(void) {
     DisplayCode = 0;
     HistoryStruct History = {0};
+
+    memset(HFreqs, 0, sizeof(HFreqs));
+    memset(HBlacklisted, 0, sizeof(HBlacklisted));
+    memset(HCode, 0, sizeof(HCode));
+    memset(HTimeS, 0, sizeof(HTimeS));
+
+    indexFs = 0;
+
     for (uint16_t position = 0; position < HISTORY_SIZE; position++) {
         PY25Q16_ReadBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),
                           (uint8_t *)&History, sizeof(HistoryStruct));
-
-        // Stop si marque de fin trouvée
         if (History.HBlacklisted == 0xFF) {
             indexFs = position;
             break;
@@ -1306,7 +1315,7 @@ void LoadHistory(void) {
         HBlacklisted[position]  = History.HBlacklisted;
         HCode[position]         = History.code;
         if(History.code && History.code != 0xFF) DisplayCode = 1;
-        HCount[position]        = History.HCount;
+        HTimeS[position]        = History.HTimeS;
         indexFs                 = position + 1;
       }
     }
@@ -1319,14 +1328,16 @@ void SaveHistory(void) {
         History.HFreqs          = HFreqs[position];
         History.HBlacklisted    = HBlacklisted[position];
         History.code            = HCode[position];
-        History.HCount          = HCount[position];
+        History.HTimeS          = HTimeS[position];
         PY25Q16_WriteBuffer(ADRESS_HISTORY + position * sizeof(HistoryStruct),
                            (uint8_t *)&History, sizeof(HistoryStruct), 0);
     }
 
-    // Marque de fin (HBlacklisted = 0xFF)
     History.HFreqs = 0;
     History.HBlacklisted = 0xFF;
+    History.code        = 0;
+    History.HTimeS    = 0;
+
     PY25Q16_WriteBuffer(ADRESS_HISTORY + indexFs * sizeof(HistoryStruct),
                        (uint8_t *)&History, sizeof(HistoryStruct), 0);
     
@@ -1419,7 +1430,7 @@ static void FillfreqHistory()
     if (f == 0 || f < 1400000 || f > 130000000) return;
 
     uint16_t foundIndex = 0xFFFF;
-    uint16_t foundCount = 0;
+    uint16_t foundTime = 0;
     bool foundBlacklisted = false;
     
     for (uint16_t i = 0; i < indexFs; i++) {
@@ -1430,14 +1441,14 @@ static void FillfreqHistory()
                 if (code != 0xFF) DisplayCode =1;
             } else HCode[i] = 0xFF;
             foundIndex = i;
-            foundCount = HCount[i];
+            foundTime = HTimeS[i];
             foundBlacklisted = HBlacklisted[i];
             break;
         }
     }
     bool freezeOrder = historyListActive && (SpectrumMonitor || gHistoryScan);
     if (freezeOrder) {
-            if (foundIndex != 0xFFFF) { HCount[foundIndex] = foundCount; }
+            if (foundIndex != 0xFFFF) { HTimeS[foundIndex] = foundTime; }
             lastReceivingFreq = f;
             return;
         }
@@ -1447,7 +1458,7 @@ static void FillfreqHistory()
             HFreqs[i]       = HFreqs[i + 1];
             HBlacklisted[i] = HBlacklisted[i + 1];
             HCode[i] = HCode[i + 1];
-            HCount[i] = HCount[i + 1];
+            HTimeS[i] = HTimeS[i + 1];
         }
         if (indexFs > 0) indexFs--;
     }
@@ -1457,7 +1468,7 @@ static void FillfreqHistory()
         HFreqs[i]       = HFreqs[i - 1];
         HBlacklisted[i] = HBlacklisted[i - 1];
         HCode[i]        = HCode[i - 1];
-        HCount[i]       = HCount[i - 1];
+        HTimeS[i]       = HTimeS[i - 1];
     }
 
     HFreqs[0] = f;
@@ -1467,7 +1478,7 @@ static void FillfreqHistory()
         if (code != 0xFF) DisplayCode =1;
     } else HCode[0] = 0xFF;
     code = 0xFF;
-    HCount[0] = (foundIndex != 0xFFFF) ? foundCount : 1;
+    HTimeS[0] = foundTime;
     if (indexFs < HISTORY_SIZE) indexFs++;
     historyListIndex = 0;
     lastReceivingFreq = f;
@@ -2235,17 +2246,17 @@ static void SortHistoryByFrequencyAscending(void) {
                 uint32_t    tf  = HFreqs[i];
                 bool        tb  = HBlacklisted[i];
                 uint8_t     tc  = HCode[i];
-                uint8_t     tco = HCount[i];
+                uint8_t     tco = HTimeS[i];
 
                 HFreqs[i]           = HFreqs[j];
                 HBlacklisted[i]     = HBlacklisted[j];
                 HCode[i]            = HCode[j];
-                HCount[i]           = HCount[j];
+                HTimeS[i]           = HTimeS[j];
 
                 HFreqs[j]       = tf;
                 HBlacklisted[j] = tb;
                 HCode[j]        = tc;
-                HCount[j]       = tco;
+                HTimeS[j]       = tco;
             }
         }
     }
@@ -2265,7 +2276,7 @@ static void CompactHistory(void) {
             HFreqs[w]       = HFreqs[r];
             HBlacklisted[w] = HBlacklisted[r];
             HCode[w]        = HCode[r];
-            HCount[w]       = HCount[r];
+            HTimeS[w]       = HTimeS[r];
         }
         w++;
     }
@@ -2274,7 +2285,7 @@ static void CompactHistory(void) {
         HFreqs[i]       = 0;
         HBlacklisted[i] = 0;
         HCode[i]        = 0;
-        HCount[i]       = 0;
+        HTimeS[i]       = 0;
     }
 
     indexFs = w;
@@ -2720,6 +2731,8 @@ static void HandleKeySpectrum(uint8_t key) {
             if (historyListActive) {
                 memset(HFreqs,       0, sizeof(HFreqs));
                 memset(HBlacklisted, 0, sizeof(HBlacklisted));
+                memset(HCode,    0, sizeof(HCode));
+                memset(HTimeS,    0, sizeof(HTimeS));
                 historyListIndex    = 0;
                 historyScrollOffset = 0;
                 indexFs             = 0;
@@ -3553,6 +3566,17 @@ static void UpdateListening(void) { // called every 200ms
     }
         
     spectrumElapsedCount += 200; //in ms
+    if (peak.f >= 1400000 && peak.f <= 130000000 && gNextTimeslice_HTimeS) {
+    gNextTimeslice_HTimeS = 0;
+    for (uint16_t i = 0; i < indexFs; i++) {
+        if (HFreqs[i] == peak.f) {
+            if (HTimeS[i] < 0xFFFFu) {
+                HTimeS[i] += 1;
+            } else {HTimeS[i] = 0xFFFFu;}
+            break;
+        }
+    }
+}
     uint32_t maxCount = (uint32_t)MaxListenTime * 1000;
 
     if (MaxListenTime && spectrumElapsedCount >= maxCount && !SpectrumMonitor) {
@@ -3920,13 +3944,13 @@ static void ClearHistory(uint8_t mode) {
         memset(HFreqs, 0, sizeof(HFreqs));
         memset(HBlacklisted, 0, sizeof(HBlacklisted));
         memset(HCode, 0, sizeof(HCode));
-        memset(HCount, 0, sizeof(HCount));
+        memset(HTimeS, 0, sizeof(HTimeS));
     } else if (mode == 1) {
         for (int i = 0; i < HISTORY_SIZE; i++) {
             if (!HBlacklisted[i]) {
                 HFreqs[i] = 0;
                 HCode[i] = 0;
-                HCount[i] = 0;
+                HTimeS[i] = 0;
             }
         }
     } else if (mode == 2) {
@@ -3935,7 +3959,7 @@ static void ClearHistory(uint8_t mode) {
                 HFreqs[i] = 0;
                 HBlacklisted[i] = 0;
                 HCode[i] = 0;
-                HCount[i] = 0;
+                HTimeS[i] = 0;
             }
         }
     }
@@ -4142,6 +4166,7 @@ static void GetHistoryRow(uint16_t index, ListRow *row) {
     if (!f) return;
 
     char freqStr[10];
+     char timeStr[7];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     RemoveTrailZeros(freqStr);
 
@@ -4152,16 +4177,16 @@ static void GetHistoryRow(uint16_t index, ListRow *row) {
         Name[10] = '\0';
     }
     const char *prefix = HBlacklisted[index] ? "#" : "";
-    
+    snprintf(timeStr, sizeof(timeStr), "%02d:%02d", HTimeS[index] / 60, HTimeS[index] % 60);
     if (HCode[index] != 0XFF) {
         if (HCode[index] < 50) {
-            snprintf(row->right, sizeof(row->right), "CT:%u.%uHz #%d", CTCSS_Options[HCode[index]] / 10, CTCSS_Options[HCode[index]] % 10,HCount[index]);
+            snprintf(row->right, sizeof(row->right), "CT:%u.%uHz %s", CTCSS_Options[HCode[index]] / 10, CTCSS_Options[HCode[index]] % 10,timeStr);
         } 
         if (HCode[index] > 100) {
-            snprintf(row->right, sizeof(row->right), "DC:D%03oN #%d", DCS_Options[HCode[index]-100],HCount[index]);
+            snprintf(row->right, sizeof(row->right), "DC:D%03oN %s", DCS_Options[HCode[index]-100],timeStr);
         }
     }
-    else snprintf(row->right, sizeof(row->right), "#%d", HCount[index]);
+    else snprintf(row->right, sizeof(row->right), "%s", timeStr);
     snprintf(row->left, sizeof(row->left), "%s%s %s", prefix, freqStr, Name);
 }
 
@@ -4362,7 +4387,6 @@ static void RenderHistoryList() {
     uint16_t count = CountValidHistoryItems();
     char title[24];
     sprintf(title, "HISTORY: %d", count);
-    /* title shown in normal mode; signal meter shown in FL/Monitor mode via useMeter=true */
     RenderUnifiedList(title, true, count, historyListIndex,
                       historyScrollOffset, true, DisplayCode, GetHistoryRow);
 }
