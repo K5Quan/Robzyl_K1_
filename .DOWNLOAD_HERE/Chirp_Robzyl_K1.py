@@ -67,14 +67,14 @@ struct {
   u8 step;
   u8 __UNUSED03;
 
-} channel[1024];
+} channel[1024]; //end 0x3FFF
 
 // --------------------
 
 #seekto 0x004000;
 struct {
 char name[16];
-} channelname[1024];
+} channelname[1024]; //end 0x7FFF
 
 
 // --------------------
@@ -85,14 +85,14 @@ struct {
      compander:2,
      band:3;
   u8 scanlist;
-} ch_attr[1031];
+} ch_attr[1031]; //end 0x00880D
 
 // --------------------
 
 #seekto 0x00880E;
 struct {
     char name[4];
-} listname[24];
+} listname[24]; //end 886D
 
 // --------------------
 
