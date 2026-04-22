@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdio.h>   // NULL
 
-#include "app/chFrScanner.h"
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -241,7 +240,7 @@ void DTMF_HandleRequest(void)
     if (!gDTMF_RX_pending)
         return;   // nothing new received
 
-    if (gScanStateDir != SCAN_OFF || gCssBackgroundScan)
+    if (gCssBackgroundScan)
     {   // we're busy scanning
         DTMF_clear_RX();
         return;

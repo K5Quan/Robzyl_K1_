@@ -232,7 +232,7 @@ uint8_t           gBatteryVoltageIndex;
 bool              gCssBackgroundScan;
 
 volatile bool     gScheduleScanListen = true;
-volatile uint16_t gScanPauseDelayIn_10ms;
+
 
 #if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)
     AlarmState_t  gAlarmState;
@@ -287,7 +287,6 @@ bool              gPttIsPressed;
 uint8_t           gPttDebounceCounter;
 uint8_t           gMenuListCount;
 uint8_t           gBackup_CROSS_BAND_RX_TX;
-uint8_t           gScanDelay_10ms;
 uint8_t           gFSKWriteIndex;
 
 #ifdef ENABLE_NOAA

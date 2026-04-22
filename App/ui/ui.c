@@ -17,7 +17,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "app/chFrScanner.h"
+
+
 #include "app/dtmf.h"
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
@@ -87,7 +88,6 @@ void GUI_SelectNextDisplay(GUI_DisplayType_t Display)
         gInputBoxIndex       = 0;
         gIsInSubMenu         = false;
         gCssBackgroundScan   = false;
-        gScanStateDir        = SCAN_OFF;
         #ifdef ENABLE_FMRADIO
             gFM_ScanState    = FM_SCAN_OFF;
         #endif

@@ -19,7 +19,7 @@
 
 #include "app/action.h"
 #include "app/app.h"
-#include "app/chFrScanner.h"
+
 #include "app/common.h"
 #include "app/dtmf.h"
 #ifdef ENABLE_FLASHLIGHT
@@ -57,14 +57,11 @@ inline static void ACTION_Alarm() { ACTION_AlarmOr1750(false); }
 inline static void ACTION_1750() { ACTION_AlarmOr1750(true); };
 #endif
 
-inline static void ACTION_ScanRestart() { ACTION_Scan(true); };
-
 void (*action_opt_table[])(void) = {
     [ACTION_OPT_NONE] = &FUNCTION_NOP,
     [ACTION_OPT_POWER] = &ACTION_Power,
     [ACTION_OPT_MONITOR] = &ACTION_Monitor,
     [ACTION_OPT_SPECTRUM] = &ACTION_Spectrum,
-    [ACTION_OPT_SCAN] = &ACTION_ScanRestart,
     [ACTION_OPT_KEYLOCK] = &COMMON_KeypadLockToggle,
     [ACTION_OPT_A_B] = &COMMON_SwitchVFOs,
     [ACTION_OPT_VFO_MR] = &COMMON_SwitchVFOMode,
@@ -168,12 +165,6 @@ void ACTION_Monitor(void)
 
     gMonitor = false;
 
-    if (gScanStateDir != SCAN_OFF) {
-        gScanPauseDelayIn_10ms = scan_pause_delay_in_1_10ms;
-        gScheduleScanListen    = false;
-        gScanPauseMode         = true;
-    }
-
 #ifdef ENABLE_NOAA
     if (gEeprom.DUAL_WATCH == DUAL_WATCH_OFF && gIsNoaaMode) {
         gNOAA_Countdown_10ms = NOAA_countdown_10ms;
@@ -209,79 +200,6 @@ void ACTION_Scan(bool bRestart)
     }
 #endif
 
-    if (SCANNER_IsScanning()) {
-        return;
-    }
-
-    // not scanning
-    gMonitor = false;
-
-#ifdef ENABLE_DTMF_CALLING
-    DTMF_clear_RX();
-#endif
-    gDTMF_RX_live_timeout = 0;
-    memset(gDTMF_RX_live, 0, sizeof(gDTMF_RX_live));
-
-    RADIO_SelectVfos();
-
-#ifdef ENABLE_NOAA
-    if (IS_NOAA_CHANNEL(gRxVfo->CHANNEL_SAVE)) {
-        return;
-    }
-#endif
-
-    GUI_SelectNextDisplay(DISPLAY_MAIN);
-
-    if (gScanStateDir != SCAN_OFF) {
-        // already scanning
-
-        if (!IS_MR_CHANNEL(gNextMrChannel)) {
-            CHFRSCANNER_Stop();
-#ifdef ENABLE_VOICE
-            gAnotherVoiceID = VOICE_ID_SCANNING_STOP;
-#endif
-            return;
-        }
-
-        // channel mode. Keep scanning but toggle between scan lists
-        RADIO_NextValidList(1);
-
-        #ifdef ENABLE_FEAT_F4HWN_RESUME_STATE
-            SETTINGS_WriteCurrentState();
-        #endif
-
-        // jump to the next channel
-        CHFRSCANNER_Start(false, gScanStateDir);
-        gScanPauseDelayIn_10ms = 1;
-        gScheduleScanListen    = false;
-    } else {
-        #ifdef ENABLE_SCAN_RANGES
-        if(gScanRangeStart == 0) // No ScanRange
-        {
-            gEeprom.CURRENT_STATE = 1;
-        }
-        else // ScanRange
-        {
-            gEeprom.CURRENT_STATE = 2;
-        }
-        SETTINGS_WriteCurrentState();
-        #endif
-        // start scanning
-        CHFRSCANNER_Start(true, SCAN_FWD);
-
-#ifdef ENABLE_VOICE
-        AUDIO_SetVoiceID(0, VOICE_ID_SCANNING_BEGIN);
-        AUDIO_PlaySingleVoice(true);
-#endif
-
-        // clear the other vfo's rssi level (to hide the antenna symbol)
-        gVFO_RSSI_bar_level[(gEeprom.RX_VFO + 1) & 1U] = 0;
-
-        // let the user see DW is not active
-        gDualWatchActive = false;
-    }
-
-    gUpdateStatus = true;
 }
 
 

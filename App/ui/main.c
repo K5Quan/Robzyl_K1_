@@ -17,7 +17,8 @@
 #include <string.h>
 #include <stdlib.h>  // abs()
 
-#include "app/chFrScanner.h"
+
+
 #include "app/dtmf.h"
 #ifdef ENABLE_AM_FIX
     #include "am_fix.h"
@@ -737,45 +738,6 @@ void UI_DisplayMain(void)
         if (activeTxVFO != vfo_num) // this is not active TX VFO
 #endif
         {
-#ifdef ENABLE_SCAN_RANGES
-            if(gScanRangeStart) {
-
-#ifdef ENABLE_FEAT_F4HWN
-                //if(IS_FREQ_CHANNEL(gEeprom.ScreenChannel[0]) && IS_FREQ_CHANNEL(gEeprom.ScreenChannel[1])) {
-                if(IS_FREQ_CHANNEL(gEeprom.ScreenChannel[activeTxVFO])) {
-
-                    uint8_t shift = 0;
-
-                    if (isMainOnly())
-                    {
-                        shift = 3;
-                    }
-
-                    UI_PrintString("ScnRng", 5, 0, line + shift, 8);
-                    sprintf(String, "%3u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
-                    UI_PrintStringSmallNormal(String, 56, 0, line + shift);
-                    sprintf(String, "%3u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
-                    UI_PrintStringSmallNormal(String, 56, 0, line + shift + 1);
-
-                    if (!isMainOnly())
-                        continue;
-                }
-                else
-                {
-                    gScanRangeStart = 0;
-                }
-#else
-                UI_PrintString("ScnRng", 5, 0, line, 8);
-                sprintf(String, "%3u.%05u", gScanRangeStart / 100000, gScanRangeStart % 100000);
-                UI_PrintStringSmallNormal(String, 56, 0, line);
-                sprintf(String, "%3u.%05u", gScanRangeStop / 100000, gScanRangeStop % 100000);
-                UI_PrintStringSmallNormal(String, 56, 0, line + 1);
-                continue;
-#endif
-            }
-#endif
-
-
             if (gDTMF_InputMode
 #ifdef ENABLE_DTMF_CALLING
                 || gDTMF_CallState != DTMF_CALL_STATE_NONE || gDTMF_IsTx
@@ -945,7 +907,7 @@ void UI_DisplayMain(void)
         {   // channel mode
             const unsigned int x = 1;
             const bool inputting = gInputBoxIndex != 0 && gEeprom.TX_VFO == vfo_num;
-            if (!inputting || gScanStateDir != SCAN_OFF)
+            if (!inputting)
                 sprintf(String, "%03u", gEeprom.ScreenChannel[vfo_num] + 1); //Robzyl 999ch max
             else
                 sprintf(String, "%.3s", INPUTBOX_GetAscii());  // show the input text //Robzyl 999ch max

@@ -16,7 +16,8 @@
 
 #include <string.h>
 
-#include "app/chFrScanner.h"
+
+
 #ifdef ENABLE_FMRADIO
     #include "app/fm.h"
 #endif
@@ -66,7 +67,7 @@ void UI_DisplayStatus()
 
 #ifdef ENABLE_NOAA
     // NOAA indicator
-    if (!(gScanStateDir != SCAN_OFF || SCANNER_IsScanning()) && gIsNoaaMode) { // NOASS SCAN indicator
+    if (gIsNoaaMode) { // NOASS SCAN indicator
         memcpy(line + x, BITMAP_NOAA, sizeof(BITMAP_NOAA));
     }
     // Power Save indicator
@@ -91,48 +92,6 @@ void UI_DisplayStatus()
     }
     else
 #endif
-    { // SCAN indicator
-        if (gScanStateDir != SCAN_OFF || SCANNER_IsScanning()) {
-            if (IS_MR_CHANNEL(gNextMrChannel) && !SCANNER_IsScanning()) { // channel mode
-
-                uint8_t end = 0;
-
-                if(gEeprom.SCAN_LIST_DEFAULT == MR_CHANNELS_LIST + 1)
-                {
-                    sprintf(str, gEeprom.SCAN_LIST_ENABLED ? "%s+" : "%s", "ALL");
-                    end = gEeprom.SCAN_LIST_ENABLED ? 18 : 14;
-                }
-                else
-                {
-                    const char *name = gListName[gEeprom.SCAN_LIST_DEFAULT - 1];
-
-                    // Check if name is valid
-                    if (!IsEmptyName(name, sizeof(gListName[0]))) {
-                        sprintf(str, "%.3s%s", name, gEeprom.SCAN_LIST_ENABLED ? "+" : "");
-                        end = gEeprom.SCAN_LIST_ENABLED ? 18 : 14;
-                    } 
-                    else {
-                        sprintf(str, "%02d%s", gEeprom.SCAN_LIST_DEFAULT, gEeprom.SCAN_LIST_ENABLED ? "+" : "");
-                        end = gEeprom.SCAN_LIST_ENABLED ? 14 : 10;
-                    }
-                }
-
-                GUI_DisplaySmallest(str, 2, 1, true, true);
-
-                gStatusLine[0] ^= 0x3E;
-                for (uint8_t x = 1; x < end; x++)
-                {
-                    gStatusLine[x] ^= 0x7F;
-                }
-                gStatusLine[end] ^= 0x3E;
-            }
-            else {  // frequency mode
-                memcpy(line + x + 1, gFontS, sizeof(gFontS));
-                //UI_PrintStringSmallBufferNormal("S", line + x + 1);
-            }
-            x1 = x + 10;
-        }
-    }
     x += 10;  // font character width
 
     #ifdef ENABLE_FEAT_F4HWN_DEBUG
@@ -153,7 +112,6 @@ void UI_DisplayStatus()
         x += sizeof(BITMAP_VoicePrompt);
         #endif
 
-        if(!SCANNER_IsScanning()) {
         #ifdef ENABLE_FEAT_F4HWN_RX_TX_TIMER
             if(gCurrentFunction == FUNCTION_TRANSMIT && gSetting_set_tmr == true)
             {
@@ -193,7 +151,6 @@ void UI_DisplayStatus()
                     #endif
                 }
             }
-        }
         x += sizeof(gFontDWR) + 3;
     #endif
 

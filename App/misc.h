@@ -366,7 +366,6 @@ enum
 };
 
 extern volatile bool     gScheduleScanListen;
-extern volatile uint16_t gScanPauseDelayIn_10ms;
 
 extern AlarmState_t          gAlarmState;
 extern uint16_t              gMenuCountdown;
@@ -420,7 +419,6 @@ extern bool                  gPttIsPressed;
 extern uint8_t               gPttDebounceCounter;
 extern uint8_t               gMenuListCount;
 extern uint8_t               gBackup_CROSS_BAND_RX_TX;
-extern uint8_t               gScanDelay_10ms;
 extern uint8_t               gFSKWriteIndex;
 #ifdef ENABLE_NOAA
     extern bool              gIsNoaaMode;

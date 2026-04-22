@@ -354,7 +354,6 @@ void SCANNER_Start(bool singleFreq)
     DTMF_clear_RX();
 #endif
 
-    gScanDelay_10ms        = scan_delay_10ms;
     gScanCssResultCode     = 0xFF;
     gScanCssResultType     = 0xFF;
     scanHitCount           = 0;
@@ -389,14 +388,6 @@ void SCANNER_Stop(void)
 
 void SCANNER_TimeSlice10ms(void)
 {
-    if (!SCANNER_IsScanning())
-        return;
-
-    if (gScanDelay_10ms > 0) {
-        gScanDelay_10ms--;
-        return;
-    }
-
     if (gScannerSaveState != SCAN_SAVE_NO_PROMPT) {
         return;
     }
@@ -438,8 +429,6 @@ void SCANNER_TimeSlice10ms(void)
                 gUpdateStatus          = true;
             }
 
-            gScanDelay_10ms = scan_delay_10ms;
-            //gScanDelay_10ms = 1;   // 10ms
             break;
         }
         case SCAN_CSS_STATE_SCANNING: {
@@ -482,7 +471,6 @@ void SCANNER_TimeSlice10ms(void)
 
             if (gScanCssState < SCAN_CSS_STATE_FOUND) { // scanning or off
                 BK4819_SetScanFrequency(gScanFrequency);
-                gScanDelay_10ms = scan_delay_10ms;
                 break;
             }
 
