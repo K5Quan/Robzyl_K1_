@@ -111,7 +111,6 @@ static int historyScrollOffset = 0;
 static bool gHistorySortLongPressDone = false;
 static bool gHistoryScan = false;
 static uint32_t CodeFreq = 0;
-static bool DisplayCode = 0;
 // ============================================================
 
 static uint16_t indexFs = 0;
@@ -1293,9 +1292,7 @@ static void SaveHistoryToFreeChannel(void) {
 static bool historyLoaded = false; // flaga stanu wczytania histotii spectrum
 
 void LoadHistory(void) {
-    DisplayCode = 0;
     HistoryStruct History = {0};
-
     memset(HFreqs, 0, sizeof(HFreqs));
     memset(HBlacklisted, 0, sizeof(HBlacklisted));
     memset(HCode, 0, sizeof(HCode));
@@ -1314,7 +1311,6 @@ void LoadHistory(void) {
         HFreqs[position]        = History.HFreqs;
         HBlacklisted[position]  = History.HBlacklisted;
         HCode[position]         = History.code;
-        if(History.code && History.code != 0xFF) DisplayCode = 1;
         HTimeS[position]        = History.HTimeS;
         indexFs                 = position + 1;
       }
@@ -1438,7 +1434,6 @@ static void FillfreqHistory()
             HCount[i]++;
             if ((CodeFreq == f)) {
                 HCode[i] = code;
-                if (code != 0xFF) DisplayCode =1;
             } else HCode[i] = 0xFF;
             foundIndex = i;
             foundTime = HTimeS[i];
@@ -1475,7 +1470,6 @@ static void FillfreqHistory()
     HBlacklisted[0] = foundBlacklisted;
     if ((CodeFreq == f)) {
         HCode[0] = code;
-        if (code != 0xFF) DisplayCode =1;
     } else HCode[0] = 0xFF;
     code = 0xFF;
     HTimeS[0] = foundTime;
@@ -2737,7 +2731,6 @@ static void HandleKeySpectrum(uint8_t key) {
                 historyScrollOffset = 0;
                 indexFs             = 0;
                 SpectrumMonitor     = 0;
-                DisplayCode         = 0;
             } else if (classic) {
                 ShowLines++;
 #ifdef ENABLE_BENCH
@@ -4105,53 +4098,68 @@ static void RenderUnifiedList(
     uint16_t     selectedIndex,
     uint16_t     scrollOffset,
     bool         invertSelected,
-    bool         twoLineMode,
     GetListRowFn getRow)
 {
+    if (selectedIndex < scrollOffset) {
+        scrollOffset = selectedIndex;
+    } else {
+        uint8_t occupiedLines = 0;
+        const uint8_t MAX_LINES = 6;
+        
+        for (uint16_t i = scrollOffset; i <= selectedIndex; i++) {
+            ListRow tempRow;
+            getRow(i, &tempRow);
+            uint8_t h = ((strlen(tempRow.left) + strlen(tempRow.right)) > 18) ? 2 : 1;
+            
+            if (i < selectedIndex) {
+                occupiedLines += h;
+            } else {
+                if (occupiedLines + h > MAX_LINES) {
+                    while (occupiedLines + h > MAX_LINES && scrollOffset < selectedIndex) {
+                        ListRow firstRow;
+                        getRow(scrollOffset, &firstRow);
+                        uint8_t hFirst = ((strlen(firstRow.left) + strlen(firstRow.right)) > 19) ? 2 : 1;
+                        occupiedLines -= hFirst;
+                        scrollOffset++;
+                    }
+                }
+            }
+        }
+    }
+    
+
     memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
 
-    /* Header row */
+    /* Header */
     if (useMeter && historyListActive && SpectrumMonitor > 0)
         DrawMeter(0);
     else if (title)
         UI_PrintStringSmallbackground(title, 1, LCD_WIDTH - 1, 0, 0);
 
-    const uint8_t maxItems = twoLineMode ? 3 : MAX_VISIBLE_LINES;
-
-    /* Clamp scroll offset */
-    if (numItems <= maxItems)
-        scrollOffset = 0;
-    else if (selectedIndex < scrollOffset)
-        scrollOffset = selectedIndex;
-    else if (selectedIndex >= scrollOffset + maxItems)
-        scrollOffset = selectedIndex - maxItems + 1;
-
-    for (uint8_t i = 0; i < maxItems; i++) {
-        uint16_t itemIndex = i + scrollOffset;
-        if (itemIndex >= numItems) break;
-
+    uint8_t currentLine = 1;
+    for (uint16_t itemIndex = scrollOffset; itemIndex < numItems; itemIndex++) {
         ListRow row;
-        row.left[0]  = '\0';
-        row.right[0] = '\0';
         getRow(itemIndex, &row);
 
-        bool sel = (itemIndex == selectedIndex);
+        bool needsTwoLines = ((strlen(row.left) + strlen(row.right)) > 19);
+        uint8_t itemHeight = needsTwoLines ? 2 : 1;
 
-        if (!twoLineMode) {
-            if (row.left[0] == '\0') continue; /* skip empty items */
-            ListDrawRow((uint8_t)(1 + i), row.left, row.right, sel && invertSelected);
+        if (currentLine + itemHeight > 7) break; // Sécurité limite physique LCD
+
+        bool sel = (itemIndex == selectedIndex);
+        bool inv = sel && invertSelected;
+
+        if (!needsTwoLines) {
+            ListDrawRow(currentLine, row.left, row.right, inv);
         } else {
-            /* Two-line mode: item occupies lines (1+i*2) and (2+i*2) */
-            uint8_t line1 = (uint8_t)(1 + i * 2);
-            uint8_t line2 = (uint8_t)(2 + i * 2);
-            bool inv = sel && invertSelected;
             if (inv) {
-                ListDrawSelectedBg(line1);
-                ListDrawSelectedBg(line2);
+                ListDrawSelectedBg(currentLine);
+                ListDrawSelectedBg(currentLine + 1);
             }
-            UI_PrintStringSmallbackground(row.left,  1, 0, line1, inv ? 1 : 0);
-            UI_PrintStringSmallbackground(row.right, 1, 0, line2, inv ? 1 : 0);
+            UI_PrintStringSmallbackground(row.left,  1, 0, currentLine, inv);
+            UI_PrintStringSmallbackground(row.right, 1, 0, currentLine + 1, inv);
         }
+        currentLine += itemHeight;
     }
     ST7565_BlitFullScreen();
 }
@@ -4370,17 +4378,17 @@ static void RenderScanListSelect() {
     char title[24];
     snprintf(title, sizeof(title), "SCANLISTS: %u/%u", selectedCount, validScanListCount);
     RenderUnifiedList(title, false, validScanListCount, scanListSelectedIndex,
-                      scanListScrollOffset, true, false, GetScanListRow);
+                      scanListScrollOffset, true, GetScanListRow);
 }
 
 static void RenderParametersSelect() {
     RenderUnifiedList("PARAMETERS:", false, PARAMETER_COUNT, parametersSelectedIndex,
-                      parametersScrollOffset, true, false, GetParametersRow);
+                      parametersScrollOffset, true, GetParametersRow);
 }
 
 void RenderBandSelect() {
     RenderUnifiedList("BANDS:", false, bandCount, bandListSelectedIndex,
-                      bandListScrollOffset, true, false, GetBandRow);
+                      bandListScrollOffset, true, GetBandRow);
 }
 
 static void RenderHistoryList() {
@@ -4388,7 +4396,7 @@ static void RenderHistoryList() {
     char title[24];
     sprintf(title, "HISTORY: %d", count);
     RenderUnifiedList(title, true, count, historyListIndex,
-                      historyScrollOffset, true, DisplayCode, GetHistoryRow);
+                      historyScrollOffset, true, GetHistoryRow);
 }
 
 #ifdef ENABLE_SCANLIST_SHOW_DETAIL
