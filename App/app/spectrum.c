@@ -946,7 +946,7 @@ static void LoadActiveScanFrequencies(void)
     }
     char str[32];
     sprintf(str, "%d CHANNELS", needed);
-    ShowOSDPopup(str);
+    if (!gComeBack) ShowOSDPopup(str);
     //memset(ScanFrequencies, 0, (MR_CHANNEL_LAST + 1) * sizeof(uint32_t));
     scanChannelsCount = 0;
     ChannelAttributes_t cache;
@@ -3671,7 +3671,7 @@ void APP_RunSpectrum(void) {
         Mode mode;
         if (!Key_1_pressed ) LoadSettings();
         Key_1_pressed = 0;
-        gComeBack = 0; 
+        
         switch (Spectrum_state) {
             case 0:  mode = FREQUENCY_MODE;  break;
             case 1:  mode = CHANNEL_MODE;    break;
@@ -3679,9 +3679,7 @@ void APP_RunSpectrum(void) {
             case 3:  mode = SCAN_BAND_MODE;  break;
             default: mode = FREQUENCY_MODE;  break;
         }
-        if(mode == CHANNEL_MODE) {
-            LoadActiveScanFrequencies();
-        }
+        if(mode == CHANNEL_MODE) {LoadActiveScanFrequencies();}
         if(mode == SCAN_BAND_MODE){
             if (BParams == NULL) {
                 BParams = (bandparameters *)malloc((MAX_BANDS) * sizeof(bandparameters));}
@@ -3724,6 +3722,7 @@ void APP_RunSpectrum(void) {
         temp_dc = CpuTemp_ReadDeciCelsius();
         //cpu_hz = CpuInfo_GetClockHz();
 #endif
+        gComeBack = 0;
         while (isInitialized) {Tick();}
 
         if (gSpectrumChangeRequested) {

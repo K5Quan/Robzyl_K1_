@@ -7,7 +7,7 @@ This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER
 Refer to this manual for global instructions,[🗲 F4HWN Manual](https://github.com/armel/uv-k1-k5v3-firmware-custom/wiki)
 Here we describe the spectrum and specific instructions for Robzyl:
 ## HISTORY CHANGES
-### V6.20 to V6.22
+### V6.20 to V6.23b
 * Add count and code to history
 * BL fix working in spectrum and history
 * show RAM usage in BENCH menu
