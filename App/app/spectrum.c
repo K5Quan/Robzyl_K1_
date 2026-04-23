@@ -93,7 +93,6 @@ uint8_t code = 0;
 typedef struct {
     uint32_t    HFreqs;
     uint8_t     HBlacklisted;
-    uint8_t     HCount;
     uint8_t     code; // 0=None, 1-50=CTCSS, 100+=DCS
     uint16_t    HTimeS;
 } HistoryStruct;
@@ -262,9 +261,8 @@ static uint32_t         *ScanFrequencies = NULL;
 static bandparameters   *BParams = NULL;
 static uint32_t         HFreqs[HISTORY_SIZE];
 static uint8_t          HCode[HISTORY_SIZE];
-static uint8_t          HCount[HISTORY_SIZE];
 static bool             HBlacklisted[HISTORY_SIZE];
-static uint32_t         HTimeS[HISTORY_SIZE];  
+static uint16_t         HTimeS[HISTORY_SIZE];  
 static uint32_t         MonitorFreqs[MONITOR_SIZE];
 /****************************************************************************/
 
@@ -1223,7 +1221,6 @@ static void DeleteHistoryItem(void) {
         HFreqs[i]       = HFreqs[i + 1];
         HBlacklisted[i] = HBlacklisted[i + 1];
         HCode[i]        = HCode[i + 1];
-        HCount[i]       = HCount[i + 1];
         HTimeS[i]       = HTimeS[i + 1];
     }
     indexFs--;
@@ -1231,7 +1228,6 @@ static void DeleteHistoryItem(void) {
     HFreqs[indexFs]         = 0;
     HBlacklisted[indexFs]   = 0xFF;
     HCode[indexFs]          = 0;
-    HCount[indexFs]         = 0;
     HTimeS[indexFs]         = 0;
     if (historyListIndex >= indexFs && indexFs > 0) {
         historyListIndex = indexFs - 1;
@@ -1431,7 +1427,6 @@ static void FillfreqHistory()
     
     for (uint16_t i = 0; i < indexFs; i++) {
         if (HFreqs[i] == f) {
-            HCount[i]++;
             if ((CodeFreq == f)) {
                 HCode[i] = code;
             } else HCode[i] = 0xFF;
@@ -3563,9 +3558,9 @@ static void UpdateListening(void) { // called every 200ms
     gNextTimeslice_HTimeS = 0;
     for (uint16_t i = 0; i < indexFs; i++) {
         if (HFreqs[i] == peak.f) {
-            if (HTimeS[i] < 0xFFFFu) {
+            if (HTimeS[i] < 3600) {
                 HTimeS[i] += 1;
-            } else {HTimeS[i] = 0xFFFFu;}
+            } else {HTimeS[i] = 3599;}
             break;
         }
     }
@@ -4109,7 +4104,7 @@ static void RenderUnifiedList(
         for (uint16_t i = scrollOffset; i <= selectedIndex; i++) {
             ListRow tempRow;
             getRow(i, &tempRow);
-            uint8_t h = ((strlen(tempRow.left) + strlen(tempRow.right)) > 18) ? 2 : 1;
+            uint8_t h = ((strlen(tempRow.left) + strlen(tempRow.right)) > 17) ? 2 : 1;
             
             if (i < selectedIndex) {
                 occupiedLines += h;
@@ -4118,7 +4113,7 @@ static void RenderUnifiedList(
                     while (occupiedLines + h > MAX_LINES && scrollOffset < selectedIndex) {
                         ListRow firstRow;
                         getRow(scrollOffset, &firstRow);
-                        uint8_t hFirst = ((strlen(firstRow.left) + strlen(firstRow.right)) > 19) ? 2 : 1;
+                        uint8_t hFirst = ((strlen(firstRow.left) + strlen(firstRow.right)) > 17) ? 2 : 1;
                         occupiedLines -= hFirst;
                         scrollOffset++;
                     }
@@ -4174,7 +4169,7 @@ static void GetHistoryRow(uint16_t index, ListRow *row) {
     if (!f) return;
 
     char freqStr[10];
-     char timeStr[7];
+    char timeStr[7];
     snprintf(freqStr, sizeof(freqStr), "%u.%05u", f / 100000, f % 100000);
     RemoveTrailZeros(freqStr);
 
@@ -4185,7 +4180,9 @@ static void GetHistoryRow(uint16_t index, ListRow *row) {
         Name[10] = '\0';
     }
     const char *prefix = HBlacklisted[index] ? "#" : "";
-    snprintf(timeStr, sizeof(timeStr), "%02d:%02d", HTimeS[index] / 60, HTimeS[index] % 60);
+    if (HTimeS[index] > 59)
+        snprintf(timeStr, sizeof(timeStr), " %02d:%02d", HTimeS[index] / 60, HTimeS[index] % 60);
+    else snprintf(timeStr, sizeof(timeStr), " %02d", HTimeS[index]);
     if (HCode[index] != 0XFF) {
         if (HCode[index] < 50) {
             snprintf(row->right, sizeof(row->right), "CT:%u.%uHz %s", CTCSS_Options[HCode[index]] / 10, CTCSS_Options[HCode[index]] % 10,timeStr);
