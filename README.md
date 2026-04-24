@@ -3,6 +3,12 @@
 # [💾 DOWNLOAD (select RAW file)](https://github.com/Robby69400/Robzyl_K1/tree/main/.DOWNLOAD_HERE)
 ## 🙏 Many thanks to Robzyl Team : Zylka, Kolyan, Iggy, Toni, Yves and Francois
 
+Installation, use the same procédure as F4HWN
+after that do
+a RESET VFO
+in spectrum do a Reset Default
+Clear Histo ALL
+
 This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
 Refer to this manual for global instructions,[🗲 F4HWN Manual](https://github.com/armel/uv-k1-k5v3-firmware-custom/wiki)
 Here we describe the spectrum and specific instructions for Robzyl:
