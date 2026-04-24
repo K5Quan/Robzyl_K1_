@@ -1,6 +1,6 @@
 # [◀️  Join the Robzyl Dev Telegram](https://t.me/k5robby69)
 # [📺 Youtube Channel](https://www.youtube.com/@robby_69400)
-# [💾 DOWNLOAD](https://github.com/Robby69400/Robzyl_K1/tree/main/.DOWNLOAD_HERE)
+# [💾 DOWNLOAD (select RAW file)](https://github.com/Robby69400/Robzyl_K1/tree/main/.DOWNLOAD_HERE)
 ## 🙏 Many thanks to Robzyl Team : Zylka, Kolyan, Iggy, Toni, Yves and Francois
 
 This software is a fork of Armel F4HWN firmware with code from NTOIVOLA, EGZUMER and DUAL TACHYON.
