@@ -121,7 +121,7 @@ static uint32_t SpectrumRangeStop = 110000000;
 /////////////////////////////Parameters://///////////////////////////
 //SEE parametersSelectedIndex
 // see GetParametersText
-static uint8_t  DelayRssi = 3;               // case 0       
+static uint8_t  DelayRssi = 2;               // case 0       
 static uint16_t SpectrumDelay = 0;           // case 1      
 static uint16_t MaxListenTime = 0;           // case 2
 static uint32_t RangeStart = 1400000;        // case 3      
@@ -180,7 +180,6 @@ static uint32_t lastReceivingFreq = 0;
 static bool gIsPeak = false;
 static bool historyListActive = false;
 static bool gForceModulation = 0;
-static bool classic = 1;
 static uint8_t SpectrumMonitor = 0;
 static uint8_t prevSpectrumMonitor = 0;
 static bool Key_1_pressed = 0;
@@ -2056,60 +2055,54 @@ static void DrawF(uint32_t f) {
             }
         }
     } else ArrowLine = 2;
-    
-   
-    if (classic) {
-            if (ShowLines == 2) {
-                UI_DisplayFrequency(line1, 10, 0, 0);  // BIG FREQUENCY
+    char Text[16];
+    if(isListening) { sprintf(Text, "%d dBm", Rssi2DBm(scanInfo.rssi)); }
+    else            { sprintf(Text, "%uch/s", benchRatePerSec); }
+
+    switch(ShowLines) {
+            case 1: {       //NORMAL SPECTRUM
+                UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
+                UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
+                ArrowLine = 2;
+                break;
+            }
+            case 2: {       // BIG FREQUENCY
+                UI_DisplayFrequency(line1, 10, 0, 0);  
                 GUI_DisplaySmallest(StringCode, 80, 17, false, true); // CSS
                 UI_PrintStringSmallbackground(line2,0, LCD_WIDTH - 1, 2, 0);  
                 ArrowLine = 3;
+                break;
             }
-
-            if (ShowLines == 1) {
-                UI_PrintStringSmallbackground(line1b, 1, LCD_WIDTH - 1, 0, 0);  // F + CSS
-                UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
-                //UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
-                ArrowLine = 2;
-            }
-
-            if (ShowLines == 3) {                       //LAST RX
+            case 3: {       //LAST RX
               char lastRxFreq[19] = "---";
               if (lastReceivingFreq >= 1400000 && lastReceivingFreq <= 130000000) {
                 FormatFrequency(lastReceivingFreq, lastRxFreq, sizeof(lastRxFreq));
                 sprintf(lastRxFreq,"%s %s", lastRxFreq,StringCode); 
               }
-
               UI_PrintStringSmallbackground(lastRxFreq, 1, LCD_WIDTH - 1, 0, 0);
               UI_PrintStringSmallbackground(line2,  1, LCD_WIDTH - 1, 1, 0);  // SL or BD + Name
               UI_PrintStringSmallbackground(line3,0, LCD_WIDTH - 1, 2, 0);
               ArrowLine = 3;
+              break;
             }
-			if (classic && ShowLines == 4) {return;} // BENCH renderujemy osobno
+            case 4: {       //SCAN
+                 if(isListening) DrawMeter(1);
+                UI_DisplayFrequency(line1, 10, 2, 0);
+                UI_PrintString(line2, 0, LCD_WIDTH - 1, 4, 10);
+                UI_PrintStringSmallbackground(Text, 64, 1, 0, 0);
+                if (StringCode[0]) { UI_PrintStringSmallbackground(StringCode, 10, 1, 0, 0);}
+                #ifdef ENABLE_CPU_TEMP
+                    else RenderCPUTemp();
+                #endif
+                break;
+                }
+			case 5: {       // BENCH
+                return;
+                break;
+            }
+    } 
     
-        if(isListening) {
-            snprintf(String, sizeof(String), "%d dBm", Rssi2DBm(scanInfo.rssi));
-            GUI_DisplaySmallest(String, 50, Bottom_print, false, true);
-        } else {
-            snprintf(String, sizeof(String), "Rate: %u/s", benchRatePerSec);
-            GUI_DisplaySmallest(String, 42, Bottom_print, false, true);
-        }
-    
-    } else { //Not Classic
-
-    DrawMeter(4);
-    UI_DisplayFrequency(line1, 10, 2, 0);
-    UI_PrintString(line2, 5, LCD_WIDTH - 1, 5, 8);
-    char rssiText[16];
-    if(isListening) {
-        sprintf(rssiText, "RSSI:%3d", scanInfo.rssi);
-        UI_PrintStringSmallbackground(rssiText, 64, 1, 0, 0);
-    }
-    if (StringCode[0]) { UI_PrintStringSmallbackground(StringCode, 10, 1, 0, 0);}
-#ifdef ENABLE_CPU_TEMP
-    else RenderCPUTemp();
-#endif
-    }
+    if(ShowLines < 4) GUI_DisplaySmallest(Text, 42, Bottom_print, false, true);
 }
 
 static void LookupChannelModulation() {
@@ -2711,10 +2704,17 @@ static void HandleKeySpectrum(uint8_t key) {
             }
             break;
         case KEY_2:
+            static bool light = 0;
             if (historyListActive) SaveHistoryToFreeChannel();
-            else {
-                classic = !classic;
+            else if (light)
+                {
+                    BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MAX);
                 }
+                else 
+                {
+                    BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MIN);
+                }
+            light = !light;
             break;
         case KEY_8:
             if (historyListActive) {
@@ -2726,19 +2726,20 @@ static void HandleKeySpectrum(uint8_t key) {
                 historyScrollOffset = 0;
                 indexFs             = 0;
                 SpectrumMonitor     = 0;
-            } else if (classic) {
+            } else {
                 ShowLines++;
 #ifdef ENABLE_BENCH
-                if (ShowLines > 4 || ShowLines < 1) ShowLines = 1;
+                if (ShowLines > 5 || ShowLines < 1) ShowLines = 1;
 #else
-                if (ShowLines > 3 || ShowLines < 1) ShowLines = 1;
+                if (ShowLines > 4 || ShowLines < 1) ShowLines = 1;
 #endif
                 char viewText[15];
-                const char *viewName = "CLASSIC";
-				if (ShowLines == 2) viewName = "BIG";
-				else if (ShowLines == 3) viewName = "LAST RX";
+                const char *viewName                = "SPECTRUM";
+				if (ShowLines == 2) viewName        = "BIG DIGITS";
+				else if (ShowLines == 3) viewName   = "LAST RX";
+				else if (ShowLines == 4) viewName   = "SCAN";
 #ifdef ENABLE_BENCH
-		        else if (ShowLines == 4) viewName = "BENCH";
+		        else if (ShowLines == 5) viewName   = "BENCH";
 #endif
                 sprintf(viewText, "VIEW: %s", viewName);
                 ShowOSDPopup(viewText);
@@ -3222,17 +3223,16 @@ static void RenderBenchmark(void) {
 static void RenderSpectrum()
 {
 #ifdef ENABLE_BENCH
-	    if (ShowLines == 4) {
+	    if (ShowLines == 5) {
         RenderBenchmark();
         return;
     }
 #endif
-    if (classic) {
+    if (ShowLines < 4) {
         DrawNums();
         DrawSpectrum();
-
 #ifdef ENABLE_SPECTRUM_LINES
-MyDrawFrameLines();
+        MyDrawFrameLines();
 #endif
         
   }
@@ -3296,7 +3296,7 @@ static void DrawMeter(int line) {
 }
 
 static void RenderStill() {
-  classic=1;
+  ShowLines = 4;
   char freqStr[18];
   //if (SpectrumMonitor) FormatFrequency(HFreqs[historyListIndex], freqStr, sizeof(freqStr));
   //else
@@ -3414,7 +3414,7 @@ static void HandleUserInput(void) {
       }
 
 if (kbd.counter == 2 || (kbd.counter > 17 && (kbd.counter % 15 == 0))) {
-        BACKLIGHT_TurnOn();
+        if(Backlight_On_Rx) BACKLIGHT_TurnOn();
         switch (currentState) {
             case SPECTRUM:
                 OnKeyDown(kbd.current);
@@ -3807,7 +3807,6 @@ typedef struct {
     bool Backlight_On_Rx;
     bool SoundBoost;  
     bool gMonitorScan;
-    bool classic;
 } SettingsEEPROM;
 
 
@@ -3860,7 +3859,6 @@ void LoadSettings()
   Spectrum_state = eepromData.Spectrum_state;    
   SoundBoost = eepromData.SoundBoost;
   gMonitorScan = eepromData.gMonitorScan;    
-  classic = eepromData.classic;    
   BK4819_WriteRegister(BK4819_REG_40, eepromData.R40);
   BK4819_WriteRegister(BK4819_REG_29, eepromData.R29);
   BK4819_WriteRegister(BK4819_REG_19, eepromData.R19);
@@ -3902,7 +3900,6 @@ static void SaveSettings()
   eepromData.Spectrum_state = Spectrum_state;    
   eepromData.SoundBoost = SoundBoost;
   eepromData.gMonitorScan = gMonitorScan;
-  eepromData.classic = classic;
   for (int i = 0; i < MAX_BANDS; i++) { 
     if (settings.bandEnabled[i]) {
         eepromData.bandListFlags |= ((uint64_t)1 << i);
@@ -3966,7 +3963,7 @@ void ClearSettings()
   settings.listenBw = 0;
   RangeStart = 43000000;
   RangeStop  = 44000000;
-  DelayRssi = 3;
+  DelayRssi = 2;
   PttEmission = 2;
   settings.scanStepIndex = STEP_10kHz;
   ShowLines = 1;
@@ -3983,7 +3980,6 @@ void ClearSettings()
   Spectrum_state = 1; 
   SoundBoost = 0;
   gMonitorScan = false;
-  classic = true;
   settings.bandEnabled[0] = 1;
   BK4819_WriteRegister(BK4819_REG_10, 0x0145);
   BK4819_WriteRegister(BK4819_REG_11, 0x01B5);
