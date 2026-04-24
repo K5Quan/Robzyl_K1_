@@ -8,6 +8,12 @@ Refer to this manual for global instructions,[🗲 F4HWN Manual](https://github.
 Here we describe the spectrum and specific instructions for Robzyl:
 ## HISTORY CHANGES
 ### V6.20 to V6.23
+* use key_8 to show scan view (no spectrum)
+* key_2 select min or max light, defined in VFO menu.
+* when Backlight_On_Rx is off, no backlight switch on other keys.
+* history display one or two lines dynamically
+* scanner removed
+* RESET VFO doesn't erase channels
 * Add count and code to history
 * BL fix working in spectrum and history
 * show RAM usage in BENCH menu
@@ -52,13 +58,13 @@ Spectrum launch  can also be affected to a Side Key in menu.
 | Key | Function |
 |-----|----------|
 | **1** | Skip receiving frequency |
-| **2** | Simplified screen (scanner) |
+| **2** | Toggle backlight|
 | **3** | Select listening bandwidth |
 | **4** | Selection menu (single/multiple SL or BD) |
 | **5** | Access Settings (</> to navigate, 1/3 to change values) |
 | **6** | Toggle BAND, SCAN-LIST, RANGE, FREQUENCY modes |
 | **7** | Save main settings |
-| **8** | Toggle BIG/CLASSIC/LAST RX/BENCH display |
+| **8** | Toggle BIG / CLASSIC / LAST RX / SCANNER/ BENCH display |
 | **9** | Select modulation |
 | **0** | Access reception history |
 | **M** | Enter Still Mode (monitoring and register access) |
