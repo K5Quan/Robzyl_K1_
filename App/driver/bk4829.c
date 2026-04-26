@@ -222,6 +222,7 @@ static uint16_t BK4819_ReadU16(void)
 }
 uint16_t reg_30_cache = 0xFFFF;
 uint16_t reg_47_cache = 0xFFFF;
+uint16_t reg_7E_cache = 0xFFFF;
 
 uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
 {
@@ -240,6 +241,7 @@ uint16_t BK4819_ReadRegister(BK4819_REGISTER_t Register)
     __enable_irq();
     if (Register == BK4819_REG_30) reg_30_cache = Value;
     if (Register == BK4819_REG_47) reg_47_cache = Value;
+    if (Register == BK4819_REG_7E) reg_7E_cache = Value;
     return Value;
 }
 
@@ -252,6 +254,10 @@ void BK4819_WriteRegister(BK4819_REGISTER_t Register, uint16_t Data)
     if (Register == BK4819_REG_47) {
         if(Data == reg_47_cache) return;
         reg_47_cache = Data;
+    }
+    if (Register == BK4819_REG_7E) {
+        if(Data == reg_7E_cache) return;
+        reg_7E_cache = Data;
     }
     
     CS_Release();
@@ -316,24 +322,30 @@ void BK4819_WriteU16(uint16_t Data)
 
 void BK4819_SetAGC(bool enable)
 {
-    uint16_t regVal = BK4819_ReadRegister(BK4819_REG_7E);
-    if(!(regVal & (1 << 15)) == enable)
-        return;
-
-    BK4819_WriteRegister(BK4819_REG_7E, (regVal & ~(1 << 15) & ~(0b111 << 12))
-        | (!enable << 15)   // 0  AGC fix mode
-        | (3u << 12)       // 3  AGC fix index
-    );
+  uint16_t reg7E = reg_7E_cache;     
+  reg7E &= ~((1 << 15) | (0b111 << 12));// Clear AGC and index bits
+  reg7E |= (!enable << 15) |            // AGC fix mode
+           (3u << 12) |                  // AGC fix index
+           (5u << 3) |                   // Default DC
+           (6u << 0);                    // Default value
+  BK4819_WriteRegister(BK4819_REG_7E, (reg7E));
 }
 
 void BK4819_InitAGC(ModulationMode_t modulation)
-{
+{   
+    bool fm = (modulation == MODULATION_FM);
     BK4819_WriteRegister(BK4819_REG_10, 0x0318);
     BK4819_WriteRegister(BK4819_REG_11, 0x033A);
     BK4819_WriteRegister(BK4819_REG_12, 0x03DB);
-    BK4819_WriteRegister(BK4819_REG_13, 0x03DF);
-    BK4819_WriteRegister(BK4819_REG_14, 0x0210);
-    BK4819_WriteRegister(BK4819_REG_49, 0x2AB2);
+    BK4819_WriteRegister(BK4819_REG_13, 0x03FF); //0x03DF
+    
+    uint16_t reg14 = fm ? 0x0210 : 0x0000;
+    BK4819_WriteRegister(BK4819_REG_14, reg14); //0x0210
+    //AGC_DEFAULT = {0, 56, 84};
+    //AGC_FAST = {0, 32, 50};
+    uint16_t reg49 = fm ? 0x2AB2 : (0 << 14) | (84 << 7) | (56 << 0);
+    
+    BK4819_WriteRegister(BK4819_REG_49, reg49);
     BK4819_WriteRegister(BK4819_REG_7B, 0x73DC);
 }
 

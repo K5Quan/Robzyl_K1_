@@ -13,7 +13,7 @@
                 "ENABLE_FMRADIO": true,
                 "ENABLE_UART": false,
                 "ENABLE_USB": false,
-                "ENABLE_VERSION": true,
+                "ENABLE_VERSION": false,
                 "ENABLE_AIRCOPY": false,
                 "ENABLE_NOAA": false,
                 "ENABLE_VOICE": false,
@@ -89,7 +89,6 @@
             "cacheVariables": {
                 "ENABLE_DEV": true,
                 "ENABLE_USB": true,
-                "ENABLE_VERSION": false,
                 "ENABLE_UART": true,
                 "ENABLE_CPU_STATS": false,
                 "ENABLE_FEAT_F4HWN_SCREENSHOT": false,
@@ -103,7 +102,6 @@
             "cacheVariables": {
                 "ENABLE_USB": true,
                 "ENABLE_UART": false,
-                "ENABLE_VERSION": true,
                 "EDITION_STRING": "USB",
                 "TARGET": "ROBZYL.K1.USB.V6.23"
             }

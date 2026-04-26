@@ -1145,7 +1145,11 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             BK4819_WriteRegister(0x31, uVar1 | 1); // AM Demodulation Enable
             BK4819_WriteRegister(0x42, 0x6f5c);
             BK4819_WriteRegister(0x2a, 0x7434);
-
+            BK4819_WriteRegister(0x2B, 0x0400); //FAGCI
+            BK4819_WriteRegister(0x2F, 0x9990); //FAGCI
+            BK4819_WriteRegister(0x28, 0x0B40); //FAGCI
+            BK4819_WriteRegister(0x2C, 0x1822); //FAGCI
+  
             #ifdef ENABLE_FEAT_F4HWN_AUDIO
                 AUDIO_ApplyAMProfile(gSetting_set_audio_am);
             #else
@@ -1165,7 +1169,8 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             BK4819_WriteRegister(0x2a, 0x7400);
             BK4819_WriteRegister(0x2b, 0x0000);
             BK4819_WriteRegister(0x2f, 0x9890);
-
+            BK4819_WriteRegister(0x28, 0x0B40); //FAGCI
+            BK4819_WriteRegister(0x2C, 0x1822); //FAGCI
             #ifdef ENABLE_FEAT_F4HWN_AUDIO
                 AUDIO_ApplyUSBProfile();
             #else
@@ -1180,6 +1185,10 @@ void RADIO_SetModulation(ModulationMode_t modulation)
         {
             uint16_t uVar1 = BK4819_ReadRegister(0x31);
             BK4819_WriteRegister(0x31, uVar1 & 0xfffe); // AM Demodulation Disable
+            BK4819_WriteRegister(0x28, 1536);  // 0x0600 - noise gate для FM
+            BK4819_WriteRegister(0x2C, 26210); // 0x6662 - emph/tx gain для FM
+            BK4819_WriteRegister(0x4A, (BK4819_ReadRegister(0x4A) & ~127U) | 40);
+    
             BK4819_WriteRegister(0x42, 0x6b5a);
             BK4819_WriteRegister(0x2a, 0x7400);
             BK4819_WriteRegister(0x2b, 0x0000);

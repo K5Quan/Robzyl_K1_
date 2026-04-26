@@ -3986,7 +3986,7 @@ void ClearSettings()
   BK4819_WriteRegister(BK4819_REG_12, 0x0393);
   BK4819_WriteRegister(BK4819_REG_13, 0x03BE);
   BK4819_WriteRegister(BK4819_REG_14, 0x0019);
-  BK4819_WriteRegister(BK4819_REG_40, 13520);
+  BK4819_WriteRegister(BK4819_REG_40, 0x34F0); //13520
   BK4819_WriteRegister(BK4819_REG_29, 43840);
   BK4819_WriteRegister(BK4819_REG_19, 4161);
   BK4819_WriteRegister(BK4819_REG_73, 18066);
