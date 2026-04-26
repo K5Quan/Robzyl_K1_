@@ -2088,7 +2088,7 @@ static void DrawF(uint32_t f) {
             case 4: {       //SCAN
                  if(isListening) DrawMeter(1);
                 UI_DisplayFrequency(line1, 10, 2, 0);
-                UI_PrintString(line2, 0, LCD_WIDTH - 1, 4, 10);
+                UI_PrintString(line2, 0, LCD_WIDTH - 1, 4, 8);
                 UI_PrintStringSmallbackground(Text, 64, 1, 0, 0);
                 if (StringCode[0]) { UI_PrintStringSmallbackground(StringCode, 10, 1, 0, 0);}
                 #ifdef ENABLE_CPU_TEMP

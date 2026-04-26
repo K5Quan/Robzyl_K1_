@@ -51,22 +51,22 @@ if [[ ! "$PRESET" =~ ^(Dev|USB|RS232|All)$ ]]; then
   exit 1
 fi
 
-VERSION_FILE="App/version.h"
-if [ -f "$VERSION_FILE" ]; then
-    # On cherche la ligne, on extrait le 3ème mot (le numéro)
-    CURRENT_VERSION=$(grep "#define APP_VERSION" "$VERSION_FILE" | awk '{print $3}')
-    
-    if [ -n "$CURRENT_VERSION" ]; then
-        NEW_VERSION=$((CURRENT_VERSION + 1))
-        # Utilisation de sed pour remplacer la ligne entière
-        sed -i "s/#define APP_VERSION $CURRENT_VERSION/#define APP_VERSION $NEW_VERSION/" "$VERSION_FILE"
-        echo "🔢 Version mise à jour : $CURRENT_VERSION -> $NEW_VERSION"
-    else
-        echo "⚠️  Ligne '#define APP_VERSION' introuvable dans $VERSION_FILE"
-    fi
-else
-    echo "❌ Fichier $VERSION_FILE introuvable au chemin spécifié."
-fi
+# VERSION_FILE="App/version.h"
+# if [ -f "$VERSION_FILE" ]; then
+#     # On cherche la ligne, on extrait le 3ème mot (le numéro)
+#     CURRENT_VERSION=$(grep "#define APP_VERSION" "$VERSION_FILE" | awk '{print $3}')
+#     
+#     if [ -n "$CURRENT_VERSION" ]; then
+#         NEW_VERSION=$((CURRENT_VERSION + 1))
+#         # Utilisation de sed pour remplacer la ligne entière
+#         sed -i "s/#define APP_VERSION $CURRENT_VERSION/#define APP_VERSION $NEW_VERSION/" "$VERSION_FILE"
+#         echo "🔢 Version mise à jour : $CURRENT_VERSION -> $NEW_VERSION"
+#     else
+#         echo "⚠️  Ligne '#define APP_VERSION' introuvable dans $VERSION_FILE"
+#     fi
+# else
+#     echo "❌ Fichier $VERSION_FILE introuvable au chemin spécifié."
+# fi
 
 # ---------------------------------------------
 # Build the Docker image (only needed once)
