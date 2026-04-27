@@ -94,7 +94,7 @@ build_preset() {
   2>&1 | sed "s|/src/|C:/Perso/Robzyl_K1/|g"
 
   docker run --rm -v "$PWD":/src -w /src "$IMAGE" \
-    arm-none-eabi-size ./build/${preset}/ROBZYL.K1.${preset}.V6.23.elf
+    arm-none-eabi-size ./build/${preset}/ROBZYL.K1.${preset}.V6.24.elf
 
   echo "✅ Done: ${preset}"
 }
@@ -125,10 +125,10 @@ fi
 # Définition du nom du binaire selon le preset
 case "$PRESET" in
   "USB")
-    BIN_NAME="ROBZYL.K1.USB.V6.23.bin"
+    BIN_NAME="ROBZYL.K1.USB.V6.24.bin"
     ;;
   "Dev")
-    BIN_NAME="ROBZYL.K1.Dev.V6.23.bin"
+    BIN_NAME="ROBZYL.K1.Dev.V6.24.bin"
     ;;
   "All")
     # Pour 'All', on peut flasher un binaire par défaut ou ignorer

@@ -45,13 +45,14 @@
 static volatile uint32_t gGlobalSysTickCounter;
 
 // we come here every 10ms
+
 void SysTick_Handler(void)
 {
     gGlobalSysTickCounter++;
     
     gNextTimeslice = true;
     gNextTimeslice_10ms = true;
-    if ((gGlobalSysTickCounter % 20) == 0)      {gNextTimeslice_display = true;}
+    if ((gGlobalSysTickCounter % RefreshDisplay) == 0)      {gNextTimeslice_display = true;}
     if ((gGlobalSysTickCounter % 47) == 0)      {gNextTimeslice_Monitor = true;}
     if ((gGlobalSysTickCounter % 100) == 0)      {gNextTimeslice_HTimeS = true;}
     if ((gGlobalSysTickCounter % 6000) == 0)    {gNextTimeslice_60s = true;}

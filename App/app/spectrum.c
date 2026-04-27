@@ -25,6 +25,7 @@
 #include "common.h"
 #include "action.h"
 #include "ui/main.h"
+#include "scheduler.h"
 #ifdef ENABLE_CPU_STATS
     #include "app/mem_stats.h"
 #else
@@ -341,25 +342,16 @@ int Rssi2DBm(const uint16_t rssi) {return (rssi >> 1) - 160;}
 static int clamp(int v, int min, int max) {
   return v <= min ? min : (v >= max ? max : v);
 }
-static void ZoomOut (void){
-    settings.dbMax = 0;
-    settings.dbMin = -160;
-}
 
 static void UpdateDBMaxAuto() { //Zoom
-    //if (ShowLines == 2) {ZoomOut(); return;}
     scanInfo.rssiMax = 0;
     scanInfo.rssiMin = 65535;
     for (uint8_t i = 0; i < 127;i++) {
-      if (rssiHistory[i] > scanInfo.rssiMax) {scanInfo.rssiMax = rssiHistory[i];}
-      else 
-      if (rssiHistory[i] < scanInfo.rssiMin) {scanInfo.rssiMin = rssiHistory[i];}
+        if (rssiHistory[i] > scanInfo.rssiMax) {scanInfo.rssiMax = rssiHistory[i];}
+        else if (rssiHistory[i] < scanInfo.rssiMin) {scanInfo.rssiMin = rssiHistory[i];}
     }
     settings.dbMax = Rssi2DBm(scanInfo.rssiMax) + 3;
     settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
-    //settings.dbMax = clamp(Rssi2DBm(scanInfo.rssiMax), -70, -20);
-    //settings.dbMin = clamp(Rssi2DBm(scanInfo.rssiMin), -120, -90);
-    //char str[64] = "";sprintf(str, "%d %d\r\n", Rssi2DBm(scanInfo.rssiMax),Rssi2DBm(scanInfo.rssiMin) );LogUart(str);
 }
 
 
@@ -1097,7 +1089,7 @@ KEY_Code_t GetKey() {
 static void SetState(State state) {
   previousState = currentState;
   currentState = state;
-  ZoomOut();
+
 }
 
 // ============================================================
@@ -1494,6 +1486,7 @@ static void ToggleRX(bool on) {
     if (on) { 
         Fmax = peak.f;
         BK4819_RX_TurnOn();
+        UpdateDBMaxAuto();
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
         BK4819_SetFilterBandwidth(settings.listenBw, false);
@@ -2308,7 +2301,6 @@ void NextAppMode(void) {
         SpectrumPauseCount = 0;
         newScanStart = true;
         ToggleRX(false);
-        ZoomOut();
 }
 
 
@@ -2767,7 +2759,6 @@ static void HandleKeySpectrum(uint8_t key) {
                 lastReceivingFreq = HFreqs[historyListIndex];
                 SetF(lastReceivingFreq);
             } else {
-                ZoomOut();
                 switch (appMode) {
                     case SCAN_BAND_MODE:
                         bandListSelectedIndex = (bandListSelectedIndex < 1 ? bandCount - 1 : bandListSelectedIndex - 1);
@@ -2808,7 +2799,6 @@ static void HandleKeySpectrum(uint8_t key) {
                 lastReceivingFreq = HFreqs[historyListIndex];
                 SetF(lastReceivingFreq);
             } else {
-                ZoomOut();
                 switch (appMode) {
                     case SCAN_BAND_MODE:
                         bandListSelectedIndex = (bandListSelectedIndex + 1) % bandCount;
@@ -3514,7 +3504,7 @@ static void UpdateScan() {
 }
 
 
-static void UpdateListening(void) { // called every 200ms
+static void UpdateListening(void) { // called every RefreshDisplay * 10ms
     
     static uint32_t stableFreq = 1;
     static uint16_t stableCount = 0;
@@ -3536,7 +3526,7 @@ static void UpdateListening(void) { // called every 200ms
         SoundBoostsave = SoundBoost;
     }
     if (peak.f == stableFreq) {
-        if (++stableCount == 2) {  // 400ms
+        if (++stableCount == 40 / RefreshDisplay) {  
             if (!SpectrumMonitor) FillfreqHistory();
             if (gEeprom.BACKLIGHT_MAX > 5)
                 BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, 1);
@@ -3553,7 +3543,7 @@ static void UpdateListening(void) { // called every 200ms
         UpdateGlitch();
     }
         
-    spectrumElapsedCount += 200; //in ms
+    spectrumElapsedCount += RefreshDisplay * 10; 
     if (peak.f >= 1400000 && peak.f <= 130000000 && gNextTimeslice_HTimeS) {
     gNextTimeslice_HTimeS = 0;
     for (uint16_t i = 0; i < indexFs; i++) {
@@ -3581,8 +3571,8 @@ static void UpdateListening(void) { // called every 200ms
     if (WaitSpectrum > 61000)
         return;
 
-    if (WaitSpectrum > 200) {
-        WaitSpectrum -= 200;
+    if (WaitSpectrum > RefreshDisplay * 10) {
+        WaitSpectrum -= RefreshDisplay * 10;
         return;
     }
     // timer écoulé
