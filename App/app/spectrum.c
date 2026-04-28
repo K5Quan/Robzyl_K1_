@@ -1465,20 +1465,22 @@ static void FillfreqHistory()
 } 
 
 static void ToggleRX(bool on) {
+    static uint32_t prevF = 0;
     if (SPECTRUM_PAUSED || settings.rssiTriggerLevelUp == 50) return;
     if(!on && SpectrumMonitor == 2) {isListening = 1;return;}
     isListening = on;
-    gChannel = BOARD_gMR_fetchChannel(scanInfo.f);
-    isKnownChannel = (gChannel != 0xFFFF);
-    
-    if (on && isKnownChannel) {
-        LookupChannelModulation();
-        settings.modulationType = channelModulation;
-        SETTINGS_FetchChannelName(channelName,gChannel );
-        if(!gForceModulation) settings.modulationType = channelModulation;
-        RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
+    if (prevF != scanInfo.f) {
+        gChannel = BOARD_gMR_fetchChannel(scanInfo.f);
+        isKnownChannel = (gChannel != 0xFFFF);
+        if (on && isKnownChannel) {
+            LookupChannelModulation();
+            settings.modulationType = channelModulation;
+            SETTINGS_FetchChannelName(channelName,gChannel );
+            if(!gForceModulation) settings.modulationType = channelModulation;
+            RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
+        }
     }
-    else if(on && appMode == SCAN_BAND_MODE) {
+    if(on && appMode == SCAN_BAND_MODE) {
             if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
             RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
           }

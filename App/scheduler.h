@@ -17,7 +17,7 @@
 #define _SCHEDULER_H
 #include "py32f0xx.h"
 
-#define RefreshDisplay 10
+#define RefreshDisplay 20
 
 static void inline SCHEDULER_Enable()
 {
