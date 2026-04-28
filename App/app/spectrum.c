@@ -4375,8 +4375,32 @@ void RenderBandSelect() {
 
 static void RenderHistoryList() {
     uint16_t count = CountValidHistoryItems();
-    char title[24];
-    sprintf(title, "HISTORY: %d", count);
+
+    uint32_t totalTime = 0;
+    for (uint16_t i = 0; i < count; i++) {
+        totalTime += HTimeS[i];
+    }
+
+    char timeStr[12];
+    if (totalTime >= 3600) {
+        sprintf(timeStr, "%u:%02u:%02u",
+                totalTime / 3600,
+                (totalTime % 3600) / 60,
+                totalTime % 60);
+    } else if (totalTime >= 60) {
+        sprintf(timeStr, "%u:%02u",
+                totalTime / 60,
+                totalTime % 60);
+    } else {
+        sprintf(timeStr, "%us", (unsigned)totalTime);
+    }
+
+    char title[32];
+    sprintf(title, "HISTORY:%d %s", count, timeStr);
+    if (strlen(title) > 22) {
+        sprintf(title, "HST:%d %s", count, timeStr);
+    }
+
     RenderUnifiedList(title, true, count, historyListIndex,
                       historyScrollOffset, true, GetHistoryRow);
 }
