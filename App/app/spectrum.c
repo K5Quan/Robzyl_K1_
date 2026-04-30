@@ -1098,6 +1098,7 @@ KEY_Code_t GetKey() {
 static void SetState(State state) {
   previousState = currentState;
   currentState = state;
+  spectrumElapsedCount = 0;
 
 }
 
@@ -1474,20 +1475,18 @@ static void FillfreqHistory()
 } 
 
 static void ToggleRX(bool on) {
-    static uint32_t prevF = 0;
     if (SPECTRUM_PAUSED || settings.rssiTriggerLevelUp == 50) return;
     if(!on && SpectrumMonitor == 2) {isListening = 1;return;}
     isListening = on;
-    if (prevF != scanInfo.f) {
-        gChannel = BOARD_gMR_fetchChannel(scanInfo.f);
-        isKnownChannel = (gChannel != 0xFFFF);
-        if (on && isKnownChannel) {
-            LookupChannelModulation();
-            settings.modulationType = channelModulation;
-            SETTINGS_FetchChannelName(channelName,gChannel );
-            if(!gForceModulation) settings.modulationType = channelModulation;
-            RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
-        }
+    
+    gChannel = BOARD_gMR_fetchChannel(scanInfo.f);
+    isKnownChannel = (gChannel != 0xFFFF);
+    if (on && isKnownChannel) {
+        LookupChannelModulation();
+        settings.modulationType = channelModulation;
+        SETTINGS_FetchChannelName(channelName,gChannel );
+        if(!gForceModulation) settings.modulationType = channelModulation;
+        RADIO_SetupAGC(settings.modulationType == MODULATION_AM, false);
     }
     if(on && appMode == SCAN_BAND_MODE) {
             if (!gForceModulation) settings.modulationType = BParams[bl].modulationType;
@@ -3294,7 +3293,6 @@ static void DrawMeter(int line) {
 }
 
 static void RenderStill() {
-  ShowLines = 4;
   char freqStr[18];
   //if (SpectrumMonitor) FormatFrequency(HFreqs[historyListIndex], freqStr, sizeof(freqStr));
   //else
@@ -3394,7 +3392,7 @@ static void Render() {
   #ifdef ENABLE_FEAT_F4HWN_SCREENSHOT
     SCREENSHOT_Update(1);
   #endif
-  ST7565_BlitFullScreen();
+  if (spectrumElapsedCount < 500) ST7565_BlitFullScreen();
 }
 
 static void HandleUserInput(void) {
