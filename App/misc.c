@@ -109,7 +109,6 @@ enum BacklightOnRxTx_t gSetting_backlight_on_tx_rx;
 
 #ifdef ENABLE_FEAT_F4HWN
     uint8_t       gSetting_set_pwr = 1;
-    uint16_t      gSetting_set_pwr_mw = 500;  // U power level in mW, default 500
     bool          gSetting_set_ptt = 0;
     uint8_t       gSetting_set_tot = 0;
     uint8_t       gSetting_set_ctr = 10;

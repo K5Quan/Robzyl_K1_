@@ -236,7 +236,7 @@ void RADIO_InitInfo(VFO_Info_t *pInfo, const uint16_t ChannelSave, const uint32_
     pInfo->StepFrequency            = gStepFrequencyTable[pInfo->STEP_SETTING];
     pInfo->CHANNEL_SAVE             = ChannelSave;
     pInfo->FrequencyReverse         = false;
-    pInfo->OUTPUT_POWER             = OUTPUT_POWER_LOW;
+    pInfo->OUTPUT_POWER             = OUTPUT_POWER_LOW1;
     pInfo->freq_config_RX.Frequency = Frequency;
     pInfo->freq_config_TX.Frequency = Frequency;
     pInfo->pRX                      = &pInfo->freq_config_RX;
@@ -254,14 +254,6 @@ void RADIO_InitInfo(VFO_Info_t *pInfo, const uint16_t ChannelSave, const uint32_
 void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure)
 {
     VFO_Info_t *pVfo = &gEeprom.VfoInfo[VFO];
-
-
-
-        if (gEeprom.FreqChannel[VFO] == FREQ_CHANNEL_FIRST + BAND5_350MHz)
-            gEeprom.FreqChannel[VFO] = FREQ_CHANNEL_FIRST + BAND6_400MHz;
-        if (gEeprom.ScreenChannel[VFO] == FREQ_CHANNEL_FIRST + BAND5_350MHz)
-            gEeprom.ScreenChannel[VFO] = FREQ_CHANNEL_FIRST + BAND6_400MHz;
-
     uint16_t channel = gEeprom.ScreenChannel[VFO];
 
     if (IS_VALID_CHANNEL(channel)) {
@@ -416,7 +408,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         {
             pVfo->FrequencyReverse  = false;
             pVfo->CHANNEL_BANDWIDTH = BK4819_FILTER_BW_WIDE;
-            pVfo->OUTPUT_POWER      = OUTPUT_POWER_LOW;
+            pVfo->OUTPUT_POWER      = OUTPUT_POWER_LOW1;
             pVfo->BUSY_CHANNEL_LOCK = false;
         }
         else
@@ -424,16 +416,7 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
             const uint8_t d4 = data[4];
             pVfo->FrequencyReverse  = !!((d4 >> 0) & 1u);
             pVfo->CHANNEL_BANDWIDTH = !!((d4 >> 1) & 1u);
-            {
-                uint8_t pwr = ((d4 >> 2) & 7u);
-                // Guard: X=0 is only valid when stored by this firmware.
-                // Old firmware had LOW=0 (no X slot), so EEPROM value 0 -> treat as LOW.
-                // X (0) is now a valid stored value — do NOT strip it.
-                // Only reject truly invalid values (>= LEN but not X).
-                if (pwr >= OUTPUT_POWER_LEN)
-                    pwr = OUTPUT_POWER_LOW;
-                pVfo->OUTPUT_POWER = pwr;
-            }
+            pVfo->OUTPUT_POWER      =   ((d4 >> 2) & 7u);
             pVfo->BUSY_CHANNEL_LOCK = !!((d4 >> 5) & 1u);
         }
 
@@ -509,10 +492,6 @@ void RADIO_ConfigureChannel(const unsigned int VFO, const unsigned int configure
         pVfo->pRX = &pVfo->freq_config_TX;
         pVfo->pTX = &pVfo->freq_config_RX;
     }
-
-        FREQ_Config_t *pConfig = pVfo->pRX;
-        if (pConfig->Frequency >= 35000000 && pConfig->Frequency < 40000000)
-            pConfig->Frequency = 43300000;
     
     pVfo->Compander = att->compander;
 
@@ -623,51 +602,123 @@ void RADIO_ConfigureSquelchAndOutputPower(VFO_Info_t *pInfo)
     //      32 32 32 64 64 64 94 8c 8c ff ff ff ff ff ff ff 470 MHz
 
     uint8_t Txp[3];
-    uint8_t Op = 0; // calibration set: 0=Low, 1=Mid, 2=High
+    uint8_t Op = 0; // Low eeprom calibration data 
+    uint8_t currentPower = pInfo->OUTPUT_POWER;
 
-    // X = TX forbidden on this channel
-    if (pInfo->OUTPUT_POWER == OUTPUT_POWER_X) {
-        pInfo->TXP_CalculatedSetting = 0;
-        return;
+    if(currentPower == OUTPUT_POWER_USER)
+    {
+        if(gSetting_set_pwr == 5)
+        {
+            Op = 1; // Mid eeprom calibration data
+        }
+        else if(gSetting_set_pwr == 6)
+        {
+            Op = 2; // High eeprom calibration data
+        }
+        currentPower = gSetting_set_pwr;
     }
-
-    // ── Поправки мощности — МЕНЯЙ ЗДЕСЬ ─────────────────────────────────
-    //   + поднимает мощность,  - опускает.
-    //   Cal-байты твоей рации (из K1_calibration.dat):
-    //     Band2 (145МГц): L=75  M=120  H=150/144/150
-    //     Band5 (430МГц): L=75  M=120  H=150/160/150
-    //
-    const int8_t pL_add =  -50;  //433.800/145.300 L - 0,4 / 0.3
-    const int8_t pM_add =  -50;  // M - 2,5 / 1.8
-    const int8_t pH_add = -60;  // H - 5,2 / 2.3
-    // ─────────────────────────────────────────────────────────────────────
-
-    if (pInfo->OUTPUT_POWER == OUTPUT_POWER_LOW) {
-        Op = 0;                                              // L — читает Low  cal-байты из EEPROM
-    } else if (pInfo->OUTPUT_POWER == OUTPUT_POWER_MID) {
-        Op = 1;                                              // M — читает Mid  cal-байты из EEPROM
-    } else {
-        Op = 2;                                              // H и U — читают High cal-байты из EEPROM U -1,4 / 0.8 (2.5W) 433 u 0.5=0 5,5=5,2
+    else
+    {
+        if (currentPower == OUTPUT_POWER_MID)
+        {
+            Op = 1; // Mid eeprom calibration data
+        }
+        else if(currentPower == OUTPUT_POWER_HIGH)
+        {
+            Op = 2; // High eeprom calibration data
+        }
+        currentPower--;
     }
 
     PY25Q16_ReadBuffer(0x100D0 + (Band * 16) + (Op * 3), Txp, 3);
 
-    if (pInfo->OUTPUT_POWER == OUTPUT_POWER_LOW) {
-    for (uint8_t p = 0; p < 3; p++)
-            Txp[p] = (uint8_t)MAX(0, MIN(255, (int16_t)Txp[p] + pL_add)); // L: cal + pL_add
-    } else if (pInfo->OUTPUT_POWER == OUTPUT_POWER_MID) {
-        for (uint8_t p = 0; p < 3; p++)
-            Txp[p] = (uint8_t)MAX(0, MIN(255, (int16_t)Txp[p] + pM_add)); // M: cal + pM_add
-    } else if (pInfo->OUTPUT_POWER == OUTPUT_POWER_HIGH) {
-        for (uint8_t p = 0; p < 3; p++)
-            Txp[p] = (uint8_t)MAX(0, MIN(255, (int16_t)Txp[p] + pH_add)); // H: cal + pH_add
-    } else if (pInfo->OUTPUT_POWER == OUTPUT_POWER_USER) {
-        for (uint8_t p = 0; p < 3; p++) {
-            uint32_t full   = (uint32_t)MAX(0, MIN(255, (int16_t)Txp[p] + pH_add)); // U: та же база что H
-            uint32_t scaled = (full * (uint32_t)gSetting_set_pwr_mw) / 5500u;       // U: МЕНЯЙ 5500u — это 100% шкалы U (= H при 5500 mW)
-            Txp[p] = (scaled > 255u) ? 255u : (uint8_t)scaled;
+#ifdef ENABLE_FEAT_F4HWN
+    // make low and mid even lower
+    // and use calibration values 
+    // be aware with toxic fucking closed firmwares
+
+    /*
+    uint8_t shift[] = {0, 0, 0, 0, 0};
+
+    if(Band == 5) // UHF
+    {
+        shift[0] = 0;
+        shift[1] = 0;
+        shift[2] = 0;
+        shift[3] = 0;
+        shift[4] = 0;
+    }
+    */
+
+    /*
+    for(uint8_t p = 0; p < 3; p++)
+    {
+        switch (currentPower)
+        {
+            case 0:
+                Txp[p] = (Txp[p] * 4) / 25; //+ shift[pInfo->OUTPUT_POWER]; 
+                break;
+            case 1:
+                Txp[p] = (Txp[p] * 4) / 19; // + shift[pInfo->OUTPUT_POWER];
+                break;
+            case 2:
+                Txp[p] = (Txp[p] * 4) / 13; // + shift[pInfo->OUTPUT_POWER];
+                break;
+            case 3:
+                Txp[p] = (Txp[p] * 4) / 10; // + shift[pInfo->OUTPUT_POWER];
+                break;
+            case 4:
+                Txp[p] = (Txp[p] * 4) / 7; // + shift[pInfo->OUTPUT_POWER];
+                break;
+            case 5:
+                Txp[p] = (Txp[p] * 3) / 4;
+                break;
+            case 6:
+                Txp[p] = Txp[p] + 30;
+                break;              
         }
     }
+    */
+
+    //static const uint8_t dividers[6] = { 25, 19, 13, 10, 7, 4}; // For UV-K5 V1
+
+    static const uint8_t dividers_band2[6] = { 20, 15, 10, 8, 6, 4 };
+    static const uint8_t dividers_band5[6] = { 25, 19, 13, 9, 6, 4 }; // Need to improve measure...
+
+    const uint8_t *dividers;
+
+    if (Band == 2)  // VHF
+        dividers = dividers_band2;
+    else // UHF
+        dividers = dividers_band5;
+
+    for (uint8_t p = 0; p < 3; p++)
+    {
+        if (currentPower < 6)
+        {
+            Txp[p] = (Txp[p] * (currentPower == 5 ? 3 : 4)) / dividers[currentPower];
+        }
+        else // case 6
+        {
+            // Txp[p] += 30; // For UV-K5 V1
+            Txp[p] += 24;
+        }
+    }
+#else
+    #ifdef ENABLE_REDUCE_LOW_MID_TX_POWER
+        // make low and mid even lower
+        if (pInfo->OUTPUT_POWER == OUTPUT_POWER_LOW) {
+            Txp[0] /= 5;
+            Txp[1] /= 5;
+            Txp[2] /= 5;
+        }
+        else if (pInfo->OUTPUT_POWER == OUTPUT_POWER_MID){
+            Txp[0] /= 3;
+            Txp[1] /= 3;
+            Txp[2] /= 3;
+        }
+    #endif
+#endif
 
     pInfo->TXP_CalculatedSetting = FREQUENCY_CalculateOutputPower(
         Txp[0],
@@ -860,11 +911,14 @@ void RADIO_SetupRegisters(bool switchToForeground)
                     break;
             }
 
-            // Scrambler: works in all builds including ENABLE_FEAT_F4HWN
+#ifndef ENABLE_FEAT_F4HWN
             if (gRxVfo->SCRAMBLING_TYPE > 0 && gSetting_ScrambleEnable)
                 BK4819_EnableScramble(gRxVfo->SCRAMBLING_TYPE - 1);
             else
                 BK4819_DisableScramble();
+#else
+                BK4819_DisableScramble();
+#endif
         }
     }
     #ifdef ENABLE_NOAA
@@ -1091,10 +1145,10 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             BK4819_WriteRegister(0x31, uVar1 | 1); // AM Demodulation Enable
             BK4819_WriteRegister(0x42, 0x6f5c);
             BK4819_WriteRegister(0x2a, 0x7434);
-            BK4819_WriteRegister(0x2B, 0x0400); // FAGCI: HP filter off, LP on, de-emph on
-            BK4819_WriteRegister(0x2F, 0x9990); // FAGCI: AM filter
-            BK4819_WriteRegister(0x28, 0x0B40); // FAGCI: noise gate AM
-            BK4819_WriteRegister(0x2C, 0x1822); // FAGCI: emph AM
+            BK4819_WriteRegister(0x2B, 0x0400); //FAGCI
+            BK4819_WriteRegister(0x2F, 0x9990); //FAGCI
+            BK4819_WriteRegister(0x28, 0x0B40); //FAGCI
+            BK4819_WriteRegister(0x2C, 0x1822); //FAGCI
   
             #ifdef ENABLE_FEAT_F4HWN_AUDIO
                 AUDIO_ApplyAMProfile(gSetting_set_audio_am);
@@ -1115,9 +1169,8 @@ void RADIO_SetModulation(ModulationMode_t modulation)
             BK4819_WriteRegister(0x2a, 0x7400);
             BK4819_WriteRegister(0x2b, 0x0000);
             BK4819_WriteRegister(0x2f, 0x9890);
-            BK4819_WriteRegister(0x28, 0x0B40); // FAGCI: noise gate USB
-            BK4819_WriteRegister(0x2C, 0x1822); // FAGCI: emph USB
-
+            BK4819_WriteRegister(0x28, 0x0B40); //FAGCI
+            BK4819_WriteRegister(0x2C, 0x1822); //FAGCI
             #ifdef ENABLE_FEAT_F4HWN_AUDIO
                 AUDIO_ApplyUSBProfile();
             #else
@@ -1132,9 +1185,10 @@ void RADIO_SetModulation(ModulationMode_t modulation)
         {
             uint16_t uVar1 = BK4819_ReadRegister(0x31);
             BK4819_WriteRegister(0x31, uVar1 & 0xfffe); // AM Demodulation Disable
-            BK4819_WriteRegister(0x28, 1536);   // 0x0600 — noise gate FM
-            BK4819_WriteRegister(0x2C, 26210);  // 0x6662 — de-emph / tx gain FM
-            BK4819_WriteRegister(0x4A, (BK4819_ReadRegister(0x4A) & ~127U) | 40); // AF volume
+            BK4819_WriteRegister(0x28, 1536);  // 0x0600 - noise gate для FM
+            BK4819_WriteRegister(0x2C, 26210); // 0x6662 - emph/tx gain для FM
+            BK4819_WriteRegister(0x4A, (BK4819_ReadRegister(0x4A) & ~127U) | 40);
+    
             BK4819_WriteRegister(0x42, 0x6b5a);
             BK4819_WriteRegister(0x2a, 0x7400);
             BK4819_WriteRegister(0x2b, 0x0000);
@@ -1220,11 +1274,6 @@ void RADIO_PrepareTX(void)
 
     RADIO_SelectCurrentVfo();
 
-        // X power mode = TX forbidden on this channel (check gTxVfo — always the TX side)
-        if (gTxVfo->OUTPUT_POWER == OUTPUT_POWER_X) {
-            State = VFO_STATE_TX_DISABLE;
-            gVfoConfigureMode = VFO_CONFIGURE;
-        } else
 #ifdef ENABLE_FEAT_F4HWN
         if(TX_freq_check(gCurrentVfo->pTX->Frequency) != 0
     #if defined(ENABLE_ALARM) || defined(ENABLE_TX1750)

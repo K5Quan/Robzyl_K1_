@@ -137,21 +137,10 @@ static_assert(ARRAY_SIZE(action_opt_table) == ACTION_OPT_LEN);
 
 void ACTION_Power(void)
 {
-    // Cycle: L → M → H → U → L  (X is toggled by F+6 only, not here)
-    if (gTxVfo->OUTPUT_POWER == OUTPUT_POWER_X)
-        return; // X is active — do nothing, use F+6 to exit X
-    gTxVfo->OUTPUT_POWER++;
-    if (gTxVfo->OUTPUT_POWER >= OUTPUT_POWER_LEN)
-        gTxVfo->OUTPUT_POWER = OUTPUT_POWER_LOW; // wrap: after U → back to L
-    // Skip X (0) — should never land here but guard anyway
-    if (gTxVfo->OUTPUT_POWER == OUTPUT_POWER_X)
-        gTxVfo->OUTPUT_POWER = OUTPUT_POWER_LOW;
+    if (++gTxVfo->OUTPUT_POWER > OUTPUT_POWER_HIGH)
+        gTxVfo->OUTPUT_POWER = OUTPUT_POWER_LOW1;
 
-    // Save immediately to flash
-    SETTINGS_SaveChannel(gTxVfo->CHANNEL_SAVE, gEeprom.TX_VFO, gTxVfo, 2);
-
-    // Apply new power level to hardware immediately (recalculates TXP_CalculatedSetting)
-    RADIO_ConfigureSquelchAndOutputPower(gTxVfo);
+    gRequestSaveChannel = 1;
 
     gRequestDisplayScreen = gScreenToDisplay;
 

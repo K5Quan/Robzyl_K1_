@@ -1276,7 +1276,7 @@ static void SaveHistoryToFreeChannel(void) {
         tempVFO.TX_OFFSET_FREQUENCY = 0;
         tempVFO.Modulation = settings.modulationType;
         tempVFO.CHANNEL_BANDWIDTH = settings.listenBw; 
-        tempVFO.OUTPUT_POWER = OUTPUT_POWER_LOW;
+        tempVFO.OUTPUT_POWER = OUTPUT_POWER_LOW1;
         tempVFO.STEP_SETTING = STEP_12_5kHz; 
         SETTINGS_SaveChannel(freeCh, 0, &tempVFO, 2);
         LoadActiveScanFrequencies();

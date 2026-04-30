@@ -1237,7 +1237,28 @@ void UI_DisplayMain(void)
             int8_t Level = -1;
 
             if (mode == VFO_MODE_TX)
-            {  
+            {   // TX power level
+                /*
+                switch (gRxVfo->OUTPUT_POWER)
+                {
+                    case OUTPUT_POWER_LOW1:     Level = 2; break;
+                    case OUTPUT_POWER_LOW2:     Level = 2; break;
+                    case OUTPUT_POWER_LOW3:     Level = 2; break;
+                    case OUTPUT_POWER_LOW4:     Level = 2; break;
+                    case OUTPUT_POWER_LOW5:     Level = 2; break;
+                    case OUTPUT_POWER_MID:      Level = 4; break;
+                    case OUTPUT_POWER_HIGH:     Level = 6; break;
+                }
+
+                if (gRxVfo->OUTPUT_POWER == OUTPUT_POWER_MID) {
+                    Level = 4;
+                } else if (gRxVfo->OUTPUT_POWER == OUTPUT_POWER_HIGH) {
+                    Level = 6;
+                } else {
+                    Level = 2;
+                }
+                */
+
                 uint8_t currentPower = gRxVfo->OUTPUT_POWER;
 
                 if(currentPower == OUTPUT_POWER_USER)

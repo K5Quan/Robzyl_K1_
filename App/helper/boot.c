@@ -100,7 +100,7 @@ void BOOT_ProcessMode(BOOT_Mode_t Mode)
             RADIO_InitInfo(gRxVfo, FREQ_CHANNEL_LAST - 1, DEFAULT_FREQ); // LPD
 
             gRxVfo->CHANNEL_BANDWIDTH        = BANDWIDTH_NARROW;
-            gRxVfo->OUTPUT_POWER             = OUTPUT_POWER_LOW;
+            gRxVfo->OUTPUT_POWER             = OUTPUT_POWER_LOW1;
 
             RADIO_ConfigureSquelchAndOutputPower(gRxVfo);
 
