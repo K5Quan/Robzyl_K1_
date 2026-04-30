@@ -914,6 +914,7 @@ static void ShowOSDPopup(const char *str)
 {   osdPopupTimer = osdPopupSetting;
     strncpy(osdPopupText, str, sizeof(osdPopupText)-1);
     osdPopupText[sizeof(osdPopupText)-1] = '\0';
+    spectrumElapsedCount = 0;
 }
 
 //#define MAX_CHANNELS 500
@@ -2059,7 +2060,9 @@ static void DrawF(uint32_t f) {
     } else ArrowLine = 2;
     char Text[16];
     if(isListening) { sprintf(Text, "%d dBm", Rssi2DBm(scanInfo.rssi)); }
-    else            { sprintf(Text, "%uch/s", benchRatePerSec); }
+    #ifdef ENABLE_BENCH
+        else        { sprintf(Text, "%uch/s", benchRatePerSec); }
+    #endif
 
     switch(ShowLines) {
             case 1: {       //NORMAL SPECTRUM

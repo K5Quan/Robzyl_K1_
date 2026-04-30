@@ -27,7 +27,7 @@
                 "ENABLE_SPECTRUM": true,
                 "ENABLE_FLASH_BAND": false,
                 "ENABLE_DEV": false,
-                "ENABLE_BENCH": true,
+                "ENABLE_BENCH": false,
                 "ENABLE_CPU_STATS": false,
                 "ENABLE_CPU_TEMP": true,
                 "ENABLE_BIG_FREQ": true,
