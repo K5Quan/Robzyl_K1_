@@ -323,30 +323,28 @@ void BK4819_WriteU16(uint16_t Data)
 void BK4819_SetAGC(bool enable)
 {
   uint16_t reg7E = reg_7E_cache;     
-  reg7E &= ~((1 << 15) | (0b111 << 12));// Clear AGC and index bits
-  reg7E |= (!enable << 15) |            // AGC fix mode
-           (3u << 12) |                  // AGC fix index
-           (5u << 3) |                   // Default DC
-           (6u << 0);                    // Default value
-  BK4819_WriteRegister(BK4819_REG_7E, (reg7E));
+      if(!(reg7E & (1 << 15)) == enable) return;
+    BK4819_WriteRegister(BK4819_REG_7E, (reg7E & ~(1 << 15) & ~(0b111 << 12))
+        | (!enable << 15)   // 0  AGC fix mode
+        | (3u << 12)       // 3  AGC fix index
+    );
 }
 
 void BK4819_InitAGC(ModulationMode_t modulation)
 {   
-    bool fm = (modulation == MODULATION_FM);
     BK4819_WriteRegister(BK4819_REG_10, 0x0318);
     BK4819_WriteRegister(BK4819_REG_11, 0x033A);
     BK4819_WriteRegister(BK4819_REG_12, 0x03DB);
-    BK4819_WriteRegister(BK4819_REG_13, 0x03FF); //0x03DF
-    
-    uint16_t reg14 = fm ? 0x0210 : 0x0000;
-    BK4819_WriteRegister(BK4819_REG_14, reg14); //0x0210
-    //AGC_DEFAULT = {0, 56, 84};
-    //AGC_FAST = {0, 32, 50};
-    uint16_t reg49 = fm ? 0x2AB2 : (0 << 14) | (84 << 7) | (56 << 0);
-    
-    BK4819_WriteRegister(BK4819_REG_49, reg49);
+    BK4819_WriteRegister(BK4819_REG_13, 0x03DF);
+    BK4819_WriteRegister(BK4819_REG_14, 0x0210);
+
+    if (modulation == MODULATION_AM) {
+        BK4819_WriteRegister(BK4819_REG_49, (0u << 14) | (50u << 7) | (20u << 0));
+        BK4819_WriteRegister(BK4819_REG_7B, 0x8420);
+    } else {
+        BK4819_WriteRegister(BK4819_REG_49, 0x2AB2);
     BK4819_WriteRegister(BK4819_REG_7B, 0x73DC);
+    }
 }
 
 int8_t BK4819_GetRxGain_dB(void)
@@ -1653,6 +1651,7 @@ void BK4819_Disable(void)
 void BK4819_StopScan(void)
 {
     BK4819_DisableFrequencyScan();
+    BK4819_WriteRegister(BK4819_REG_02, 0);
     BK4819_Disable();
 }
 

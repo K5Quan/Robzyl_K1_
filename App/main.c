@@ -178,7 +178,7 @@ void Main(void)
          KEYBOARD_Poll() != KEY_INVALID ||
          BootMode != BOOT_MODE_NORMAL)
     {   // keys are pressed
-        UI_DisplayReleaseKeys();
+        //UI_DisplayReleaseKeys();
         BACKLIGHT_TurnOn();
 
         // 500ms
@@ -192,9 +192,7 @@ void Main(void)
         gDebounceCounter = 0;
     }
     #ifdef ENABLE_USB
-        else {
-            LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_USBD); //USB DEACTIVATED
-        }
+    VCP_Init(); // USB always active
     #endif
 
     if (!gChargingWithTypeC && gBatteryDisplayLevel == 0)

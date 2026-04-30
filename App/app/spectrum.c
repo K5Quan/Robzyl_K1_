@@ -344,14 +344,23 @@ static int clamp(int v, int min, int max) {
 }
 
 static void UpdateDBMaxAuto() { //Zoom
-    scanInfo.rssiMax = 0;
-    scanInfo.rssiMin = 65535;
-    for (uint8_t i = 0; i < 127;i++) {
-        if (rssiHistory[i] > scanInfo.rssiMax) {scanInfo.rssiMax = rssiHistory[i];}
-        else if (rssiHistory[i] < scanInfo.rssiMin) {scanInfo.rssiMin = rssiHistory[i];}
+  static uint8_t z = 5;
+  int newDbMax;
+    if (scanInfo.rssiMax > 0) {
+        newDbMax = Rssi2DBm(scanInfo.rssiMax);
+
+        if (newDbMax > settings.dbMax + z) {
+            settings.dbMax = settings.dbMax + z;
+        } else if (newDbMax < settings.dbMax - z) {
+            settings.dbMax = settings.dbMax - z;
+        } else {
+            settings.dbMax = newDbMax;
+        }
     }
-    settings.dbMax = Rssi2DBm(scanInfo.rssiMax) + 3;
-    settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+
+    if (scanInfo.rssiMin > 0) {
+        settings.dbMin = Rssi2DBm(scanInfo.rssiMin);
+    }
 }
 
 
@@ -1488,7 +1497,6 @@ static void ToggleRX(bool on) {
     if (on) { 
         Fmax = peak.f;
         BK4819_RX_TurnOn();
-        UpdateDBMaxAuto();
         SYSTEM_DelayMs(20);
         RADIO_SetModulation(settings.modulationType);
         BK4819_SetFilterBandwidth(settings.listenBw, false);
@@ -2162,7 +2170,6 @@ static void NextScanStep() {
 #endif
         if (++scanInfo.i >= scanChannelsCount) {
             scanInfo.i = 0;
-            UpdateDBMaxAuto();
         }
 #ifdef ENABLE_BENCH
         if (scanInfo.i < prevI) benchLapDone = true;   // pełna pętla listy kanałów
@@ -2194,7 +2201,6 @@ static void NextScanStep() {
     if (scanInfo.i > steps) {
         scanInfo.i = 0;
         newScanStart = true;
-        UpdateDBMaxAuto();
         benchLapDone = true;          // pełna pętla zakresu/pasma/freq
     } else if (scanInfo.i < prevI) {
         benchLapDone = true;
@@ -2203,7 +2209,6 @@ static void NextScanStep() {
     if (scanInfo.i > GetStepsCount()) {
         scanInfo.i = 0;
         newScanStart = true;
-        UpdateDBMaxAuto();
     }
 #endif
 }
@@ -3222,6 +3227,7 @@ static void RenderSpectrum()
 #endif
     if (ShowLines < 4) {
         DrawNums();
+        UpdateDBMaxAuto();
         DrawSpectrum();
 #ifdef ENABLE_SPECTRUM_LINES
         MyDrawFrameLines();
